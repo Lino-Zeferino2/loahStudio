@@ -3,6 +3,7 @@ import 'package:loahstudio/constants/colors.dart';
 import 'package:loahstudio/view/user_views/home/home_page.dart';
 import 'package:loahstudio/view/user_views/agendamento/agendamento_page.dart';
 import 'package:loahstudio/view/user_views/servicos/servicos_page.dart';
+import 'package:loahstudio/view/user_views/carrinho/carrinho_page.dart';
 
 class ProdutosPage extends StatefulWidget {
   @override
@@ -155,7 +156,12 @@ class _ProdutosPageState extends State<ProdutosPage> {
                         } else if (index == 3) {
                           Navigator.push(context, MaterialPageRoute(builder: (_) => AgendamentoPage()));
                         } else if (index == 4) {
-                          _showCartDialog();
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => CarrinhoPage(existingCart: _cart),
+                            ),
+                          );
                         }
                       },
                       child: AnimatedContainer(
