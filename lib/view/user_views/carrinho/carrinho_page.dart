@@ -24,6 +24,12 @@ class _CarrinhoPageState extends State<CarrinhoPage> {
   final moradaController = TextEditingController();
   final cpController = TextEditingController();
   final cidadeController = TextEditingController();
+  // Controladores condicionais para pagamento
+  final mbwayNumeroController = TextEditingController();
+  final cartaoNumeroController = TextEditingController();
+  final cartaoValidadeController = TextEditingController();
+  final cartaoCvvController = TextEditingController();
+  final cartaoNomeController = TextEditingController();
   String pagamentoSelecionado = 'mbway';
 
   final List<String> menuItems = [
@@ -716,6 +722,93 @@ class _CarrinhoPageState extends State<CarrinhoPage> {
                 _metodoPagamento("Cartão de Crédito", "cartao", "assets/icons/cartao.png"),
                 SizedBox(height: 24),
 
+                // Campos condicionais conforme método
+                if (pagamentoSelecionado == 'mbway') ...[
+                  Text(
+                    "Número MB Way",
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFF5A4A42),
+                    ),
+                  ),
+                  SizedBox(height: 8),
+                  _textField(mbwayNumeroController, "9xxxxxxxxx", Icons.phone_android, keyboardType: TextInputType.phone),
+                ],
+
+                if (pagamentoSelecionado == 'cartao') ...[
+                  Text(
+                    "Dados do cartão",
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFF5A4A42),
+                    ),
+                  ),
+                  SizedBox(height: 8),
+                  _textField(cartaoNomeController, "Nome no cartão", Icons.person_outline),
+                  SizedBox(height: 12),
+                  _textField(cartaoNumeroController, "Número do cartão", Icons.credit_card, keyboardType: TextInputType.number),
+                  SizedBox(height: 12),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _textField(cartaoValidadeController, "MM/AA", Icons.calendar_today, width: 120),
+                      ),
+                      SizedBox(width: 12),
+                      Expanded(
+                        child: _textField(cartaoCvvController, "CVV", Icons.lock_outline, width: 100),
+                      ),
+                    ],
+                  ),
+                ],
+
+                if (pagamentoSelecionado == 'multibanco') ...[
+                  Container(
+                    padding: EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Color(0xFFF7F4F2),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          "Dados para Transferência",
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                            color: Color(0xFF5A4A42),
+                          ),
+                        ),
+                        SizedBox(height: 8),
+                        Text(
+                          "Entidade: 12345",
+                          style: TextStyle(color: Color(0xFF7A6A62)),
+                        ),
+                        Text(
+                          "Referência: 999 999 999",
+                          style: TextStyle(color: Color(0xFF7A6A62)),
+                        ),
+                        Text(
+                          "IBAN: PT50 0000 0000 0000 0000 00",
+                          style: TextStyle(color: Color(0xFF7A6A62)),
+                        ),
+                        SizedBox(height: 8),
+                        Text(
+                          "Após transferência, envie o comprovativo para o nosso email.",
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.grey,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+
+                SizedBox(height: 24),
+
                 // Total e botão
                 Divider(),
                 SizedBox(height: 16),
@@ -752,6 +845,7 @@ class _CarrinhoPageState extends State<CarrinhoPage> {
                       ),
                     ),
                     onPressed: () {
+                      // Validação básica
                       if (nomeController.text.isEmpty ||
                           emailController.text.isEmpty ||
                           telefoneController.text.isEmpty ||
@@ -764,6 +858,31 @@ class _CarrinhoPageState extends State<CarrinhoPage> {
                         );
                         return;
                       }
+
+                      // Validação condicional conforme método de pagamento
+                      if (pagamentoSelecionado == 'mbway' && mbwayNumeroController.text.isEmpty) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text("Por favor, insira o número MB Way."),
+                            backgroundColor: Colors.red,
+                          ),
+                        );
+                        return;
+                      }
+
+                      if (pagamentoSelecionado == 'cartao' &&
+                          (cartaoNumeroController.text.isEmpty ||
+                           cartaoValidadeController.text.isEmpty ||
+                           cartaoCvvController.text.isEmpty)) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text("Por favor, preencha os dados do cartão."),
+                            backgroundColor: Colors.red,
+                          ),
+                        );
+                        return;
+                      }
+
                       Navigator.pop(dialogContext);
                       _showConfirmacaoDialog();
                     },
@@ -946,6 +1065,11 @@ class _CarrinhoPageState extends State<CarrinhoPage> {
                   moradaController.clear();
                   cpController.clear();
                   cidadeController.clear();
+                  mbwayNumeroController.clear();
+                  cartaoNumeroController.clear();
+                  cartaoValidadeController.clear();
+                  cartaoCvvController.clear();
+                  cartaoNomeController.clear();
                 });
                 Navigator.pushReplacement(
                   context,
