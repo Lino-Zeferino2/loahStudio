@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:loahstudio/constants/colors.dart';
 import 'package:loahstudio/view/user_views/home/home_page.dart';
 import 'package:loahstudio/view/user_views/servicos/servicos_page.dart';
@@ -15,6 +16,15 @@ class CarrinhoPage extends StatefulWidget {
 class _CarrinhoPageState extends State<CarrinhoPage> {
   int selectedIndex = -1;
   int? hoverIndex;
+
+  // Controladores para o formulário
+  final nomeController = TextEditingController();
+  final emailController = TextEditingController();
+  final telefoneController = TextEditingController();
+  final moradaController = TextEditingController();
+  final cpController = TextEditingController();
+  final cidadeController = TextEditingController();
+  String pagamentoSelecionado = 'mbway';
 
   final List<String> menuItems = [
     "Início",
@@ -346,17 +356,7 @@ class _CarrinhoPageState extends State<CarrinhoPage> {
                               ),
                               onPressed: cartItems.isEmpty
                                   ? null
-                                  : () {
-                                      ScaffoldMessenger.of(context).showSnackBar(
-                                        SnackBar(
-                                          content: Text("Encomenda realizada com sucesso!"),
-                                          backgroundColor: Colors.green,
-                                        ),
-                                      );
-                                      setState(() {
-                                        cartItems.clear();
-                                      });
-                                    },
+                                  : () => _showCheckoutDialog(),
                               child: Text(
                                 "Finalizar compra",
                                 style: TextStyle(
@@ -619,6 +619,343 @@ class _CarrinhoPageState extends State<CarrinhoPage> {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  void _showCheckoutDialog() {
+    showDialog(
+      context: context,
+      builder: (dialogContext) => Dialog(
+        backgroundColor: Colors.white,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        child: Container(
+          width: 500,
+          padding: EdgeInsets.all(30),
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Cabeçalho
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      "Finalizar compra",
+                      style: TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF5A4A42),
+                      ),
+                    ),
+                    IconButton(
+                      icon: Icon(Icons.close),
+                      onPressed: () => Navigator.pop(dialogContext),
+                    ),
+                  ],
+                ),
+                SizedBox(height: 24),
+
+                // Dados de faturação
+                Text(
+                  "Dados de faturação",
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFF5A4A42),
+                  ),
+                ),
+                SizedBox(height: 16),
+                _textField(nomeController, "Nome completo", Icons.person_outline),
+                SizedBox(height: 12),
+                _textField(emailController, "Email", Icons.email_outlined, keyboardType: TextInputType.emailAddress),
+                SizedBox(height: 12),
+                _textField(telefoneController, "Telemóvel", Icons.phone_outlined, keyboardType: TextInputType.phone),
+                SizedBox(height: 24),
+
+                // Morada
+                Text(
+                  "Morada de entrega",
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFF5A4A42),
+                  ),
+                ),
+                SizedBox(height: 16),
+                _textField(moradaController, "Morada", Icons.location_on_outlined),
+                SizedBox(height: 12),
+                Row(
+                  children: [
+                    Expanded(
+                      child: _textField(cpController, "Código Postal", Icons.markunread_outlined, width: 150),
+                    ),
+                    SizedBox(width: 12),
+                    Expanded(
+                      child: _textField(cidadeController, "Cidade", Icons.location_city_outlined),
+                    ),
+                  ],
+                ),
+                SizedBox(height: 24),
+
+                // Método de pagamento
+                Text(
+                  "Método de pagamento",
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFF5A4A42),
+                  ),
+                ),
+                SizedBox(height: 16),
+                _metodoPagamento("MB Way", "mbway", "assets/icons/mbway.png"),
+                SizedBox(height: 12),
+                _metodoPagamento("Multibanco", "multibanco", "assets/icons/multibanco.png"),
+                SizedBox(height: 12),
+                _metodoPagamento("Cartão de Crédito", "cartao", "assets/icons/cartao.png"),
+                SizedBox(height: 24),
+
+                // Total e botão
+                Divider(),
+                SizedBox(height: 16),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      "Total a pagar",
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF5A4A42),
+                      ),
+                    ),
+                    Text(
+                      "€${totalValue.toStringAsFixed(2)}",
+                      style: TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.pinkStrong,
+                      ),
+                    ),
+                  ],
+                ),
+                SizedBox(height: 24),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.pinkStrong,
+                      padding: EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(30),
+                      ),
+                    ),
+                    onPressed: () {
+                      if (nomeController.text.isEmpty ||
+                          emailController.text.isEmpty ||
+                          telefoneController.text.isEmpty ||
+                          moradaController.text.isEmpty) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text("Por favor, preencha todos os campos necessários."),
+                            backgroundColor: Colors.red,
+                          ),
+                        );
+                        return;
+                      }
+                      Navigator.pop(dialogContext);
+                      _showConfirmacaoDialog();
+                    },
+                    child: Text(
+                      "Confirmar compra",
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _textField(TextEditingController controller, String label, IconData icon, {TextInputType? keyboardType, double? width}) {
+    return Container(
+      width: width ?? double.infinity,
+      child: TextField(
+        controller: controller,
+        keyboardType: keyboardType,
+        decoration: InputDecoration(
+          labelText: label,
+          prefixIcon: Icon(icon, size: 20),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide(color: Colors.grey.shade300),
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide(color: Colors.grey.shade300),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide(color: AppColors.pinkStrong),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _metodoPagamento(String titulo, String valor, String iconPath) {
+    final isSelected = pagamentoSelecionado == valor;
+    return GestureDetector(
+      onTap: () => setState(() => pagamentoSelecionado = valor),
+      child: Container(
+        padding: EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          border: Border.all(
+            color: isSelected ? AppColors.pinkStrong : Colors.grey.shade300,
+            width: isSelected ? 2 : 1,
+          ),
+          borderRadius: BorderRadius.circular(12),
+          color: isSelected ? AppColors.pinkStrong.withValues(alpha: 0.05) : Colors.white,
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 24,
+              height: 24,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: isSelected ? AppColors.pinkStrong : Colors.grey.shade400,
+                  width: 2,
+                ),
+              ),
+              child: isSelected
+                  ? Center(
+                      child: Container(
+                        width: 12,
+                        height: 12,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: AppColors.pinkStrong,
+                        ),
+                      ),
+                    )
+                  : null,
+            ),
+            SizedBox(width: 16),
+            Icon(
+              valor == 'mbway' ? Icons.phone_android
+                  : valor == 'multibanco' ? Icons.account_balance
+                  : Icons.credit_card,
+              color: isSelected ? AppColors.pinkStrong : Color(0xFF5A4A42),
+            ),
+            SizedBox(width: 12),
+            Text(
+              titulo,
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+                color: isSelected ? AppColors.pinkStrong : Color(0xFF5A4A42),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showConfirmacaoDialog() {
+    showDialog(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.check_circle,
+              color: Colors.green,
+              size: 80,
+            ),
+            SizedBox(height: 20),
+            Text(
+              "Encomenda confirmada!",
+              style: TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+                color: Color(0xFF5A4A42),
+              ),
+            ),
+            SizedBox(height: 12),
+            Text(
+              "receberá uma confirmação no email:\n${emailController.text}",
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 16,
+                color: Color(0xFF7A6A62),
+              ),
+            ),
+            if (pagamentoSelecionado == 'mbway') ...[
+              SizedBox(height: 20),
+              Container(
+                padding: EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Color(0xFFF7F4F2),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Column(
+                  children: [
+                    Text(
+                      "Pagamento via MB Way",
+                      style: TextStyle(fontWeight: FontWeight.w600),
+                    ),
+                    SizedBox(height: 8),
+                    Text(
+                      "Enviará um pedido de pagamento\npara o seu número.",
+                      textAlign: TextAlign.center,
+                      style: TextStyle(fontSize: 14, color: Color(0xFF7A6A62)),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+            SizedBox(height: 20),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.pinkStrong,
+                padding: EdgeInsets.symmetric(horizontal: 40, vertical: 14),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(25),
+                ),
+              ),
+              onPressed: () {
+                Navigator.pop(dialogContext);
+                setState(() {
+                  cartItems.clear();
+                  nomeController.clear();
+                  emailController.clear();
+                  telefoneController.clear();
+                  moradaController.clear();
+                  cpController.clear();
+                  cidadeController.clear();
+                });
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(builder: (_) => ProdutosPage()),
+                );
+              },
+              child: Text("Continuar a compras", style: TextStyle(color: Colors.white)),
+            ),
+          ],
+        ),
       ),
     );
   }
