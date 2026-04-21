@@ -705,25 +705,45 @@ class _CarrinhoPageState extends State<CarrinhoPage> {
                 ),
                 SizedBox(height: 24),
 
-                // Método de pagamento
-                Text(
-                  "Método de pagamento",
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    color: Color(0xFF5A4A42),
-                  ),
-                ),
-                SizedBox(height: 16),
-                _metodoPagamento("MB Way", "mbway", "assets/icons/mbway.png"),
-                SizedBox(height: 12),
-                _metodoPagamento("Multibanco", "multibanco", "assets/icons/multibanco.png"),
-                SizedBox(height: 12),
-                _metodoPagamento("Cartão de Crédito", "cartao", "assets/icons/cartao.png"),
-                SizedBox(height: 24),
+                // Campos condicionais conforme método - com StatefulBuilder para atualizar em tempo real
+                StatefulBuilder(
+                  builder: (context, setStateDialog) {
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Método de pagamento com atualização em tempo real
+                        Text(
+                          "Método de pagamento",
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            color: Color(0xFF5A4A42),
+                          ),
+                        ),
+                        SizedBox(height: 16),
+                        _metodoPagamento("MB Way", "mbway", "assets/icons/mbway.png", pagamentoSelecionado, () {
+                          setState(() {
+                            pagamentoSelecionado = 'mbway';
+                          });
+                          setStateDialog(() {});
+                        }),
+                        SizedBox(height: 12),
+                        _metodoPagamento("Multibanco", "multibanco", "assets/icons/multibanco.png", pagamentoSelecionado, () {
+                          setState(() {
+                            pagamentoSelecionado = 'multibanco';
+                          });
+                          setStateDialog(() {});
+                        }),
+                        SizedBox(height: 12),
+                        _metodoPagamento("Cartão de Crédito", "cartao", "assets/icons/cartao.png", pagamentoSelecionado, () {
+                          setState(() {
+                            pagamentoSelecionado = 'cartao';
+                          });
+                         setStateDialog(() {});
+                        }),
+                        SizedBox(height: 24),
 
-                // Campos condicionais conforme método
-                if (pagamentoSelecionado == 'mbway') ...[
+                        if (pagamentoSelecionado == 'mbway') ...[
                   Text(
                     "Número MB Way",
                     style: TextStyle(
@@ -806,6 +826,10 @@ class _CarrinhoPageState extends State<CarrinhoPage> {
                     ),
                   ),
                 ],
+                      ],
+                    );
+                  },
+                ),
 
                 SizedBox(height: 24),
 
@@ -930,10 +954,12 @@ class _CarrinhoPageState extends State<CarrinhoPage> {
     );
   }
 
-  Widget _metodoPagamento(String titulo, String valor, String iconPath) {
+  Widget _metodoPagamento(String titulo, String valor, String iconPath, String pagamentoSelecionado, [VoidCallback? onTapCallback]) {
     final isSelected = pagamentoSelecionado == valor;
     return GestureDetector(
-      onTap: () => setState(() => pagamentoSelecionado = valor),
+      onTap: () {
+        onTapCallback?.call();
+      },
       child: Container(
         padding: EdgeInsets.all(16),
         decoration: BoxDecoration(
