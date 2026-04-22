@@ -32,7 +32,7 @@ class HeroSection extends StatelessWidget {
                 borderRadius: BorderRadius.circular(16),
                 child: Image.asset(
                   "assets/images/loahcapa.png",
-                  height: 280,
+                  height: 320,
                   width: double.infinity,
                   fit: BoxFit.cover,
                 ),
