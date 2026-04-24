@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:loahstudio/constants/colors.dart';
+import 'package:loahstudio/constants/responsive.dart';
 import 'package:loahstudio/view/user_views/home/home_page.dart';
 import 'package:loahstudio/view/user_views/agendamento/agendamento_page.dart';
 import 'package:loahstudio/view/user_views/produtos/produtos_page.dart';
@@ -19,6 +20,9 @@ class _ServicosPageState extends State<ServicosPage> {
   final emailController = TextEditingController();
   final telefoneController = TextEditingController();
   final observacaoController = TextEditingController();
+
+  // Controla qual cartão está expandido no mobile
+  String? expandedServicoTitulo;
 
   final List<String> menuItems = [
     "Início",
@@ -74,7 +78,7 @@ class _ServicosPageState extends State<ServicosPage> {
       "preço": "€60",
       "duracao": "1h",
       "tipo": "Básico",
-      "imagem": "https://images.unsplash.com/photo-1573496359142-b8d87734a7a2",
+      "imagem": "https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9",
     },
   ];
 
@@ -97,98 +101,107 @@ class _ServicosPageState extends State<ServicosPage> {
 
   @override
   Widget build(BuildContext context) {
+    final isMobile = ResponsiveHelper.isMobile(context);
+    final headerTitleSize = ResponsiveHelper.headerTitleSize(context);
+
     return Scaffold(
       appBar: AppBar(
         automaticallyImplyLeading: false,
         backgroundColor: Colors.transparent,
         elevation: 0,
-        title: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            GestureDetector(
-              onTap: () => Navigator.pop(context),
-              child: Text(
-                "LOAH STÚDIO",
-                style: TextStyle(
-                  color: AppColors.brown,
-                  fontWeight: FontWeight.w600,
-                  fontSize: 22,
-                  letterSpacing: 3,
-                ),
-              ),
-            ),
-            Row(
+        title: LayoutBuilder(
+          builder: (context, constraints) {
+            final isCompact = constraints.maxWidth < 600;
+            return Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                ...List.generate(menuItems.length, (index) {
-                  final isSelected = selectedIndex == index;
-                  final isHover = hoverIndex == index;
-                  return MouseRegion(
-                    onEnter: (_) => setState(() => hoverIndex = index),
-                    onExit: (_) => setState(() => hoverIndex = null),
-                    child: GestureDetector(
-                      onTap: () {
-                        if (index == 0) {
-                          Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (_) => HomePage()), (route) => route.isFirst);
-                        } else if (index == 2) {
-                          Navigator.push(context, MaterialPageRoute(builder: (_) => ProdutosPage()));
-                        } else if (index == 3) {
-                          Navigator.push(context, MaterialPageRoute(builder: (_) => AgendamentoPage()));
-                        } else {
-                          setState(() => selectedIndex = index);
-                        }
-                      },
-                      child: AnimatedContainer(
-                        duration: Duration(milliseconds: 200),
-                        margin: EdgeInsets.symmetric(horizontal: 12),
-                        padding: EdgeInsets.symmetric(vertical: 8),
-                        decoration: BoxDecoration(
-                          border: isSelected
-                              ? Border(bottom: BorderSide(color: AppColors.pinkNude, width: 2))
-                              : null,
-                        ),
-                        child: Text(
-                          menuItems[index],
-                          style: TextStyle(
-                            color: isSelected || isHover ? AppColors.pinkNude : AppColors.brown,
-                            fontSize: 16,
-                            fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
-                          ),
-                        ),
-                      ),
+                GestureDetector(
+                  onTap: () => Navigator.pop(context),
+                  child: Text(
+                    "LOAH STÚDIO",
+                    style: TextStyle(
+                      color: AppColors.brown,
+                      fontWeight: FontWeight.w600,
+                      fontSize: headerTitleSize,
+                      letterSpacing: 3,
                     ),
-                  );
-                }),
-                SizedBox(width: 20),
-                ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.pinkStrong,
-                    padding: EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
                   ),
-                  onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => AgendamentoPage())),
-                  child: Text("Agendar", style: TextStyle(color: Colors.white)),
                 ),
+                if (!isCompact)
+                  Row(
+                    children: [
+                      ...List.generate(menuItems.length, (index) {
+                        final isSelected = selectedIndex == index;
+                        final isHover = hoverIndex == index;
+                        return MouseRegion(
+                          onEnter: (_) => setState(() => hoverIndex = index),
+                          onExit: (_) => setState(() => hoverIndex = null),
+                          child: GestureDetector(
+                            onTap: () {
+                              if (index == 0) {
+                                Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (_) => HomePage()), (route) => route.isFirst);
+                              } else if (index == 2) {
+                                Navigator.push(context, MaterialPageRoute(builder: (_) => ProdutosPage()));
+                              } else if (index == 3) {
+                                Navigator.push(context, MaterialPageRoute(builder: (_) => AgendamentoPage()));
+                              } else {
+                                setState(() => selectedIndex = index);
+                              }
+                            },
+                            child: AnimatedContainer(
+                              duration: Duration(milliseconds: 200),
+                              margin: EdgeInsets.symmetric(horizontal: isMobile ? 8.0 : 12.0),
+                              padding: EdgeInsets.symmetric(vertical: 8.0),
+                              decoration: BoxDecoration(
+                                border: isSelected
+                                    ? Border(bottom: BorderSide(color: AppColors.pinkNude, width: 2))
+                                    : null,
+                              ),
+                              child: Text(
+                                menuItems[index],
+                                style: TextStyle(
+                                  color: isSelected || isHover ? AppColors.pinkNude : AppColors.brown,
+                                  fontSize: isMobile ? 14.0 : 16.0,
+                                  fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                                ),
+                              ),
+                            ),
+                          ),
+                        );
+                      }),
+                      SizedBox(width: isMobile ? 10.0 : 20.0),
+                      ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.pinkStrong,
+                          padding: EdgeInsets.symmetric(horizontal: isMobile ? 14.0 : 20.0, vertical: isMobile ? 8.0 : 12.0),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                        ),
+                        onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => AgendamentoPage())),
+                        child: Text("Agendar", style: TextStyle(color: Colors.white, fontSize: isMobile ? 13.0 : 14.0)),
+                      ),
+                    ],
+                  ),
               ],
-            ),
-          ],
+            );
+          },
         ),
       ),
       body: SingleChildScrollView(
         child: Column(
           children: [
-            SizedBox(height: 40),
+            SizedBox(height: isMobile ? 20.0 : 40.0),
             // Secção Título + Intro
             _introSection(),
-            SizedBox(height: 60),
+            SizedBox(height: isMobile ? 30.0 : 60.0),
             // Lista de Serviços
             _servicosList(),
-            SizedBox(height: 60),
+            SizedBox(height: isMobile ? 30.0 : 60.0),
             // Secção Calendário
             _calendarSection(),
-            SizedBox(height: 60),
+            SizedBox(height: isMobile ? 30.0 : 60.0),
             // Secção Formulário
             _formSection(),
-            SizedBox(height: 100),
+            SizedBox(height: isMobile ? 50.0 : 100.0),
             // Footer
             _footerSection(),
           ],
@@ -198,6 +211,59 @@ class _ServicosPageState extends State<ServicosPage> {
   }
 
   Widget _introSection() {
+    final isMobile = MediaQuery.of(context).size.width < 600;
+
+    if (isMobile) {
+      // Mobile: imagem no topo
+      return Container(
+        padding: EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+        child: Column(
+          children: [
+            // Logo no topo
+            Container(
+              height: 120,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.1),
+                    blurRadius: 15,
+                    offset: Offset(0, 8),
+                  ),
+                ],
+              ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(16),
+                child: Image.asset("assets/images/logo.png", fit: BoxFit.cover),
+              ),
+            ),
+            SizedBox(height: 16),
+            Text(
+              "Os nossos serviços",
+              style: TextStyle(
+                fontSize: 28,
+                fontWeight: FontWeight.bold,
+                color: Color(0xFF5A4A42),
+                height: 1.2,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            SizedBox(height: 8),
+            Text(
+              "Oferecemos serviços de maquilhagem profissional adaptados às suas necessidades.",
+              style: TextStyle(
+                fontSize: 14,
+                color: Color(0xFF7A6A62),
+                height: 1.4,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+      );
+    }
+
+    // Desktop: layout original
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 60, vertical: 40),
       child: Row(
@@ -256,20 +322,24 @@ class _ServicosPageState extends State<ServicosPage> {
   }
 
   Widget _servicosList() {
+    final isMobile = MediaQuery.of(context).size.width < 600;
+    final double horizontalPad = isMobile ? 16.0 : 60.0;
+    final double titleSize = isMobile ? 20.0 : 28.0;
+
     return Container(
-      padding: EdgeInsets.symmetric(horizontal: 60),
+      padding: EdgeInsets.symmetric(horizontal: horizontalPad),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             "Escolha o seu serviço",
             style: TextStyle(
-              fontSize: 28,
+              fontSize: titleSize,
               fontWeight: FontWeight.bold,
               color: Color(0xFF5A4A42),
             ),
           ),
-          SizedBox(height: 30),
+          SizedBox(height: isMobile ? 16.0 : 30.0),
           ...servicos.map((servico) => _servicoCard(
             servico["titulo"]!,
             servico["descricao"]!,
@@ -284,8 +354,210 @@ class _ServicosPageState extends State<ServicosPage> {
   }
 
   Widget _servicoCard(String titulo, String descricao, String preco, String duracao, String tipo, String imagem) {
+    final isMobile = MediaQuery.of(context).size.width < 600;
     final isPremium = tipo == "Premium";
     final isSelected = selectedServico?["titulo"] == titulo;
+
+    // Versão mobile: cartão clicável
+    if (isMobile) {
+      return GestureDetector(
+        onTap: () => setState(() => selectedServico = {
+          "titulo": titulo,
+          "preço": preco,
+          "descricao": descricao,
+          "duracao": duracao,
+          "tipo": tipo,
+          "imagem": imagem,
+        }),
+        child: Container(
+          margin: EdgeInsets.only(bottom: 12),
+          padding: EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            border: isSelected ? Border.all(color: AppColors.pinkStrong, width: 2) : null,
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.06),
+                blurRadius: 10,
+                offset: Offset(0, 4),
+              ),
+            ],
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Imagem
+              ClipRRect(
+                borderRadius: BorderRadius.circular(12),
+                child: Image.network(
+                  imagem,
+                  width: double.infinity,
+                  height: 80,
+                  fit: BoxFit.cover,
+                ),
+              ),
+              SizedBox(height: 10),
+              // Título e preço
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Expanded(
+                    child: Text(
+                      titulo,
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF5A4A42),
+                      ),
+                    ),
+                  ),
+                  Text(
+                    preco,
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.pinkStrong,
+                    ),
+                  ),
+                ],
+              ),
+              SizedBox(height: 6),
+              // Tipo, duração + Botão Ver detalhes (na mesma linha)
+              Row(
+                children: [
+                  Container(
+                    padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: Color(0xFFF7F4F2),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.access_time, size: 12, color: Color(0xFF5A4A42)),
+                        SizedBox(width: 4),
+                        Text(duracao, style: TextStyle(fontSize: 11, color: Color(0xFF5A4A42))),
+                      ],
+                    ),
+                  ),
+                  SizedBox(width: 6),
+                  Container(
+                    padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: isPremium ? AppColors.pinkStrong : Color(0xFF5A4A42),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Text(
+                      tipo,
+                      style: TextStyle(fontSize: 11, color: Colors.white, fontWeight: FontWeight.w500),
+                    ),
+                  ),
+                  SizedBox(width: 6),
+                  // Botão "Ver detalhes" ao lado
+                  GestureDetector(
+                    onTap: () {
+                      // Mostrar detalhes em dialog
+                      showModalBottomSheet(
+                        context: context,
+                        isScrollControlled: true,
+                        backgroundColor: Colors.transparent,
+                        builder: (context) => Container(
+                          height: MediaQuery.of(context).size.height * 0.7,
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+                          ),
+                          padding: EdgeInsets.all(20),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Text(titulo, style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF5A4A42))),
+                                  Text(preco, style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppColors.pinkStrong)),
+                                ],
+                              ),
+                              SizedBox(height: 12),
+                              Text(descricao, style: TextStyle(fontSize: 14, color: Color(0xFF7A6A62), height: 1.5)),
+                              SizedBox(height: 20),
+                              Row(
+                                children: [
+                                  Icon(Icons.access_time, size: 16, color: Color(0xFF5A4A42)),
+                                  SizedBox(width: 8),
+                                  Text(duracao, style: TextStyle(fontSize: 14, color: Color(0xFF5A4A42))),
+                                ],
+                              ),
+                              Spacer(),
+                              SizedBox(
+                                width: double.infinity,
+                                child: ElevatedButton(
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: AppColors.pinkStrong,
+                                    padding: EdgeInsets.symmetric(vertical: 14),
+                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(25)),
+                                  ),
+                                  onPressed: () {
+                                    Navigator.pop(context);
+                                    setState(() => selectedServico = {
+                                      "titulo": titulo,
+                                      "preço": preco,
+                                      "descricao": descricao,
+                                      "duracao": duracao,
+                                      "tipo": tipo,
+                                      "imagem": imagem,
+                                    });
+                                  },
+                                  child: Text("Selecionar", style: TextStyle(fontSize: 16, color: Colors.white, fontWeight: FontWeight.w600)),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    },
+                    child: Container(
+                      padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        border: Border.all(color: AppColors.pinkNude, width: 1),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Text("Ver detalhes", style: TextStyle(fontSize: 10, color: AppColors.pinkNude)),
+                    ),
+                  ),
+                ],
+              ),
+              SizedBox(height: 10),
+              // Botão Selecionar sempre visível
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: isSelected ? AppColors.pinkStrong : Colors.white,
+                    foregroundColor: isSelected ? Colors.white : AppColors.pinkStrong,
+                    side: BorderSide(color: AppColors.pinkStrong, width: 2),
+                    padding: EdgeInsets.symmetric(vertical: 10),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                  ),
+                  onPressed: () => setState(() => selectedServico = {
+                    "titulo": titulo,
+                    "preço": preco,
+                    "descricao": descricao,
+                    "duracao": duracao,
+                    "tipo": tipo,
+                    "imagem": imagem,
+                  }),
+                  child: Text(isSelected ? "Selecionado" : "Selecionar", style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    // Versão desktop: original
     return GestureDetector(
       onTap: () => setState(() => selectedServico = {
         "titulo": titulo,
@@ -420,8 +692,127 @@ class _ServicosPageState extends State<ServicosPage> {
   }
 
   Widget _calendarSection() {
+    final isMobile = MediaQuery.of(context).size.width < 600;
+    final double horizontalPad = isMobile ? 16.0 : 60.0;
+
+    if (isMobile) {
+      // Mobile: column layout
+      return Container(
+        padding: EdgeInsets.symmetric(horizontal: horizontalPad),
+        child: Column(
+          children: [
+            // Data
+            Text(
+              "Selecione a Data",
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: Color(0xFF5A4A42),
+              ),
+            ),
+            SizedBox(height: 12),
+            Container(
+              padding: EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.06),
+                    blurRadius: 10,
+                    offset: Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: availableDates.map((date) {
+                  final isSelected = selectedDate?.day == date.day && selectedDate?.month == date.month;
+                  return GestureDetector(
+                    onTap: () => setState(() => selectedDate = date),
+                    child: Container(
+                      width: 50,
+                      padding: EdgeInsets.symmetric(vertical: 8),
+                      decoration: BoxDecoration(
+                        color: isSelected ? AppColors.pinkStrong : Color(0xFFF7F4F2),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Column(
+                        children: [
+                          Text(
+                            _getDayName(date.weekday),
+                            style: TextStyle(fontSize: 10, color: isSelected ? Colors.white : Color(0xFF7A6A62)),
+                          ),
+                          Text(
+                            date.day.toString(),
+                            style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: isSelected ? Colors.white : Color(0xFF5A4A42)),
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                }).toList(),
+              ),
+            ),
+            SizedBox(height: 20),
+            // Horário
+            Text(
+              "Selecione o Horário",
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: Color(0xFF5A4A42),
+              ),
+            ),
+            SizedBox(height: 12),
+            Container(
+              padding: EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.06),
+                    blurRadius: 10,
+                    offset: Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: availableTimes.map((time) {
+                  final isSelected = selectedTime == time;
+                  return GestureDetector(
+                    onTap: () => setState(() => selectedTime = time),
+                    child: Container(
+                      padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: isSelected ? AppColors.pinkStrong : Color(0xFFF7F4F2),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        time,
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: isSelected ? Colors.white : Color(0xFF5A4A42),
+                        ),
+                      ),
+                    ),
+                  );
+                }).toList(),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    // Desktop: row layout
     return Container(
-      padding: EdgeInsets.symmetric(horizontal: 60),
+      padding: EdgeInsets.symmetric(horizontal: horizontalPad),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
