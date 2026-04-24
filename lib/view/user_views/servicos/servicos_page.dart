@@ -944,22 +944,25 @@ class _ServicosPageState extends State<ServicosPage> {
   }
 
   Widget _formSection() {
+    final isMobile = MediaQuery.of(context).size.width < 600;
+    final horizontalPad = isMobile ? 16.0 : 60.0;
+
     return Container(
-      padding: EdgeInsets.symmetric(horizontal: 60),
+      padding: EdgeInsets.symmetric(horizontal: horizontalPad),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             "Dados Pessoais",
             style: TextStyle(
-              fontSize: 20,
+              fontSize: isMobile ? 18.0 : 20.0,
               fontWeight: FontWeight.bold,
               color: Color(0xFF5A4A42),
             ),
           ),
-          SizedBox(height: 20),
+          SizedBox(height: isMobile ? 12.0 : 20.0),
           Container(
-            padding: EdgeInsets.all(30),
+            padding: EdgeInsets.all(isMobile ? 16.0 : 30.0),
             decoration: BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.circular(16),
@@ -974,20 +977,20 @@ class _ServicosPageState extends State<ServicosPage> {
             child: Column(
               children: [
                 _buildTextField(controller: nameController, label: "Nome", hint: "Digite o seu nome completo"),
-                SizedBox(height: 20),
+                SizedBox(height: isMobile ? 12.0 : 20.0),
                 _buildTextField(controller: emailController, label: "Email", hint: "Digite o seu email", keyboardType: TextInputType.emailAddress),
-                SizedBox(height: 20),
+                SizedBox(height: isMobile ? 12.0 : 20.0),
                 _buildTextField(controller: telefoneController, label: "Número de Telemóvel", hint: "Digite o seu número", keyboardType: TextInputType.phone),
-                SizedBox(height: 20),
+                SizedBox(height: isMobile ? 12.0 : 20.0),
                 _buildTextField(controller: observacaoController, label: "Observação (opcional)", hint: "Alguma informação adicional?", maxLines: 3),
-                SizedBox(height: 30),
+                SizedBox(height: isMobile ? 20.0 : 30.0),
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton(
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.pinkStrong,
-                      padding: EdgeInsets.symmetric(vertical: 18),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+                      padding: EdgeInsets.symmetric(vertical: isMobile ? 14.0 : 18.0),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(25.0)),
                       elevation: 4,
                     ),
                     onPressed: () {
@@ -1003,7 +1006,7 @@ class _ServicosPageState extends State<ServicosPage> {
                         );
                       }
                     },
-                    child: Text("Confirmar Agendamento", style: TextStyle(fontSize: 18, color: Colors.white, fontWeight: FontWeight.w600)),
+                    child: Text("Confirmar Agendamento", style: TextStyle(fontSize: isMobile ? 14.0 : 18.0, color: Colors.white, fontWeight: FontWeight.w600)),
                   ),
                 ),
               ],
@@ -1086,9 +1089,44 @@ class _ServicosPageState extends State<ServicosPage> {
   }
 
   Widget _footerSection() {
+    final isMobile = MediaQuery.of(context).size.width < 600;
+    final horizontalPad = isMobile ? 16.0 : 60.0;
+
+    if (isMobile) {
+      // Mobile: coluna
+      return Container(
+        width: double.infinity,
+        padding: EdgeInsets.symmetric(horizontal: horizontalPad, vertical: 24.0),
+        color: Color(0xFFF5F5F5),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text("LOAH STÚDIO", style: TextStyle(fontSize: 20.0, fontWeight: FontWeight.bold, color: Color(0xFF5A4A42))),
+            SizedBox(height: 8),
+            Text("© 2026 Loah Stúdio.\nTodos os direitos reservados.", style: TextStyle(fontSize: 12.0, color: Color(0xFF7A6A62), height: 1.5)),
+            SizedBox(height: 16),
+            Text("Redes Sociais", style: TextStyle(fontSize: 14.0, fontWeight: FontWeight.w600, color: Color(0xFF5A4A42))),
+            SizedBox(height: 8),
+            Row(children: [
+              _socialIcon(Icons.camera_alt_outlined),
+              SizedBox(width: 8),
+              _socialIcon(Icons.facebook_outlined),
+              SizedBox(width: 8),
+              _socialIcon(Icons.alternate_email),
+            ]),
+            SizedBox(height: 16),
+            Text("Horário", style: TextStyle(fontSize: 14.0, fontWeight: FontWeight.w600, color: Color(0xFF5A4A42))),
+            SizedBox(height: 8),
+            Text("Seg - Sex: 9h às 19h\nSábado: 9h às 14h\nDomingo: Encerrado", style: TextStyle(fontSize: 12.0, color: Color(0xFF7A6A62), height: 1.6)),
+          ],
+        ),
+      );
+    }
+
+    // Desktop: row
     return Container(
       width: double.infinity,
-      padding: EdgeInsets.symmetric(horizontal: 60, vertical: 40),
+      padding: EdgeInsets.symmetric(horizontal: horizontalPad, vertical: 40.0),
       color: Color(0xFFF5F5F5),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1097,9 +1135,9 @@ class _ServicosPageState extends State<ServicosPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text("LOAH STÚDIO", style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Color(0xFF5A4A42))),
+                Text("LOAH STÚDIO", style: TextStyle(fontSize: 24.0, fontWeight: FontWeight.bold, color: Color(0xFF5A4A42))),
                 SizedBox(height: 12),
-                Text("© 2026 Loah Stúdio.\nTodos os direitos reservados.", style: TextStyle(fontSize: 14, color: Color(0xFF7A6A62), height: 1.5)),
+                Text("© 2026 Loah Stúdio.\nTodos os direitos reservados.", style: TextStyle(fontSize: 14.0, color: Color(0xFF7A6A62), height: 1.5)),
               ],
             ),
           ),
@@ -1107,7 +1145,7 @@ class _ServicosPageState extends State<ServicosPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text("Redes Sociais", style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Color(0xFF5A4A42))),
+                Text("Redes Sociais", style: TextStyle(fontSize: 16.0, fontWeight: FontWeight.w600, color: Color(0xFF5A4A42))),
                 SizedBox(height: 12),
                 Row(children: [
                   _socialIcon(Icons.camera_alt_outlined),
@@ -1123,9 +1161,9 @@ class _ServicosPageState extends State<ServicosPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text("Horário", style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Color(0xFF5A4A42))),
+                Text("Horário", style: TextStyle(fontSize: 16.0, fontWeight: FontWeight.w600, color: Color(0xFF5A4A42))),
                 SizedBox(height: 12),
-                Text("Seg - Sex: 9h às 19h\nSábado: 9h às 14h\nDomingo: Encerrado", style: TextStyle(fontSize: 14, color: Color(0xFF7A6A62), height: 1.6)),
+                Text("Seg - Sex: 9h às 19h\nSábado: 9h às 14h\nDomingo: Encerrado", style: TextStyle(fontSize: 14.0, color: Color(0xFF7A6A62), height: 1.6)),
               ],
             ),
           ),
