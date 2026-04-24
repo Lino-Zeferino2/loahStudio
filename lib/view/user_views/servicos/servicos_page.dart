@@ -105,6 +105,7 @@ class _ServicosPageState extends State<ServicosPage> {
     final headerTitleSize = ResponsiveHelper.headerTitleSize(context);
 
     return Scaffold(
+      endDrawer: isMobile ? _buildMobileDrawer() : null,
       appBar: AppBar(
         automaticallyImplyLeading: false,
         backgroundColor: Colors.transparent,
@@ -206,6 +207,66 @@ class _ServicosPageState extends State<ServicosPage> {
             _footerSection(),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildMobileDrawer() {
+    return Container(
+      width: 280,
+      padding: EdgeInsets.all(20),
+      color: Colors.white,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text("LOAH STÚDIO", style: TextStyle(color: AppColors.brown, fontWeight: FontWeight.w600, fontSize: 18, letterSpacing: 2)),
+              GestureDetector(
+                onTap: () => Navigator.pop(context),
+                child: Icon(Icons.close, color: AppColors.brown),
+              ),
+            ],
+          ),
+          SizedBox(height: 30),
+          Divider(),
+          SizedBox(height: 20),
+          ...List.generate(menuItems.length, (index) {
+            final isSelected = selectedIndex == index;
+            return ListTile(
+              leading: Icon(index == 0 ? Icons.home_outlined : index == 1 ? Icons.spa_outlined : index == 2 ? Icons.shopping_bag_outlined : Icons.calendar_today_outlined, color: isSelected ? AppColors.pinkStrong : AppColors.brown),
+              title: Text(menuItems[index], style: TextStyle(color: isSelected ? AppColors.pinkStrong : AppColors.brown, fontWeight: isSelected ? FontWeight.bold : FontWeight.w500)),
+              onTap: () {
+                Navigator.pop(context);
+                if (index == 0) {
+                  Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (_) => HomePage()), (route) => route.isFirst);
+                } else if (index == 2) {
+                  Navigator.push(context, MaterialPageRoute(builder: (_) => ProdutosPage()));
+                } else if (index == 3) {
+                  Navigator.push(context, MaterialPageRoute(builder: (_) => AgendamentoPage()));
+                } else {
+                  setState(() => selectedIndex = index);
+                }
+              },
+            );
+          }),
+          Spacer(),
+          Divider(),
+          SizedBox(height: 16),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              style: ElevatedButton.styleFrom(backgroundColor: AppColors.pinkStrong, padding: EdgeInsets.symmetric(vertical: 14), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(25))),
+              onPressed: () {
+                Navigator.pop(context);
+                Navigator.push(context, MaterialPageRoute(builder: (_) => AgendamentoPage()));
+              },
+              child: Text("Agendar", style: TextStyle(fontSize: 16, color: Colors.white, fontWeight: FontWeight.w600)),
+            ),
+          ),
+          SizedBox(height: 20),
+        ],
       ),
     );
   }
