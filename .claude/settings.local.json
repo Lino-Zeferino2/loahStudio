@@ -2,7 +2,8 @@
   "permissions": {
     "allow": [
       "Bash(flutter analyze)",
-      "Bash(flutter analyze lib/view/user_views/produtos/produtos_page.dart)"
+      "Bash(flutter analyze lib/view/user_views/produtos/produtos_page.dart)",
+      "Bash(flutter pub get)"
     ]
   }
 }
