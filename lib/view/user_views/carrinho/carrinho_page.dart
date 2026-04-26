@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:loahstudio/constants/colors.dart';
+import 'package:loahstudio/constants/responsive.dart';
 import 'package:loahstudio/view/user_views/home/home_page.dart';
 import 'package:loahstudio/view/user_views/servicos/servicos_page.dart';
 import 'package:loahstudio/view/user_views/produtos/produtos_page.dart';
@@ -122,280 +123,159 @@ class _CarrinhoPageState extends State<CarrinhoPage> {
 
   @override
   Widget build(BuildContext context) {
+    final isMobile = MediaQuery.of(context).size.width < 600;
+    final headerTitleSize = ResponsiveHelper.headerTitleSize(context);
+
     return Scaffold(
+      endDrawer: isMobile ? _buildMobileDrawer() : null,
       appBar: AppBar(
         automaticallyImplyLeading: false,
         backgroundColor: Colors.transparent,
         elevation: 0,
-        title: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            GestureDetector(
-              onTap: () => Navigator.pop(context),
-              child: Row(
-                children: [
-                  Icon(Icons.arrow_back, color: AppColors.brown, size: 20),
-                  SizedBox(width: 8),
-                  Text(
-                    "VOLTAR",
-                    style: TextStyle(
-                      color: AppColors.brown,
-                      fontWeight: FontWeight.w600,
-                      fontSize: 14,
-                      letterSpacing: 2,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Text(
-              "LOAH STÚDIO",
-              style: TextStyle(
-                color: AppColors.brown,
-                fontWeight: FontWeight.w600,
-                fontSize: 20,
-                letterSpacing: 3,
-              ),
-            ),
-            SizedBox(width: 80),
-          ],
-        ),
-      ),
-      body: Column(
-        children: [
-          // Menu
-          Container(
-            padding: EdgeInsets.symmetric(horizontal: 60, vertical: 10),
-            decoration: BoxDecoration(
-              border: Border(
-                bottom: BorderSide(color: Colors.grey.shade200),
-              ),
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: List.generate(menuItems.length, (index) {
-                final isSelected = selectedIndex == index || (index == 4 && selectedIndex == -1);
-                final isHover = hoverIndex == index;
-                return MouseRegion(
-                  onEnter: (_) => setState(() => hoverIndex = index),
-                  onExit: (_) => setState(() => hoverIndex = null),
-                  child: GestureDetector(
-                    onTap: () {
-                      if (index == 0) {
-                        Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (_) => HomePage()), (route) => route.isFirst);
-                      } else if (index == 1) {
-                        Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => ServicosPage()));
-                      } else if (index == 2) {
-                        Navigator.push(context, MaterialPageRoute(builder: (_) => ProdutosPage()));
-                      } else if (index == 3) {
-                        Navigator.push(context, MaterialPageRoute(builder: (_) => AgendamentoPage()));
-                      } else if (index == 4) {
-                        // Ya estamos en el carrito
-                      } else {
-                        setState(() => selectedIndex = index);
-                      }
-                    },
-                    child: AnimatedContainer(
-                      duration: Duration(milliseconds: 200),
-                      margin: EdgeInsets.symmetric(horizontal: 16),
-                      padding: EdgeInsets.symmetric(vertical: 10),
-                      decoration: BoxDecoration(
-                        border: isSelected
-                            ? Border(bottom: BorderSide(color: AppColors.pinkNude, width: 2))
-                            : null,
+        title: LayoutBuilder(
+          builder: (context, constraints) {
+            final isCompact = constraints.maxWidth < 600;
+            return Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                GestureDetector(
+                  onTap: () => Navigator.pop(context),
+                  child: Row(
+                    children: [
+                      Icon(Icons.arrow_back, color: AppColors.brown, size: isMobile ? 16 : 20),
+                      SizedBox(width: 8),
+                      Text(
+                        "VOLTAR",
+                        style: TextStyle(
+                          color: AppColors.brown,
+                          fontWeight: FontWeight.w600,
+                          fontSize: isMobile ? 11 : 14,
+                          letterSpacing: 2,
+                        ),
                       ),
-                      child: index == 4
-                          ? Row(
-                              children: [
-                                Icon(
-                                  Icons.shopping_bag,
-                                  color: AppColors.pinkNude,
-                                  size: 20,
-                                ),
-                                SizedBox(width: 6),
-                                Text(
-                                  menuItems[index],
-                                  style: TextStyle(
-                                    color: AppColors.pinkNude,
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ],
-                            )
-                          : Text(
-                              menuItems[index],
-                              style: TextStyle(
-                                color: isSelected || isHover ? AppColors.pinkNude : AppColors.brown,
-                                fontSize: 16,
-                                fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
-                              ),
-                            ),
-                    ),
+                    ],
                   ),
-                );
-              }),
-            ),
-          ),
-
-          Expanded(
-            child: Padding(
-              padding: EdgeInsets.symmetric(horizontal: 60, vertical: 40),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Lista de produtos
-                  Expanded(
-                    flex: 3,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                ),
+                Text(
+                  "LOAH STÚDIO",
+                  style: TextStyle(
+                    color: AppColors.brown,
+                    fontWeight: FontWeight.w600,
+                    fontSize: isMobile ? 16 : 20,
+                    letterSpacing: 3,
+                  ),
+                ),
+                if (!isCompact)
+                  SizedBox(width: 80)
+                else
+                  GestureDetector(
+                    onTap: () => Scaffold.of(context).openEndDrawer(),
+                    child: Stack(
                       children: [
-                        Text(
-                          "O seu carrinho",
-                          style: TextStyle(
-                            fontSize: 32,
-                            fontWeight: FontWeight.bold,
-                            color: Color(0xFF5A4A42),
-                          ),
-                        ),
-                        SizedBox(height: 8),
-                        Text(
-                          "${cartItems.length} artigo${cartItems.length == 1 ? '' : 's'}",
-                          style: TextStyle(
-                            fontSize: 16,
-                            color: Color(0xFF7A6A62),
-                          ),
-                        ),
-                        SizedBox(height: 30),
-                        if (cartItems.isEmpty)
-                          _emptyCart()
-                        else
-                          Expanded(
-                            child: ListView.builder(
-                              itemCount: cartItems.length,
-                              itemBuilder: (context, index) {
-                                return _cartItemCard(
-                                  cartItems[index]['nome'] ?? '',
-                                  cartItems[index]['marca'] ?? '',
-                                  cartItems[index]['preco'] ?? '0',
-                                  cartItems[index]['imagem'] ?? '',
-                                  cartItems[index]['quantidade'] ?? 1,
-                                  index,
-                                );
-                              },
+                        Icon(Icons.shopping_cart, color: AppColors.brown, size: 24),
+                        if (cartItems.isNotEmpty)
+                          Positioned(
+                            right: -2,
+                            top: -2,
+                            child: Container(
+                              padding: EdgeInsets.all(4),
+                              decoration: BoxDecoration(color: AppColors.pinkStrong, shape: BoxShape.circle),
+                              child: Text("${cartItems.length}", style: TextStyle(fontSize: 8, color: Colors.white, fontWeight: FontWeight.bold)),
                             ),
                           ),
                       ],
                     ),
                   ),
-                  SizedBox(width: 40),
-                  // Resumo do pedido
-                  Expanded(
-                    flex: 2,
-                    child: Container(
-                      padding: EdgeInsets.all(30),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(20),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.06),
-                            blurRadius: 20,
-                            offset: Offset(0, 10),
-                          ),
-                        ],
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            "Resumo do pedido",
-                            style: TextStyle(
-                              fontSize: 20,
-                              fontWeight: FontWeight.bold,
-                              color: Color(0xFF5A4A42),
-                            ),
-                          ),
-                          SizedBox(height: 24),
-                          Divider(color: Colors.grey.shade200),
-                          SizedBox(height: 20),
-                          ...cartItems.map((item) => _resumoItem(
-                            item['nome'] ?? '',
-                            item['quantidade'] ?? 1,
-                            double.tryParse(item['preco'].toString()) ?? 0,
-                          )),
-                          SizedBox(height: 20),
-                          Divider(color: Colors.grey.shade200),
-                          SizedBox(height: 20),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Text(
-                                "Total",
-                                style: TextStyle(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.bold,
-                                  color: Color(0xFF5A4A42),
-                                ),
-                              ),
-                              Text(
-                                "€${totalValue.toStringAsFixed(2)}",
-                                style: TextStyle(
-                                  fontSize: 24,
-                                  fontWeight: FontWeight.bold,
-                                  color: AppColors.pinkStrong,
-                                ),
-                              ),
-                            ],
-                          ),
-                          SizedBox(height: 30),
-                          SizedBox(
-                            width: double.infinity,
-                            child: ElevatedButton(
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: AppColors.pinkStrong,
-                                padding: EdgeInsets.symmetric(vertical: 18),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(30),
-                                ),
-                                elevation: 4,
-                              ),
-                              onPressed: cartItems.isEmpty
-                                  ? null
-                                  : () => _showCheckoutDialog(),
-                              child: Text(
-                                "Finalizar compra",
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w600,
-                                  color: Colors.white,
-                                ),
-                              ),
-                            ),
-                          ),
-                          SizedBox(height: 16),
-                          Center(
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Icon(Icons.lock, size: 16, color: Color(0xFF7A6A62)),
-                                SizedBox(width: 8),
-                                Text(
-                                  "Pagamento seguro",
-                                  style: TextStyle(
-                                    fontSize: 14,
-                                    color: Color(0xFF7A6A62),
+               
+              ],
+            );
+          },
+        ),
+      ),
+      body: Column(
+        children: [
+          // Menu - só desktop
+          if (!isMobile)
+            Container(
+              padding: EdgeInsets.symmetric(horizontal: 60, vertical: 10),
+              decoration: BoxDecoration(
+                border: Border(
+                  bottom: BorderSide(color: Colors.grey.shade200),
+                ),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: List.generate(menuItems.length, (index) {
+                  final isSelected = selectedIndex == index || (index == 4 && selectedIndex == -1);
+                  final isHover = hoverIndex == index;
+                  return MouseRegion(
+                    onEnter: (_) => setState(() => hoverIndex = index),
+                    onExit: (_) => setState(() => hoverIndex = null),
+                    child: GestureDetector(
+                      onTap: () {
+                        if (index == 0) {
+                          Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (_) => HomePage()), (route) => route.isFirst);
+                        } else if (index == 1) {
+                          Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => ServicosPage()));
+                        } else if (index == 2) {
+                          Navigator.push(context, MaterialPageRoute(builder: (_) => ProdutosPage()));
+                        } else if (index == 3) {
+                          Navigator.push(context, MaterialPageRoute(builder: (_) => AgendamentoPage()));
+                        } else if (index == 4) {
+                          // Ya estamos en el carrito
+                        } else {
+                          setState(() => selectedIndex = index);
+                        }
+                      },
+                      child: AnimatedContainer(
+                        duration: Duration(milliseconds: 200),
+                        margin: EdgeInsets.symmetric(horizontal: 16),
+                        padding: EdgeInsets.symmetric(vertical: 10),
+                        decoration: BoxDecoration(
+                          border: isSelected
+                              ? Border(bottom: BorderSide(color: AppColors.pinkNude, width: 2))
+                              : null,
+                        ),
+                        child: index == 4
+                            ? Row(
+                                children: [
+                                  Icon(
+                                    Icons.shopping_bag,
+                                    color: AppColors.pinkNude,
+                                    size: 20,
                                   ),
+                                  SizedBox(width: 6),
+                                  Text(
+                                    menuItems[index],
+                                    style: TextStyle(
+                                      color: AppColors.pinkNude,
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ],
+                              )
+                            : Text(
+                                menuItems[index],
+                                style: TextStyle(
+                                  color: isSelected || isHover ? AppColors.pinkNude : AppColors.brown,
+                                  fontSize: 16,
+                                  fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
                                 ),
-                              ],
-                            ),
-                          ),
-                        ],
+                              ),
                       ),
                     ),
-                  ),
-                ],
+                  );
+                }),
               ),
+            ),
+
+          Expanded(
+            child: Padding(
+              padding: EdgeInsets.symmetric(horizontal: isMobile ? 16.0 : 60.0, vertical: isMobile ? 20.0 : 40),
+              child: isMobile
+                  ? _buildMobileLayout()
+                  : _buildDesktopLayout(),
             ),
           ),
         ],
@@ -1115,4 +995,294 @@ class _CarrinhoPageState extends State<CarrinhoPage> {
       cartItems.removeAt(index);
     });
   }
+
+  Widget _buildMobileDrawer() {
+    return Container(
+      width: 280,
+      padding: EdgeInsets.all(20),
+      color: Colors.white,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text("LOAH STÚDIO", style: TextStyle(color: AppColors.brown, fontWeight: FontWeight.w600, fontSize: 18, letterSpacing: 2)),
+              GestureDetector(
+                onTap: () => Navigator.pop(context),
+                child: Icon(Icons.close, color: AppColors.brown),
+              ),
+            ],
+          ),
+          SizedBox(height: 30),
+          Divider(),
+          SizedBox(height: 20),
+          ...List.generate(menuItems.length, (index) {
+            final isSelected = selectedIndex == index || (index == 4 && selectedIndex == -1);
+            return ListTile(
+              leading: Stack(
+                children: [
+                  Icon(index == 0 ? Icons.home_outlined : index == 1 ? Icons.spa_outlined : index == 2 ? Icons.shopping_bag_outlined : index == 3 ? Icons.calendar_today_outlined : Icons.shopping_bag, color: isSelected ? AppColors.pinkStrong : AppColors.brown),
+                  if (index == 4 && cartItems.isNotEmpty)
+                    Positioned(
+                      right: -2,
+                      top: -2,
+                      child: Container(
+                        padding: EdgeInsets.all(4),
+                        decoration: BoxDecoration(color: AppColors.pinkStrong, shape: BoxShape.circle),
+                        child: Text("${cartItems.length}", style: TextStyle(fontSize: 8, color: Colors.white, fontWeight: FontWeight.bold)),
+                      ),
+                    ),
+                ],
+              ),
+              title: Row(
+                children: [
+                  Text(menuItems[index], style: TextStyle(color: isSelected ? AppColors.pinkStrong : AppColors.brown, fontWeight: isSelected ? FontWeight.bold : FontWeight.w500)),
+                  if (index == 4 && cartItems.isNotEmpty) ...[
+                    SizedBox(width: 8),
+                    Container(
+                      padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      decoration: BoxDecoration(color: AppColors.pinkStrong, borderRadius: BorderRadius.circular(10)),
+                      child: Text("${cartItems.length}", style: TextStyle(fontSize: 10, color: Colors.white, fontWeight: FontWeight.bold)),
+                    ),
+                  ],
+                ],
+              ),
+              onTap: () {
+                Navigator.pop(context);
+                if (index == 0) {
+                  Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (_) => HomePage()), (route) => route.isFirst);
+                } else if (index == 1) {
+                  Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => ServicosPage()));
+                } else if (index == 2) {
+                  Navigator.push(context, MaterialPageRoute(builder: (_) => ProdutosPage()));
+                } else if (index == 3) {
+                  Navigator.push(context, MaterialPageRoute(builder: (_) => AgendamentoPage()));
+                } else if (index == 4) {
+                  // Ya estamos en el carrito
+                }
+              },
+            );
+          }),
+          Spacer(),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMobileLayout() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          "O seu carrinho",
+          style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Color(0xFF5A4A42)),
+        ),
+        SizedBox(height: 4),
+        Text(
+          "${cartItems.length} artigo${cartItems.length == 1 ? '' : 's'}",
+          style: TextStyle(fontSize: 14, color: Color(0xFF7A6A62)),
+        ),
+        SizedBox(height: 16),
+        if (cartItems.isEmpty)
+          _emptyCart()
+        else
+          SizedBox(
+            height: MediaQuery.of(context).size.height * 0.45,
+            child: ListView.builder(
+              itemCount: cartItems.length,
+              itemBuilder: (context, index) => _cartItemCardMobile(
+                cartItems[index]['nome'] ?? '',
+                cartItems[index]['marca'] ?? '',
+                cartItems[index]['preco'] ?? '0',
+                cartItems[index]['imagem'] ?? '',
+                cartItems[index]['quantidade'] ?? 1,
+                index,
+              ),
+            ),
+          ),
+        if (cartItems.isNotEmpty) ...[
+          SizedBox(height: 16),
+          // Resumo mobile
+          Container(
+            padding: EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.06), blurRadius: 10, offset: Offset(0, 4))],
+            ),
+            child: Column(
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text("Total", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF5A4A42))),
+                    Text("€${totalValue.toStringAsFixed(2)}", style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppColors.pinkStrong)),
+                  ],
+                ),
+                SizedBox(height: 12),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(backgroundColor: AppColors.pinkStrong, padding: EdgeInsets.symmetric(vertical: 14), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(25))),
+                    onPressed: () => _showCheckoutDialog(),
+                    child: Text("Finalizar compra", style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Colors.white)),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+        SizedBox(height: 20),
+        // Footer mobile
+        //_footerMobile(),
+      ],
+    );
+  }
+
+  Widget _buildDesktopLayout() {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Expanded(
+          flex: 3,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text("O seu carrinho", style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: Color(0xFF5A4A42))),
+              SizedBox(height: 8),
+              Text("${cartItems.length} artigo${cartItems.length == 1 ? '' : 's'}", style: TextStyle(fontSize: 16, color: Color(0xFF7A6A62))),
+              SizedBox(height: 30),
+              if (cartItems.isEmpty)
+                _emptyCart()
+              else
+                Expanded(
+                  child: ListView.builder(
+                    itemCount: cartItems.length,
+                    itemBuilder: (context, index) => _cartItemCard(
+                      cartItems[index]['nome'] ?? '',
+                      cartItems[index]['marca'] ?? '',
+                      cartItems[index]['preco'] ?? '0',
+                      cartItems[index]['imagem'] ?? '',
+                      cartItems[index]['quantidade'] ?? 1,
+                      index,
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        ),
+        SizedBox(width: 40),
+        Expanded(flex: 2, child: _resumoDesktop()),
+      ],
+    );
+  }
+
+  Widget _resumoDesktop() {
+    return Container(
+      padding: EdgeInsets.all(30),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.06), blurRadius: 20, offset: Offset(0, 10))],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text("Resumo do pedido", style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF5A4A42))),
+          SizedBox(height: 24),
+          Divider(color: Colors.grey.shade200),
+          SizedBox(height: 20),
+          ...cartItems.map((item) => _resumoItem(item['nome'] ?? '', item['quantidade'] ?? 1, double.tryParse(item['preco'].toString()) ?? 0)),
+          SizedBox(height: 20),
+          Divider(color: Colors.grey.shade200),
+          SizedBox(height: 20),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text("Total", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF5A4A42))),
+              Text("€${totalValue.toStringAsFixed(2)}", style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: AppColors.pinkStrong)),
+            ],
+          ),
+          SizedBox(height: 30),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              style: ElevatedButton.styleFrom(backgroundColor: AppColors.pinkStrong, padding: EdgeInsets.symmetric(vertical: 18), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)), elevation: 4),
+              onPressed: cartItems.isEmpty ? null : () => _showCheckoutDialog(),
+              child: Text("Finalizar compra", style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.white)),
+            ),
+          ),
+          SizedBox(height: 16),
+          Center(child: Row(mainAxisSize: MainAxisSize.min, children: [Icon(Icons.lock, size: 16, color: Color(0xFF7A6A62)), SizedBox(width: 8), Text("Pagamento seguro", style: TextStyle(fontSize: 14, color: Color(0xFF7A6A62)))])),
+        ],
+      ),
+    );
+  }
+
+  Widget _cartItemCardMobile(String nome, String marca, String preco, String imagem, int quantidade, int index) {
+    double price = double.tryParse(preco) ?? 0;
+    double total = price * quantidade;
+    return Container(
+      margin: EdgeInsets.only(bottom: 8),
+      padding: EdgeInsets.all(8),
+      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(10), boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 6, offset: Offset(0, 2))]),
+      child: IntrinsicHeight(
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // Imagem
+            SizedBox(
+              width: 40,
+              height: 40,
+              child: ClipRRect(borderRadius: BorderRadius.circular(6), child: Image.network(imagem, width: 40, height: 40, fit: BoxFit.cover)),
+            ),
+            SizedBox(width: 8),
+            // Info
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(marca, style: TextStyle(fontSize: 8, color: AppColors.pinkStrong, fontWeight: FontWeight.w600, letterSpacing: 1), overflow: TextOverflow.ellipsis, maxLines: 1),
+                  Text(nome, style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF5A4A42)), maxLines: 1, overflow: TextOverflow.ellipsis),
+                  Text("€${price.toStringAsFixed(2)}", style: TextStyle(fontSize: 10, color: Color(0xFF7A6A62))),
+                ],
+              ),
+            ),
+            // Quantidade
+            SizedBox(
+              width: 50,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      GestureDetector(
+                        onTap: () => setState(() { if (quantidade > 1) cartItems[index]['quantidade'] = quantidade - 1; else _removeItem(index); }),
+                        child: Container(padding: EdgeInsets.all(3), decoration: BoxDecoration(color: Color(0xFFF7F4F2), borderRadius: BorderRadius.circular(4)), child: Icon(Icons.remove, size: 10, color: Color(0xFF5A4A42))),
+                      ),
+                      Padding(padding: EdgeInsets.symmetric(horizontal: 4), child: Text("$quantidade", style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Color(0xFF5A4A42)))),
+                      GestureDetector(
+                        onTap: () => setState(() => cartItems[index]['quantidade'] = quantidade + 1),
+                        child: Container(padding: EdgeInsets.all(3), decoration: BoxDecoration(color: Color(0xFFF7F4F2), borderRadius: BorderRadius.circular(4)), child: Icon(Icons.add, size: 10, color: Color(0xFF5A4A42))),
+                      ),
+                    ],
+                  ),
+                  SizedBox(height: 4),
+                  Text("€${total.toStringAsFixed(2)}", style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Color(0xFF5A4A42))),
+                ],
+              ),
+            ),
+            SizedBox(width: 4),
+            // Delete
+            GestureDetector(onTap: () => _removeItem(index), child: Icon(Icons.delete_outline, size: 16, color: Colors.red.shade400)),
+          ],
+        ),
+      ),
+    );
+  }
+
+
 }
