@@ -78,35 +78,35 @@ class _CarrinhoPageState extends State<CarrinhoPage> {
       "marca": "NARS",
       "descricao": "Base de cobertura média com efeito radiante natural.",
       "preco": "65.00",
-      "imagem": "https://images.unsplash.com/photo-1596462502278-27bfdc403348?w=600",
+      "imagem":  "https://images.unsplash.com/photo-1596462502278-27bfdc403348?w=600",
     },
     {
       "nome": "Highlighter Liquid Gold",
       "marca": "Fenty Beauty",
       "descricao": "Highlighter líquido com partículas douradas luminosas.",
       "preco": "38.00",
-      "imagem": "https://images.unsplash.com/photo-1596462502278-27bfdc403348?w=600",
+      "imagem":  "https://images.unsplash.com/photo-1596462502278-27bfdc403348?w=600",
     },
     {
       "nome": "Máscara Volume Extra",
       "marca": "YSL",
       "descricao": "Máscara de cilios com volume extremo e curl.",
       "preco": "36.00",
-      "imagem": "https://images.unsplash.com/photo-1596462502278-27bfdc403348?w=600",
+      "imagem":  "https://images.unsplash.com/photo-1596462502278-27bfdc403348?w=600",
     },
     {
       "nome": "Brush Set Premium",
       "marca": "Morphe",
       "descricao": "Conjunto de 12 pincéis profissional de fibra sintética.",
       "preco": "125.00",
-      "imagem": "https://images.unsplash.com/photo-1596462502278-27bfdc403348?w=600",
+      "imagem":  "https://images.unsplash.com/photo-1596462502278-27bfdc403348?w=600",
     },
     {
       "nome": "Spray Fixador Eternal",
       "marca": "Urban Decay",
       "descricao": "Spray fixador de longa duração para maquiagem perfeita.",
       "preco": "42.00",
-      "imagem": "https://images.unsplash.com/photo-1596462502278-27bfdc403348?w=600",
+      "imagem":  "https://images.unsplash.com/photo-1596462502278-27bfdc403348?w=600",
     },
   ];
 
@@ -338,8 +338,8 @@ class _CarrinhoPageState extends State<CarrinhoPage> {
     double total = price * quantidade;
 
     return Container(
-      margin: EdgeInsets.only(bottom: 20),
-      padding: EdgeInsets.all(20),
+      margin: EdgeInsets.only(bottom: 12),
+      padding: EdgeInsets.symmetric(horizontal: 6, vertical: 8),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
@@ -355,15 +355,15 @@ class _CarrinhoPageState extends State<CarrinhoPage> {
         children: [
           // Imagem
           ClipRRect(
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(10),
             child: Image.network(
               imagem,
-              width: 100,
-              height: 100,
+              width: 42,
+              height: 42,
               fit: BoxFit.cover,
             ),
           ),
-          SizedBox(width: 20),
+          SizedBox(width: 6),
           // Info
           Expanded(
             child: Column(
@@ -372,43 +372,50 @@ class _CarrinhoPageState extends State<CarrinhoPage> {
                 Text(
                   marca,
                   style: TextStyle(
-                    fontSize: 12,
+                    fontSize: 10,
                     color: AppColors.pinkStrong,
                     fontWeight: FontWeight.w600,
                     letterSpacing: 1,
                   ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
-                SizedBox(height: 4),
+                SizedBox(height: 2),
                 Text(
                   nome,
                   style: TextStyle(
-                    fontSize: 16,
+                    fontSize: 12,
                     fontWeight: FontWeight.bold,
                     color: Color(0xFF5A4A42),
                   ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
-                SizedBox(height: 8),
+                SizedBox(height: 4),
                 Text(
                   "€${price.toStringAsFixed(2)}",
                   style: TextStyle(
-                    fontSize: 16,
+                    fontSize: 11,
                     color: Color(0xFF7A6A62),
                   ),
                 ),
               ],
             ),
           ),
+          SizedBox(width: 2),
           // Quantidade
           Container(
             decoration: BoxDecoration(
               color: Color(0xFFF7F4F2),
-              borderRadius: BorderRadius.circular(25),
+              borderRadius: BorderRadius.circular(12),
             ),
             child: Row(
               children: [
                 IconButton(
-                  icon: Icon(Icons.remove, size: 18),
+                  icon: Icon(Icons.remove, size: 12),
                   color: Color(0xFF5A4A42),
+                  padding: EdgeInsets.all(3),
+                  constraints: BoxConstraints(),
                   onPressed: () {
                     setState(() {
                       if (quantidade > 1) {
@@ -420,7 +427,7 @@ class _CarrinhoPageState extends State<CarrinhoPage> {
                   },
                 ),
                 Container(
-                  width: 40,
+                  width: 24,
                   alignment: Alignment.center,
                   child: Text(
                     "$quantidade",
@@ -432,8 +439,10 @@ class _CarrinhoPageState extends State<CarrinhoPage> {
                   ),
                 ),
                 IconButton(
-                  icon: Icon(Icons.add, size: 18),
+                  icon: Icon(Icons.add, size: 12),
                   color: Color(0xFF5A4A42),
+                  padding: EdgeInsets.all(3),
+                  constraints: BoxConstraints(),
                   onPressed: () {
                     setState(() {
                       cartItems[index]['quantidade'] = quantidade + 1;
@@ -443,7 +452,7 @@ class _CarrinhoPageState extends State<CarrinhoPage> {
               ],
             ),
           ),
-          SizedBox(width: 20),
+          SizedBox(width: 2),
           // Total + Remover
           Column(
             crossAxisAlignment: CrossAxisAlignment.end,
@@ -451,22 +460,23 @@ class _CarrinhoPageState extends State<CarrinhoPage> {
               Text(
                 "€${total.toStringAsFixed(2)}",
                 style: TextStyle(
-                  fontSize: 18,
+                  fontSize: 11,
                   fontWeight: FontWeight.bold,
                   color: Color(0xFF5A4A42),
                 ),
               ),
-              SizedBox(height: 12),
+              SizedBox(height: 2),
               GestureDetector(
                 onTap: () => _removeItem(index),
                 child: Row(
+                  mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(Icons.delete_outline, size: 18, color: Colors.red.shade400),
-                    SizedBox(width: 4),
+                    Icon(Icons.delete_outline, size: 12, color: Colors.red.shade400),
+                    SizedBox(width: 2),
                     Text(
                       "Remover",
                       style: TextStyle(
-                        fontSize: 14,
+                        fontSize: 10,
                         color: Colors.red.shade400,
                       ),
                     ),
@@ -490,7 +500,7 @@ class _CarrinhoPageState extends State<CarrinhoPage> {
             child: Text(
               "$nome x$quantidade",
               style: TextStyle(
-                fontSize: 14,
+                fontSize: 12,
                 color: Color(0xFF7A6A62),
               ),
               overflow: TextOverflow.ellipsis,
@@ -499,7 +509,7 @@ class _CarrinhoPageState extends State<CarrinhoPage> {
           Text(
             "€${(preco * quantidade).toStringAsFixed(2)}",
             style: TextStyle(
-              fontSize: 14,
+              fontSize: 12,
               fontWeight: FontWeight.w500,
               color: Color(0xFF5A4A42),
             ),
@@ -642,7 +652,7 @@ class _CarrinhoPageState extends State<CarrinhoPage> {
                           Text(
                             "Número MB Way",
                             style: TextStyle(
-                              fontSize: 14,
+                              fontSize: 12,
                               fontWeight: FontWeight.w600,
                               color: Color(0xFF5A4A42),
                             ),
@@ -655,7 +665,7 @@ class _CarrinhoPageState extends State<CarrinhoPage> {
                           Text(
                             "Dados do cartão",
                             style: TextStyle(
-                              fontSize: 14,
+                              fontSize: 12,
                               fontWeight: FontWeight.w600,
                               color: Color(0xFF5A4A42),
                             ),
@@ -697,7 +707,7 @@ class _CarrinhoPageState extends State<CarrinhoPage> {
                                 Text(
                                   "Dados para Transferência",
                                   style: TextStyle(
-                                    fontSize: 14,
+                                    fontSize: 12,
                                     fontWeight: FontWeight.w600,
                                     color: Color(0xFF5A4A42),
                                   ),
@@ -1139,7 +1149,7 @@ class _CarrinhoPageState extends State<CarrinhoPage> {
         SizedBox(height: 4),
         Text(
           "${cartItems.length} artigo${cartItems.length == 1 ? '' : 's'}",
-          style: TextStyle(fontSize: 14, color: Color(0xFF7A6A62)),
+          style: TextStyle(fontSize: 12, color: Color(0xFF7A6A62)),
         ),
         SizedBox(height: 16),
         if (cartItems.isEmpty)
@@ -1184,7 +1194,7 @@ class _CarrinhoPageState extends State<CarrinhoPage> {
                   child: ElevatedButton(
                     style: ElevatedButton.styleFrom(backgroundColor: AppColors.pinkStrong, padding: EdgeInsets.symmetric(vertical: 14), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(25))),
                     onPressed: () => _showCheckoutDialog(),
-                    child: Text("Finalizar compra", style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Colors.white)),
+                    child: Text("Finalizar compra", style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Colors.white)),
                   ),
                 ),
               ],
@@ -1199,39 +1209,33 @@ class _CarrinhoPageState extends State<CarrinhoPage> {
   }
 
   Widget _buildDesktopLayout() {
-    return Row(
+    return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Expanded(
-          flex: 3,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text("O seu carrinho", style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: Color(0xFF5A4A42))),
-              SizedBox(height: 8),
-              Text("${cartItems.length} artigo${cartItems.length == 1 ? '' : 's'}", style: TextStyle(fontSize: 16, color: Color(0xFF7A6A62))),
-              SizedBox(height: 30),
-              if (cartItems.isEmpty)
-                _emptyCart()
-              else
-                Expanded(
-                  child: ListView.builder(
-                    itemCount: cartItems.length,
-                    itemBuilder: (context, index) => _cartItemCard(
-                      cartItems[index]['nome'] ?? '',
-                      cartItems[index]['marca'] ?? '',
-                      cartItems[index]['preco'] ?? '0',
-                      cartItems[index]['imagem'] ?? '',
-                      cartItems[index]['quantidade'] ?? 1,
-                      index,
-                    ),
-                  ),
-                ),
-            ],
+        Text("O seu carrinho", style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: Color(0xFF5A4A42))),
+        SizedBox(height: 8),
+        Text("${cartItems.length} artigo${cartItems.length == 1 ? '' : 's'}", style: TextStyle(fontSize: 16, color: Color(0xFF7A6A62))),
+        SizedBox(height: 30),
+        if (cartItems.isEmpty)
+          _emptyCart()
+        else
+          Expanded(
+            child: ListView.builder(
+              itemCount: cartItems.length,
+              shrinkWrap: true,
+              physics: NeverScrollableScrollPhysics(),
+              itemBuilder: (context, index) => _cartItemCard(
+                cartItems[index]['nome'] ?? '',
+                cartItems[index]['marca'] ?? '',
+                cartItems[index]['preco'] ?? '0',
+                cartItems[index]['imagem'] ?? '',
+                cartItems[index]['quantidade'] ?? 1,
+                index,
+              ),
+            ),
           ),
-        ),
-        SizedBox(width: 40),
-        Expanded(flex: 2, child: _resumoDesktop()),
+        SizedBox(height: 40),
+        _resumoDesktop(),
       ],
     );
   }
@@ -1272,7 +1276,7 @@ class _CarrinhoPageState extends State<CarrinhoPage> {
             ),
           ),
           SizedBox(height: 16),
-          Center(child: Row(mainAxisSize: MainAxisSize.min, children: [Icon(Icons.lock, size: 16, color: Color(0xFF7A6A62)), SizedBox(width: 8), Text("Pagamento seguro", style: TextStyle(fontSize: 14, color: Color(0xFF7A6A62)))])),
+          Center(child: Row(mainAxisSize: MainAxisSize.min, children: [Icon(Icons.lock, size: 16, color: Color(0xFF7A6A62)), SizedBox(width: 8), Text("Pagamento seguro", style: TextStyle(fontSize: 12, color: Color(0xFF7A6A62)))])),
         ],
       ),
     );
@@ -1343,4 +1347,4 @@ class _CarrinhoPageState extends State<CarrinhoPage> {
   }
 
 
-}
+} 

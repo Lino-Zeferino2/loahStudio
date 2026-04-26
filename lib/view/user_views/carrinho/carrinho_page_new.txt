@@ -1,0 +1,65 @@
+Widget _cartItemCard(String nome, String marca, String preco, String imagem, int quantidade, int index) {
+    double price = double.tryParse(preco) ?? 0;
+    double total = price * quantidade;
+    final isTablet = MediaQuery.of(context).size.width < 1200;
+    final isSmallTablet = MediaQuery.of(context).size.width < 900;
+
+    final imgSize = isSmallTablet ? 50.0 : 60.0;
+    final fontSize = isSmallTablet ? 12.0 : 14.0;
+    final imgWidth = isSmallTablet ? 50.0 : 60.0;
+
+    return Container(
+      margin: EdgeInsets.only(bottom: isTablet ? 8 : 20),
+      padding: EdgeInsets.all(isTablet ? 8 : 20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 15, offset: Offset(0, 5))],
+      ),
+      child: Row(
+        children: [
+          ClipRRect(
+            borderRadius: BorderRadius.circular(12),
+            child: Image.network(imagem, width: imgWidth, height: imgSize, fit: BoxFit.cover),
+          ),
+          SizedBox(width: isTablet ? 12 : 20),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(marca, style: TextStyle(fontSize: isSmallTablet ? 10 : 12, color: AppColors.pinkStrong, fontWeight: FontWeight.w600, letterSpacing: 1)),
+                SizedBox(height: 4),
+                Text(nome, style: TextStyle(fontSize: fontSize, fontWeight: FontWeight.bold, color: Color(0xFF5A4A42)), maxLines: 2, overflow: TextOverflow.ellipsis),
+                SizedBox(height: 8),
+                Text("€${price.toStringAsFixed(2)}", style: TextStyle(fontSize: fontSize, color: Color(0xFF7A6A62))),
+              ],
+            ),
+          ),
+          Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              if (!isTablet)
+                Row(mainAxisSize: MainAxisSize.min, children: [
+                  Text("€${total.toStringAsFixed(2)}", style: TextStyle(fontSize: isSmallTablet ? 14 : 18, fontWeight: FontWeight.bold, color: Color(0xFF5A4A42))),
+                  SizedBox(width: 8),
+                  GestureDetector(onTap: () => _removeItem(index), child: Row(mainAxisSize: MainAxisSize.min, children: [Icon(Icons.delete_outline, size: isSmallTablet ? 14 : 18, color: Colors.red.shade400), SizedBox(width: 4), Text("Remover", style: TextStyle(fontSize: isSmallTablet ? 12 : 14, color: Colors.red.shade400))])),
+                ]),
+              if (isTablet) Text("€${total.toStringAsFixed(2)}", style: TextStyle(fontSize: isSmallTablet ? 12 : 14, fontWeight: FontWeight.bold, color: Color(0xFF5A4A42))),
+              SizedBox(height: 4),
+              Container(
+                decoration: BoxDecoration(color: Color(0xFFF7F4F2), borderRadius: BorderRadius.circular(15)),
+                padding: EdgeInsets.all(4),
+                child: Row(mainAxisSize: MainAxisSize.min, children: [
+                  GestureDetector(onTap: () => setState(() { if (quantidade > 1) cartItems[index]['quantidade'] = quantidade - 1; else _removeItem(index); }), child: Icon(Icons.remove, size: isSmallTablet ? 10 : 12, color: Color(0xFF5A4A42))),
+                  Padding(padding: EdgeInsets.symmetric(horizontal: 6), child: Text("$quantidade", style: TextStyle(fontSize: isSmallTablet ? 10 : 12, fontWeight: FontWeight.w600, color: Color(0xFF5A4A42)))),
+                  GestureDetector(onTap: () => setState(() => cartItems[index]['quantidade'] = quantidade + 1), child: Icon(Icons.add, size: isSmallTablet ? 10 : 12, color: Color(0xFF5A4A42))),
+                ]),
+              ),
+              if (isTablet) ...[SizedBox(height: 4), GestureDetector(onTap: () => _removeItem(index), child: Row(mainAxisSize: MainAxisSize.min, children: [Icon(Icons.delete_outline, size: isSmallTablet ? 12 : 14, color: Colors.red.shade400), SizedBox(width: 4), Text("Remover", style: TextStyle(fontSize: isSmallTablet ? 10 : 12, color: Colors.red.shade400))]))],
+            ],
+          ),
+        ],
+      ),
+    );
+  }
