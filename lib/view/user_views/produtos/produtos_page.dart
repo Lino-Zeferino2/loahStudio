@@ -148,7 +148,7 @@ class _ProdutosPageState extends State<ProdutosPage> {
                 child: Badge(
                   label: Text("${_cart.length}"),
                   isLabelVisible: _cart.isNotEmpty,
-                  child: Icon(Icons.menu, color: AppColors.brown, size: 24),
+                  child: Icon(Icons.shopping_cart, color: AppColors.brown, size: 24),
                 ),
               )
             else
