@@ -19,9 +19,10 @@ class _AdminLayoutState extends State<AdminLayout> {
     AdminMenuItem(icon: Icons.dashboard, label: 'Dashboard', index: 0),
     AdminMenuItem(icon: Icons.calendar_month, label: 'Agendamentos', index: 1),
     AdminMenuItem(icon: Icons.shopping_cart, label: 'Compras', index: 2),
-    AdminMenuItem(icon: Icons.people, label: 'Clientes', index: 3),
-    AdminMenuItem(icon: Icons.inventory, label: 'Produtos', index: 4),
-    AdminMenuItem(icon: Icons.settings, label: 'Configurações', index: 5),
+    AdminMenuItem(icon: Icons.inventory, label: 'Produtos', index: 3),
+    AdminMenuItem(icon: Icons.content_cut, label: 'Serviços', index: 4),
+    AdminMenuItem(icon: Icons.people, label: 'Clientes', index: 5),
+    AdminMenuItem(icon: Icons.settings, label: 'Configurações', index: 6),
   ];
 
   @override
@@ -340,10 +341,12 @@ class _AdminLayoutState extends State<AdminLayout> {
       case 2:
         return const AdminComprasPage();
       case 3:
-        return const AdminClientesPage();
-      case 4:
         return const AdminProdutosPage();
+      case 4:
+        return const AdminServicosPage();
       case 5:
+        return const AdminClientesPage();
+      case 6:
         return const AdminConfiguracoesPage();
       default:
         return const AdminDashboardPage();
@@ -3037,6 +3040,665 @@ class _AdminComprasPageState extends State<AdminComprasPage> {
   }
 }
 
+// 🔹 Página de Serviços
+class AdminServicosPage extends StatefulWidget {
+  const AdminServicosPage({super.key});
+
+  @override
+  State<AdminServicosPage> createState() => _AdminServicosPageState();
+}
+
+class _AdminServicosPageState extends State<AdminServicosPage> {
+  String _selectedFilter = 'todos';
+  String _searchQuery = '';
+  final TextEditingController _searchController = TextEditingController();
+
+  // Dados de exemplo para serviços de maquiagem
+  final List<Map<String, dynamic>> _servicos = [
+    {
+      'id': 1,
+      'nome': 'Maquilhagem noiva',
+      'descricao': 'Maquilhagem completa para.noiva com bertahancia',
+      'categoria': 'Noiva',
+      'duracao': 90,
+      'preco': 250.00,
+      'disponivel': true,
+      'totalVendas': 45,
+      'notaMedia': 4.9,
+      'imagem': '👰‍♀️',
+    },
+    {
+      'id': 2,
+      'nome': 'Maquilhagem Festa',
+      'descricao': 'Maquilhagem para festas e eventos',
+      'categoria': 'Festa',
+      'duracao': 60,
+      'preco': 150.00,
+      'disponivel': true,
+      'totalVendas': 89,
+      'notaMedia': 4.8,
+      'imagem': '💃',
+    },
+    {
+      'id': 3,
+      'nome': 'Maquilhagem Editorial',
+      'descricao': 'Maquilhagem para sessões fotograficas',
+      'categoria': 'Editorial',
+      'duracao': 45,
+      'preco': 200.00,
+      'disponivel': true,
+      'totalVendas': 34,
+      'notaMedia': 4.7,
+      'imagem': '📸',
+    },
+    {
+      'id': 4,
+      'nome': 'Maquilhagem Casamento',
+      'descricao': 'Maquilhagem para.noiva e madrinhas',
+      'categoria': 'Casamento',
+      'duracao': 120,
+      'preco': 350.00,
+      'disponivel': true,
+      'totalVendas': 28,
+      'notaMedia': 5.0,
+      'imagem': '💒',
+    },
+    {
+      'id': 5,
+      'nome': 'Maquilhagem Natural',
+      'descricao': 'Maquilhagem leve e natural do dia a dia',
+      'categoria': 'Natural',
+      'duracao': 30,
+      'preco': 80.00,
+      'disponivel': true,
+      'totalVendas': 112,
+      'notaMedia': 4.6,
+      'imagem': '✨',
+    },
+    {
+      'id': 6,
+      'nome': 'Maquilhagem Profissional',
+      'descricao': 'Maquilhagem para.atrizes e modelos',
+      'categoria': 'Profissional',
+      'duracao': 75,
+      'preco': 300.00,
+      'disponivel': false,
+      'totalVendas': 15,
+      'notaMedia': 4.8,
+      'imagem': '🎬',
+    },
+ 
+    {
+      'id': 5,
+      'nome': 'Sombra Olhos',
+      'descricao': 'Maquilhagem de olhos com sombra e delineador',
+      'categoria': 'Olhos',
+      'duracao': 30,
+      'preco': 60.00,
+      'disponivel': true,
+      'totalVendas': 67,
+      'notaMedia': 4.5,
+      'imagem': '👁️',
+    },
+    {
+      'id': 6,
+      'nome': 'Gloss Look',
+      'descricao': 'Gloss e iluminador labial',
+      'categoria': 'Lábios',
+      'duracao': 20,
+      'preco': 40.00,
+      'disponivel': false,
+      'totalVendas': 23,
+      'notaMedia': 4.6,
+      'imagem': '💋',
+    },
+  ];
+
+  // Categorias únicas
+  List<String> get _categorias {
+    final cats = _servicos.map((s) => s['categoria'] as String).toSet().toList();
+    cats.sort();
+    return cats;
+  }
+
+  // Total de serviços
+  int get _totalServicos => _servicos.length;
+
+  // Total de vendas
+  int get _totalVendas => _servicos.fold(0, (sum, s) => sum + (s['totalVendas'] as int));
+
+  // Receita total estimada
+  double get _receitaEstimada => _servicos.fold(0.0, (sum, s) => sum + (s['totalVendas'] as int) * (s['preco'] as double));
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  List<Map<String, dynamic>> get _filteredServicos {
+    var result = List<Map<String, dynamic>>.from(_servicos);
+
+    if (_selectedFilter != 'todos') {
+      result = result.where((s) => s['disponivel'] == (_selectedFilter == 'ativo')).toList();
+    }
+
+    if (_searchQuery.isNotEmpty) {
+      result = result.where((s) =>
+        (s['nome'] as String).toLowerCase().contains(_searchQuery.toLowerCase()) ||
+        (s['categoria'] as String).toLowerCase().contains(_searchQuery.toLowerCase())
+      ).toList();
+    }
+
+    result.sort((a, b) => (b['totalVendas'] as int).compareTo(a['totalVendas'] as int));
+    return result;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final bool isMobile = ResponsiveHelper.isMobile(context);
+    final bool isTablet = ResponsiveHelper.isTablet(context);
+
+    return Column(
+      children: [
+        _buildAppBar(isMobile),
+        if (!isMobile) _buildStatsBar(isTablet),
+        Expanded(
+          child: _filteredServicos.isEmpty
+              ? _buildEmptyState()
+              : _buildServicosList(isMobile, isTablet),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildAppBar(bool isMobile) {
+    return Container(
+      padding: EdgeInsets.all(isMobile ? 12 : 16),
+      decoration: BoxDecoration(
+        color: AppColors.white,
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.grey.withValues(alpha: 0.1),
+            blurRadius: 4,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          TextField(
+            controller: _searchController,
+            onChanged: (value) => setState(() => _searchQuery = value),
+            decoration: InputDecoration(
+              hintText: 'Pesquisar serviço, categoria...',
+              prefixIcon: const Icon(Icons.search, color: AppColors.grey),
+              suffixIcon: _searchQuery.isNotEmpty
+                  ? IconButton(
+                      icon: const Icon(Icons.clear, color: AppColors.grey),
+                      onPressed: () {
+                        _searchController.clear();
+                        setState(() => _searchQuery = '');
+                      },
+                    )
+                  : null,
+              filled: true,
+              fillColor: AppColors.lightCreamBg,
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide.none,
+              ),
+              contentPadding: EdgeInsets.symmetric(
+                horizontal: 16,
+                vertical: isMobile ? 12 : 14,
+              ),
+            ),
+          ),
+          SizedBox(height: isMobile ? 12 : 16),
+          Row(
+            children: [
+              Expanded(
+                child: isMobile
+                    ? _buildFiltroDropdown()
+                    : Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: [
+                          _buildFilterChip('todos', 'Todos'),
+                          _buildFilterChip('ativo', 'Disponíveis'),
+                          _buildFilterChip('inativo', 'Indisponíveis'),
+                        ],
+                      ),
+              ),
+              const SizedBox(width: 12),
+              ElevatedButton.icon(
+                onPressed: () => _showAdicionarDialog(),
+                icon: const Icon(Icons.add, size: 18),
+                label: const Text('Novo Serviço'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.pinkStrong,
+                  foregroundColor: AppColors.white,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFiltroDropdown() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12),
+      decoration: BoxDecoration(
+        color: AppColors.lightCreamBg,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: AppColors.grey.withValues(alpha: 0.3)),
+      ),
+      child: DropdownButton<String>(
+        value: _selectedFilter,
+        isExpanded: true,
+        underline: const SizedBox(),
+        icon: const Icon(Icons.keyboard_arrow_down, color: AppColors.grey),
+        items: const [
+          DropdownMenuItem(value: 'todos', child: Text('Todos')),
+          DropdownMenuItem(value: 'ativo', child: Text('Disponíveis')),
+          DropdownMenuItem(value: 'inativo', child: Text('Indisponíveis')),
+        ],
+        onChanged: (value) {
+          if (value != null) setState(() => _selectedFilter = value);
+        },
+      ),
+    );
+  }
+
+  Widget _buildFilterChip(String value, String label) {
+    final bool isSelected = _selectedFilter == value;
+    final Color chipColor = value == 'ativo' ? Colors.green : value == 'inativo' ? Colors.red : AppColors.pinkStrong;
+
+    return GestureDetector(
+      onTap: () => setState(() => _selectedFilter = value),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        decoration: BoxDecoration(
+          color: isSelected ? chipColor : AppColors.lightCreamBg,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: isSelected ? chipColor : AppColors.grey.withValues(alpha: 0.3),
+          ),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            color: isSelected ? AppColors.white : AppColors.brown,
+            fontSize: 13,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildStatsBar(bool isTablet) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.lightCreamBg,
+        border: Border(
+          bottom: BorderSide(color: AppColors.grey.withValues(alpha: 0.2)),
+        ),
+      ),
+      child: isTablet
+          ? Wrap(
+              spacing: 24,
+              runSpacing: 12,
+              children: [
+                _buildStatItem('Total Serviços', '$_totalServicos', Icons.content_cut),
+                _buildStatItem('Total Vendas', '$_totalVendas', Icons.trending_up),
+                _buildStatItem(
+                  'Receita',
+                  'R\$ ${_receitaEstimada.toStringAsFixed(0)}',
+                  Icons.attach_money,
+                ),
+              ],
+            )
+          : Row(
+              children: [
+                Expanded(child: _buildStatItem('Total Serviços', '$_totalServicos', Icons.content_cut)),
+                Expanded(child: _buildStatItem('Total Vendas', '$_totalVendas', Icons.trending_up)),
+                Expanded(child: _buildStatItem('Receita', 'R\$ ${_receitaEstimada.toStringAsFixed(0)}', Icons.attach_money)),
+              ],
+          ));
+      
+      
+  }
+
+  Widget _buildStatItem(String label, String value, IconData icon) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: AppColors.pinkNude.withValues(alpha: 0.3),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Icon(icon, color: AppColors.pinkStrong, size: 20),
+        ),
+        const SizedBox(width: 8),
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(label, style: const TextStyle(color: AppColors.grey, fontSize: 11)),
+            Text(value, style: const TextStyle(color: AppColors.brown, fontSize: 16, fontWeight: FontWeight.bold)),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildEmptyState() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.content_cut, size: 64, color: AppColors.grey.withValues(alpha: 0.5)),
+          const SizedBox(height: 16),
+          const Text('Nenhum serviço encontrado', style: TextStyle(color: AppColors.grey, fontSize: 16)),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildServicosList(bool isMobile, bool isTablet) {
+    return GridView.builder(
+      padding: EdgeInsets.all(isMobile ? 12 : 16),
+      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: isMobile ? 1 : isTablet ? 2 : 3,
+        mainAxisSpacing: 16,
+        crossAxisSpacing: 16,
+        childAspectRatio: isMobile ? 1.4 : 1.2,
+      ),
+      itemCount: _filteredServicos.length,
+      itemBuilder: (context, index) => _buildServicoCard(_filteredServicos[index]),
+    );
+  }
+
+  Widget _buildServicoCard(Map<String, dynamic> servico) {
+    final bool disponivel = servico['disponivel'] as bool;
+    final int totalVendas = servico['totalVendas'] as int;
+    final double preco = servico['preco'] as double;
+    final int duracao = servico['duracao'] as int;
+    final double notaMedia = servico['notaMedia'] as double;
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: !disponivel ? Colors.grey.withValues(alpha: 0.1) : AppColors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: !disponivel ? Border.all(color: Colors.grey.withValues(alpha: 0.3)) : null,
+        boxShadow: [
+          BoxShadow(color: AppColors.grey.withValues(alpha: 0.1), blurRadius: 8, offset: const Offset(0, 2)),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 50,
+                height: 50,
+                decoration: BoxDecoration(
+                  color: AppColors.pinkNude.withValues(alpha: 0.3),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Center(
+                  child: Text(
+                    servico['imagem'] as String? ?? '💄',
+                    style: const TextStyle(fontSize: 24),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      servico['nome'] as String,
+                      style: const TextStyle(color: AppColors.brown, fontSize: 16, fontWeight: FontWeight.bold),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    Text(servico['categoria'] as String, style: const TextStyle(color: AppColors.grey, fontSize: 12)),
+                  ],
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: disponivel ? Colors.green.withValues(alpha: 0.1) : Colors.red.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Text(
+                  disponivel ? 'DISPONÍVEL' : 'INDISPONÍVEL',
+                  style: TextStyle(
+                    color: disponivel ? Colors.green : Colors.red,
+                    fontSize: 10,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Expanded(
+            child: Text(
+              servico['descricao'] as String,
+              style: const TextStyle(color: AppColors.grey, fontSize: 12),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  'R\$ ${preco.toStringAsFixed(2).replaceAll('.', ',')}',
+                  style: const TextStyle(color: AppColors.pinkStrong, fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(color: AppColors.lightCreamBg, borderRadius: BorderRadius.circular(8)),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.access_time, color: AppColors.grey, size: 14),
+                    const SizedBox(width: 4),
+                    Text(
+                      '$duracao min',
+                      style: const TextStyle(color: AppColors.brown, fontSize: 12, fontWeight: FontWeight.w500),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              Icon(Icons.star, color: Colors.amber, size: 16),
+              const SizedBox(width: 4),
+              Text(
+                notaMedia.toStringAsFixed(1),
+                style: const TextStyle(color: AppColors.brown, fontSize: 12, fontWeight: FontWeight.w500),
+              ),
+              const SizedBox(width: 12),
+              Icon(Icons.trending_up, color: Colors.green, size: 16),
+              const SizedBox(width: 4),
+              Text(
+                '$totalVendas vendas',
+                style: const TextStyle(color: AppColors.brown, fontSize: 12, fontWeight: FontWeight.w500),
+              ),
+              const Spacer(),
+              Transform.scale(
+                scale: 0.8,
+                child: Switch(
+                  value: disponivel,
+                  onChanged: (v) => _toggleDisponibilidade(servico, v),
+                  activeColor: Colors.green,
+                ),
+              ),
+              IconButton(
+                onPressed: () => _showEditarDialog(servico),
+                icon: const Icon(Icons.edit, size: 18),
+                color: AppColors.pinkStrong,
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _toggleDisponibilidade(Map<String, dynamic> servico, bool disponivel) {
+    setState(() {
+      final index = _servicos.indexWhere((s) => s['id'] == servico['id']);
+      if (index != -1) _servicos[index]['disponivel'] = disponivel;
+    });
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('${servico['nome']} ${disponivel ? "disponível" : "indisponível"}!'),
+        backgroundColor: disponivel ? Colors.green : Colors.red,
+      ),
+    );
+  }
+
+  void _showAdicionarDialog() {
+    final nomeController = TextEditingController();
+    final descricaoController = TextEditingController();
+    final precoController = TextEditingController();
+    final duracaoController = TextEditingController();
+    final imagemController = TextEditingController();
+    String categoriaSelecionada = _categorias.isNotEmpty ? _categorias.first : 'Noiva';
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Row(children: [Icon(Icons.add_box, color: AppColors.pinkStrong), SizedBox(width: 8), Text('Novo Serviço')]),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Campo de Imagem (opcional)
+              TextField(
+                controller: imagemController,
+                decoration: InputDecoration(
+                  labelText: 'Imagem (emoji opcional)',
+                  hintText: 'Ex: 👰💃📸 ouLeave vazio para padrão',
+                  prefixIcon: const Icon(Icons.image, color: AppColors.grey),
+                  border: const OutlineInputBorder(),
+                ),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: nomeController,
+                decoration: const InputDecoration(
+                  labelText: 'Nome do Serviço',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: descricaoController,
+                decoration: const InputDecoration(
+                  labelText: 'Descrição',
+                  border: OutlineInputBorder(),
+                ),
+                maxLines: 2,
+              ),
+              const SizedBox(height: 12),
+              DropdownButtonFormField<String>(
+                value: categoriaSelecionada,
+                decoration: const InputDecoration(
+                  labelText: 'Categoria',
+                  border: OutlineInputBorder(),
+                ),
+                items: _categorias.map((c) => DropdownMenuItem(value: c, child: Text(c))).toList(),
+                onChanged: (value) {
+                  if (value != null) categoriaSelecionada = value;
+                },
+              ),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Expanded(
+                    child: TextField(
+                      controller: precoController,
+                      decoration: const InputDecoration(
+                        labelText: 'Preço',
+                        prefixText: 'R\$ ',
+                        border: OutlineInputBorder(),
+                      ),
+                      keyboardType: TextInputType.number,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: TextField(
+                      controller: duracaoController,
+                      decoration: const InputDecoration(
+                        labelText: 'Duração',
+                        suffixText: 'min',
+                        border: OutlineInputBorder(),
+                      ),
+                      keyboardType: TextInputType.number,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancelar')),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(context);
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text('Serviço "${nomeController.text}" adicionado!')),
+              );
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.pinkStrong,
+              foregroundColor: AppColors.white,
+            ),
+            child: const Text('Adicionar'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showEditarDialog(Map<String, dynamic> servico) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Editar ${servico['nome']}'),
+        content: Text('Preço: R\$ ${(servico['preco'] as double).toStringAsFixed(2).replaceAll('.', ',')}\nVendas: ${servico['totalVendas']}'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Fechar')),
+        ],
+      ),
+    );
+  }
+}
+
 // 🔹 Página de Clientes
 class AdminClientesPage extends StatefulWidget {
   const AdminClientesPage({super.key});
@@ -4063,18 +4725,841 @@ class _AdminClientesPageState extends State<AdminClientesPage> {
 }
 
 // 🔹 Página de Produtos
-class AdminProdutosPage extends StatelessWidget {
+class AdminProdutosPage extends StatefulWidget {
   const AdminProdutosPage({super.key});
 
   @override
+  State<AdminProdutosPage> createState() => _AdminProdutosPageState();
+}
+
+class _AdminProdutosPageState extends State<AdminProdutosPage> {
+  String _selectedFilter = 'todos'; // todos, ativo, inativo
+  String _searchQuery = '';
+  final TextEditingController _searchController = TextEditingController();
+
+  // Dados de exemplo para produtos
+  final List<Map<String, dynamic>> _produtos = [
+    {
+      'id': 1,
+      'nome': 'Batom Rouge',
+      'descricao': 'Batom vermelho matte de longa duração',
+      'categoria': 'Batom',
+      'preco': 45.00,
+      'estoque': 30,
+      'estoqueMinimo': 5,
+      'imagem': '💄',
+      'disponivel': true,
+      'dataCadastro': DateTime(2024, 1, 10),
+    },
+    {
+      'id': 2,
+      'nome': 'Gloss Brilho',
+      'descricao': 'Gloss labial com brilho',
+      'categoria': 'Gloss',
+      'preco': 35.00,
+      'estoque': 20,
+      'estoqueMinimo': 5,
+      'imagem': '💋',
+      'disponivel': true,
+      'dataCadastro': DateTime(2024, 2, 15),
+    },
+    {
+      'id': 3,
+      'nome': 'Paleta Sombra',
+      'descricao': 'Paleta de sombras 12 cores',
+      'categoria': 'Olhos',
+      'preco': 120.00,
+      'estoque': 12,
+      'estoqueMinimo': 3,
+      'imagem': '👁️',
+      'disponivel': true,
+      'dataCadastro': DateTime(2024, 3, 20),
+    },
+    {
+      'id': 4,
+      'nome': 'Primer Facial',
+      'descricao': 'Primer base para maquiagem',
+      'categoria': 'Base',
+      'preco': 75.00,
+      'estoque': 18,
+      'estoqueMinimo': 3,
+      'imagem': '✨',
+      'disponivel': true,
+      'dataCadastro': DateTime(2024, 4, 5),
+    },
+    {
+      'id': 5,
+      'nome': 'Delineador',
+      'descricao': 'Delineador líquido preto',
+      'categoria': 'Olhos',
+      'preco': 42.00,
+      'estoque': 25,
+      'estoqueMinimo': 5,
+      'imagem': '🖊️',
+      'disponivel': true,
+      'dataCadastro': DateTime(2024, 5, 12),
+    },
+    {
+      'id': 6,
+      'nome': 'Kit Maquiagem',
+      'descricao': 'Kit completo maquiagem básica',
+      'categoria': 'Kit',
+      'preco': 250.00,
+      'estoque': 8,
+      'estoqueMinimo': 2,
+      'imagem': '🎁',
+      'disponivel': true,
+      'dataCadastro': DateTime(2024, 6, 1),
+    },
+  ];
+
+  // Lista de categorias únicas
+  List<String> get _categorias {
+    final cats = _produtos.map((p) => p['categoria'] as String).toSet().toList();
+    cats.sort();
+    return cats;
+  }
+
+  // Total de produtos em estoque
+  int get _totalEstoque {
+    return _produtos.fold(0, (sum, p) => sum + (p['estoque'] as int));
+  }
+
+  // Valor total em estoque
+  double get _valorEstoque {
+    return _produtos.fold(0.0, (sum, p) => sum + (p['estoque'] as int) * (p['preco'] as double));
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  List<Map<String, dynamic>> get _filteredProdutos {
+    var result = List<Map<String, dynamic>>.from(_produtos);
+
+    // Filtrar por status
+    if (_selectedFilter != 'todos') {
+      result = result.where((p) => p['disponivel'] == (_selectedFilter == 'ativo')).toList();
+    }
+
+    // Filtrar por busca
+    if (_searchQuery.isNotEmpty) {
+      result = result.where((p) =>
+        (p['nome'] as String).toLowerCase().contains(_searchQuery.toLowerCase()) ||
+        (p['categoria'] as String).toLowerCase().contains(_searchQuery.toLowerCase())
+      ).toList();
+    }
+
+    // Ordenar por nome
+    result.sort((a, b) => (a['nome'] as String).compareTo(b['nome'] as String));
+
+    return result;
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return Center(
-      child: Text(
-        'Página de Produtos',
-        style: TextStyle(
-          color: AppColors.brown,
-          fontSize: 24,
+    final bool isMobile = ResponsiveHelper.isMobile(context);
+    final bool isTablet = ResponsiveHelper.isTablet(context);
+
+    return Column(
+      children: [
+        _buildAppBar(isMobile),
+        // Stats (só desktop/tablet)
+        if (!isMobile) _buildStatsBar(isTablet),
+        Expanded(
+          child: _filteredProdutos.isEmpty
+              ? _buildEmptyState()
+              : _buildProdutosList(isMobile, isTablet),
         ),
+      ],
+    );
+  }
+
+  Widget _buildAppBar(bool isMobile) {
+    return Container(
+      padding: EdgeInsets.all(isMobile ? 12 : 16),
+      decoration: BoxDecoration(
+        color: AppColors.white,
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.grey.withValues(alpha: 0.1),
+            blurRadius: 4,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          // Linha de Pesquisa
+          TextField(
+            controller: _searchController,
+            onChanged: (value) {
+              setState(() {
+                _searchQuery = value;
+              });
+            },
+            decoration: InputDecoration(
+              hintText: 'Pesquisar produto, categoria...',
+              prefixIcon: const Icon(Icons.search, color: AppColors.grey),
+              suffixIcon: _searchQuery.isNotEmpty
+                  ? IconButton(
+                      icon: const Icon(Icons.clear, color: AppColors.grey),
+                      onPressed: () {
+                        _searchController.clear();
+                        setState(() {
+                          _searchQuery = '';
+                        });
+                      },
+                    )
+                  : null,
+              filled: true,
+              fillColor: AppColors.lightCreamBg,
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide.none,
+              ),
+              contentPadding: EdgeInsets.symmetric(
+                horizontal: 16,
+                vertical: isMobile ? 12 : 14,
+              ),
+            ),
+          ),
+          SizedBox(height: isMobile ? 12 : 16),
+          // Filtros + Botão Adicionar
+          Row(
+            children: [
+              // Filtros
+              Expanded(
+                child: isMobile
+                    ? _buildFiltroStatusDropdown()
+                    : Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: [
+                          _buildFilterChip('todos', 'Todos'),
+                          _buildFilterChip('ativo', 'Disponíveis'),
+                          _buildFilterChip('inativo', 'Indisponíveis'),
+                        ],
+                      ),
+              ),
+              const SizedBox(width: 12),
+              // Botão Adicionar
+              ElevatedButton.icon(
+                onPressed: () => _showAdicionarDialog(),
+                icon: const Icon(Icons.add, size: 18),
+                label: const Text('Novo Produto'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.pinkStrong,
+                  foregroundColor: AppColors.white,
+                  padding: EdgeInsets.symmetric(
+                    horizontal: isMobile ? 12 : 16,
+                    vertical: isMobile ? 8 : 12,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFiltroStatusDropdown() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12),
+      decoration: BoxDecoration(
+        color: AppColors.lightCreamBg,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: AppColors.grey.withValues(alpha: 0.3)),
+      ),
+      child: DropdownButton<String>(
+        value: _selectedFilter,
+        isExpanded: true,
+        underline: const SizedBox(),
+        icon: const Icon(Icons.keyboard_arrow_down, color: AppColors.grey),
+        style: TextStyle(
+          color: _selectedFilter == 'todos' ? AppColors.grey : AppColors.brown,
+          fontSize: 14,
+        ),
+        items: const [
+          DropdownMenuItem(value: 'todos', child: Text('Todos')),
+          DropdownMenuItem(value: 'ativo', child: Text('Disponíveis')),
+          DropdownMenuItem(value: 'inativo', child: Text('Indisponíveis')),
+        ],
+        onChanged: (value) {
+          if (value != null) {
+            setState(() {
+              _selectedFilter = value;
+            });
+          }
+        },
+      ),
+    );
+  }
+
+  Widget _buildFilterChip(String value, String label) {
+    final bool isSelected = _selectedFilter == value;
+
+    Color chipColor;
+    switch (value) {
+      case 'ativo':
+        chipColor = Colors.green;
+        break;
+      case 'inativo':
+        chipColor = Colors.red;
+        break;
+      default:
+        chipColor = AppColors.pinkStrong;
+    }
+
+    return GestureDetector(
+      onTap: () {
+        setState(() {
+          _selectedFilter = value;
+        });
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        decoration: BoxDecoration(
+          color: isSelected ? chipColor : AppColors.lightCreamBg,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: isSelected ? chipColor : AppColors.grey.withValues(alpha: 0.3),
+          ),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            color: isSelected ? AppColors.white : AppColors.brown,
+            fontSize: 13,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildStatsBar(bool isTablet) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.lightCreamBg,
+        border: Border(
+          bottom: BorderSide(color: AppColors.grey.withValues(alpha: 0.2)),
+        ),
+      ),
+      child: isTablet
+          ? Wrap(
+              spacing: 24,
+              runSpacing: 12,
+              children: [
+                _buildStatItem('Total Produtos', '${_produtos.length}', Icons.inventory_2),
+                _buildStatItem('Em Estoque', '$_totalEstoque', Icons.assignment),
+                _buildStatItem('Valor em Estoque', 'R\$ ${_valorEstoque.toStringAsFixed(2).replaceAll('.', ',')}', Icons.attach_money),
+              ],
+            )
+          : Row(
+              children: [
+                Expanded(child: _buildStatItem('Total Produtos', '${_produtos.length}', Icons.inventory_2)),
+                Expanded(child: _buildStatItem('Em Estoque', '$_totalEstoque', Icons.assignment)),
+                Expanded(child: _buildStatItem('Valor em Estoque', 'R\$ ${_valorEstoque.toStringAsFixed(2).replaceAll('.', ',')}', Icons.attach_money)),
+              ],
+            ),
+    );
+  }
+
+  Widget _buildStatItem(String label, String value, IconData icon) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: AppColors.pinkNude.withValues(alpha: 0.3),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Icon(icon, color: AppColors.pinkStrong, size: 20),
+        ),
+        const SizedBox(width: 8),
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              label,
+              style: const TextStyle(
+                color: AppColors.grey,
+                fontSize: 11,
+              ),
+            ),
+            Text(
+              value,
+              style: const TextStyle(
+                color: AppColors.brown,
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildEmptyState() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            Icons.inventory_2_outlined,
+            size: 64,
+            color: AppColors.grey.withValues(alpha: 0.5),
+          ),
+          const SizedBox(height: 16),
+          const Text(
+            'Nenhum produto encontrado',
+            style: TextStyle(
+              color: AppColors.grey,
+              fontSize: 16,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildProdutosList(bool isMobile, bool isTablet) {
+    return GridView.builder(
+      padding: EdgeInsets.all(isMobile ? 12 : 16),
+      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: isMobile ? 1 : isTablet ? 2 : 3,
+        mainAxisSpacing: 16,
+        crossAxisSpacing: 16,
+        childAspectRatio: isMobile ? 1.5 : 1.3,
+      ),
+      itemCount: _filteredProdutos.length,
+      itemBuilder: (context, index) {
+        return _buildProdutoCard(_filteredProdutos[index]);
+      },
+    );
+  }
+
+  Widget _buildProdutoCard(Map<String, dynamic> produto) {
+    final bool disponivel = produto['disponivel'] as bool;
+    final int estoque = produto['estoque'] as int;
+    final int estoqueMinimo = produto['estoqueMinimo'] as int;
+    final double preco = produto['preco'] as double;
+
+    // Verificar se estoque está baixo
+    final bool estoqueBaixo = estoque <= estoqueMinimo && estoque > 0;
+    final bool semEstoque = estoque == 0;
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: !disponivel
+            ? Colors.grey.withValues(alpha: 0.1)
+            : semEstoque
+                ? Colors.red.withValues(alpha: 0.05)
+                : estoqueBaixo
+                    ? Colors.orange.withValues(alpha: 0.05)
+                    : AppColors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: !disponivel
+            ? Border.all(color: Colors.grey.withValues(alpha: 0.3))
+            : semEstoque
+                ? Border.all(color: Colors.red.withValues(alpha: 0.3), width: 2)
+                : estoqueBaixo
+                    ? Border.all(color: Colors.orange.withValues(alpha: 0.3))
+                    : null,
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.grey.withValues(alpha: 0.1),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Linha principal: Imagem + Info + Status
+          Row(
+            children: [
+              // Imagem/Emoji
+              Container(
+                width: 50,
+                height: 50,
+                decoration: BoxDecoration(
+                  color: AppColors.lightCreamBg,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Center(
+                  child: Text(
+                    produto['imagem'] as String,
+                    style: const TextStyle(fontSize: 24),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              // Info
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      produto['nome'] as String,
+                      style: const TextStyle(
+                        color: AppColors.brown,
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    Text(
+                      produto['categoria'] as String,
+                      style: const TextStyle(
+                        color: AppColors.grey,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              // Status
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: disponivel
+                      ? Colors.green.withValues(alpha: 0.1)
+                      : Colors.red.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Text(
+                  disponivel ? 'DISPONÍVEL' : 'INDISPONÍVEL',
+                  style: TextStyle(
+                    color: disponivel ? Colors.green : Colors.red,
+                    fontSize: 10,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          // Descrição
+          Expanded(
+            child: Text(
+              produto['descricao'] as String,
+              style: const TextStyle(
+                color: AppColors.grey,
+                fontSize: 12,
+              ),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+          // Linha de preço e estoque
+          Row(
+            children: [
+              // Preço
+              Expanded(
+                child: Text(
+                  'R\$ ${preco.toStringAsFixed(2).replaceAll('.', ',')}',
+                  style: const TextStyle(
+                    color: AppColors.pinkStrong,
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+              // Estoque
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: semEstoque
+                      ? Colors.red.withValues(alpha: 0.2)
+                      : estoqueBaixo
+                          ? Colors.orange.withValues(alpha: 0.2)
+                          : AppColors.lightCreamBg,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      semEstoque
+                          ? Icons.error
+                          : estoqueBaixo
+                              ? Icons.warning
+                              : Icons.inventory,
+                      color: semEstoque
+                          ? Colors.red
+                          : estoqueBaixo
+                              ? Colors.orange
+                              : AppColors.grey,
+                      size: 14,
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      '$estoque uni',
+                      style: TextStyle(
+                        color: semEstoque
+                            ? Colors.red
+                            : estoqueBaixo
+                                ? Colors.orange
+                                : AppColors.brown,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          // Ações
+          Row(
+            children: [
+              // Toggle Disponibilidade
+              Transform.scale(
+                scale: 0.8,
+                child: Switch(
+                  value: disponivel,
+                  onChanged: (value) => _toggleDisponibilidade(produto, value),
+                  activeColor: Colors.green,
+                  inactiveThumbColor: Colors.red,
+                ),
+              ),
+              const Spacer(),
+              // Botão Editar
+              IconButton(
+                onPressed: () => _showEditarDialog(produto),
+                icon: const Icon(Icons.edit, size: 18),
+                color: AppColors.pinkStrong,
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(),
+              ),
+              // Botão Excluir
+              IconButton(
+                onPressed: () => _showExcluirDialog(produto),
+                icon: const Icon(Icons.delete, size: 18),
+                color: Colors.red,
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _toggleDisponibilidade(Map<String, dynamic> produto, bool disponivel) {
+    setState(() {
+      final index = _produtos.indexWhere((p) => p['id'] == produto['id']);
+      if (index != -1) {
+        _produtos[index]['disponivel'] = disponivel;
+      }
+    });
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          disponivel
+              ? '${produto['nome']} agora está disponível!'
+              : '${produto['nome']} agora está indisponível!',
+        ),
+        backgroundColor: disponivel ? Colors.green : Colors.red,
+      ),
+    );
+  }
+
+  void _showAdicionarDialog() {
+    final nomeController = TextEditingController();
+    final descricaoController = TextEditingController();
+    final precoController = TextEditingController();
+    final estoqueController = TextEditingController();
+    final imagemController = TextEditingController();
+    String categoriaSelecionada = _categorias.isNotEmpty ? _categorias.first : 'Batom';
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Row(
+          children: [
+            Icon(Icons.add_box, color: AppColors.pinkStrong),
+            SizedBox(width: 8),
+            Text('Novo Produto'),
+          ],
+        ),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Campo de Imagem (opcional)
+              TextField(
+                controller: imagemController,
+                decoration: InputDecoration(
+                  labelText: 'Imagem (emoji opcional)',
+                  hintText: 'Ex: 💄💋👁️ ou Leave vazio para padrão',
+                  prefixIcon: const Icon(Icons.image, color: AppColors.grey),
+                  border: const OutlineInputBorder(),
+                ),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: nomeController,
+                decoration: const InputDecoration(
+                  labelText: 'Nome do Produto',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: descricaoController,
+                decoration: const InputDecoration(
+                  labelText: 'Descrição',
+                  border: OutlineInputBorder(),
+                ),
+                maxLines: 2,
+              ),
+              const SizedBox(height: 12),
+              DropdownButtonFormField<String>(
+                value: categoriaSelecionada,
+                decoration: const InputDecoration(
+                  labelText: 'Categoria',
+                  border: OutlineInputBorder(),
+                ),
+                items: _categorias.map((c) => DropdownMenuItem(value: c, child: Text(c))).toList(),
+                onChanged: (value) {
+                  if (value != null) categoriaSelecionada = value;
+                },
+              ),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Expanded(
+                    child: TextField(
+                      controller: precoController,
+                      decoration: const InputDecoration(
+                        labelText: 'Preço',
+                        prefixText: 'R\$ ',
+                        border: OutlineInputBorder(),
+                      ),
+                      keyboardType: TextInputType.number,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: TextField(
+                      controller: estoqueController,
+                      decoration: const InputDecoration(
+                        labelText: 'Estoque',
+                        border: OutlineInputBorder(),
+                      ),
+                      keyboardType: TextInputType.number,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancelar'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(context);
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Produto adicionado!')),
+              );
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.pinkStrong,
+              foregroundColor: AppColors.white,
+            ),
+            child: const Text('Adicionar'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showEditarDialog(Map<String, dynamic> produto) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Row(
+          children: [
+            Icon(Icons.edit, color: AppColors.pinkStrong),
+            SizedBox(width: 8),
+            Text('Editar Produto'),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Nome: ${produto['nome']}'),
+            Text('Categoria: ${produto['categoria']}'),
+            Text('Preço: R\$ ${(produto['preco'] as double).toStringAsFixed(2).replaceAll('.', ',')}'),
+            Text('Estoque: ${produto['estoque']}'),
+            const SizedBox(height: 16),
+            const Text('Funcionalidade em desenvolvimento...'),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Fechar'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showExcluirDialog(Map<String, dynamic> produto) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Row(
+          children: [
+            Icon(Icons.delete, color: Colors.red),
+            SizedBox(width: 8),
+            Text('Excluir Produto'),
+          ],
+        ),
+        content: Text('Tem certeza que deseja excluir ${produto['nome']}?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancelar'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(context);
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text('${produto['nome']} foi excluído!'),
+                  backgroundColor: Colors.red,
+                ),
+              );
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              foregroundColor: AppColors.white,
+            ),
+            child: const Text('Excluir'),
+          ),
+        ],
       ),
     );
   }
