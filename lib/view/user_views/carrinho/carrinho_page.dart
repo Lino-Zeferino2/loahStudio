@@ -361,6 +361,26 @@ class _CarrinhoPageState extends State<CarrinhoPage> {
               width: 42,
               height: 42,
               fit: BoxFit.cover,
+              errorBuilder: (context, error, stackTrace) => Container(
+                width: 42,
+                height: 42,
+                decoration: BoxDecoration(
+                  color: AppColors.creamBg,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child:  Icon(Icons.image, color: AppColors.grey, size: 20),
+              ),
+              loadingBuilder: (context, child, loadingProgress) => loadingProgress == null
+                  ? child
+                  : Container(
+                      width: 42,
+                      height: 42,
+                      decoration: BoxDecoration(
+                        color: AppColors.creamBg,
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Icon(Icons.image, color: AppColors.grey, size: 20),
+                    ),
             ),
           ),
           SizedBox(width: 6),
@@ -1297,7 +1317,21 @@ class _CarrinhoPageState extends State<CarrinhoPage> {
             SizedBox(
               width: 40,
               height: 40,
-              child: ClipRRect(borderRadius: BorderRadius.circular(6), child: Image.network(imagem, width: 40, height: 40, fit: BoxFit.cover)),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(6),
+                child: Image.network(
+                  imagem,
+                  width: 40,
+                  height: 40,
+                  fit: BoxFit.cover,
+                  errorBuilder: (context, error, stackTrace) => Container(
+                    width: 40,
+                    height: 40,
+                    color: AppColors.creamBg,
+                    child: Icon(Icons.image, color: AppColors.grey, size: 18),
+                  ),
+                ),
+              ),
             ),
             SizedBox(width: 8),
             // Info
