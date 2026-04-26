@@ -3252,6 +3252,7 @@ class _AdminClientesPageState extends State<AdminClientesPage> {
                     _buildFilterChip('todos', 'Todos'),
                     _buildFilterChip('ativo', 'Ativos'),
                     _buildFilterChip('inativo', 'Inativos'),
+                    _buildFilterChip('bloqueado', 'Bloqueados'),
                   ],
                 ),
         ],
@@ -3280,6 +3281,7 @@ class _AdminClientesPageState extends State<AdminClientesPage> {
           DropdownMenuItem(value: 'todos', child: Text('Todos os clientes')),
           DropdownMenuItem(value: 'ativo', child: Text('Ativos')),
           DropdownMenuItem(value: 'inativo', child: Text('Inativos')),
+          DropdownMenuItem(value: 'bloqueado', child: Text('Bloqueados')),
         ],
         onChanged: (value) {
           if (value != null) {
@@ -3302,6 +3304,9 @@ class _AdminClientesPageState extends State<AdminClientesPage> {
         break;
       case 'inativo':
         chipColor = Colors.grey;
+        break;
+      case 'bloqueado':
+        chipColor = Colors.red;
         break;
       default:
         chipColor = AppColors.pinkStrong;
@@ -3377,14 +3382,29 @@ class _AdminClientesPageState extends State<AdminClientesPage> {
     final int totalCompras = cliente['totalCompras'] as int;
     final String notas = cliente['notas'] as String;
 
-    Color statusColor = status == 'ativo' ? Colors.green : Colors.grey;
+    Color statusColor;
+    switch (status) {
+      case 'ativo':
+        statusColor = Colors.green;
+        break;
+      case 'bloqueado':
+        statusColor = Colors.red;
+        break;
+      default:
+        statusColor = Colors.grey;
+    }
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppColors.white,
+        color: status == 'bloqueado'
+            ? Colors.red.withValues(alpha: 0.05)
+            : AppColors.white,
         borderRadius: BorderRadius.circular(12),
+        border: status == 'bloqueado'
+            ? Border.all(color: Colors.red.withValues(alpha: 0.3), width: 2)
+            : null,
         boxShadow: [
           BoxShadow(
             color: AppColors.grey.withValues(alpha: 0.1),
@@ -3679,6 +3699,25 @@ class _AdminClientesPageState extends State<AdminClientesPage> {
                   foregroundColor: Colors.green,
                 ),
               ),
+              // Botão de Bloquear/Desbloquear
+              if (cliente['status'] == 'ativo')
+                TextButton.icon(
+                  onPressed: () => _showBloquearDialog(cliente),
+                  icon: const Icon(Icons.block, size: 18),
+                  label: const Text('Bloquear'),
+                  style: TextButton.styleFrom(
+                    foregroundColor: Colors.red,
+                  ),
+                )
+              else
+                TextButton.icon(
+                  onPressed: () => _showDesbloquearDialog(cliente),
+                  icon: const Icon(Icons.lock_open, size: 18),
+                  label: const Text('Desbloquear'),
+                  style: TextButton.styleFrom(
+                    foregroundColor: Colors.orange,
+                  ),
+                ),
             ],
           ),
         ],
@@ -3933,6 +3972,93 @@ class _AdminClientesPageState extends State<AdminClientesPage> {
         ],
       ),
     );
+  }
+
+  void _showBloquearDialog(Map<String, dynamic> cliente) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Row(
+          children: [
+            Icon(Icons.block, color: Colors.red),
+            SizedBox(width: 8),
+            Text('Bloquear Cliente'),
+          ],
+        ),
+        content: Text('Tem certeza que deseja BLOQUEAR o cliente ${cliente['nome']}?\n\nO cliente não poderá mais agendar serviços ou comprar produtos.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancelar'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(context);
+              _updateStatus(cliente, 'bloqueado');
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text('${cliente['nome']} foi bloqueado!'),
+                  backgroundColor: Colors.red,
+                ),
+              );
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              foregroundColor: AppColors.white,
+            ),
+            child: const Text('Bloquear'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showDesbloquearDialog(Map<String, dynamic> cliente) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Row(
+          children: [
+            Icon(Icons.lock_open, color: Colors.orange),
+            SizedBox(width: 8),
+            Text('Desbloquear Cliente'),
+          ],
+        ),
+        content: Text('Tem certeza que deseja DESBLOQUEAR o cliente ${cliente['nome']}?\n\nO cliente poderá novamente agendar serviços e comprar produtos.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancelar'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(context);
+              _updateStatus(cliente, 'ativo');
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text('${cliente['nome']} foi desbloqueado!'),
+                  backgroundColor: Colors.green,
+                ),
+              );
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.orange,
+              foregroundColor: AppColors.white,
+            ),
+            child: const Text('Desbloquear'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _updateStatus(Map<String, dynamic> cliente, String newStatus) {
+    setState(() {
+      final index = _clientes.indexWhere((c) => c['id'] == cliente['id']);
+      if (index != -1) {
+        _clientes[index]['status'] = newStatus;
+      }
+    });
   }
 }
 
