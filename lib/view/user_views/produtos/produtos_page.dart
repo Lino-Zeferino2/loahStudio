@@ -145,7 +145,11 @@ class _ProdutosPageState extends State<ProdutosPage> {
             if (isMobile)
               GestureDetector(
                 onTap: () => Scaffold.of(context).openEndDrawer(),
-                child: Icon(Icons.menu, color: AppColors.brown, size: 24),
+                child: Badge(
+                  label: Text("${_cart.length}"),
+                  isLabelVisible: _cart.isNotEmpty,
+                  child: Icon(Icons.menu, color: AppColors.brown, size: 24),
+                ),
               )
             else
               Row(
@@ -395,47 +399,77 @@ class _ProdutosPageState extends State<ProdutosPage> {
     final double cardWidth = isMobile ? (MediaQuery.of(context).size.width / 2 - 20) : 260;
     final double imgHeight = isMobile ? 90 : 180;
 
-    return Container(
-      width: cardWidth,
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.06), blurRadius: 8, offset: Offset(0, 4))],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          ClipRRect(
-            borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-            child: Stack(
-              children: [
-                Image.network(imagem, height: imgHeight, width: cardWidth, fit: BoxFit.cover),
-                if (!isDisponivel)
-                  Positioned(
-                    top: 6, left: 6,
-                    child: Container(
-                      padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                      decoration: BoxDecoration(color: Colors.red, borderRadius: BorderRadius.circular(10)),
-                      child: Text("ESG", style: TextStyle(fontSize: 7, color: Colors.white, fontWeight: FontWeight.bold)),
+    // Verificar se já está no carrinho
+    final produtoIndex = produtos.indexWhere((p) => p["nome"] == nome && p["preco"] == preco);
+    final isInCart = produtoIndex >= 0 && _cart.any((item) => item['index'] == produtoIndex);
+
+    return GestureDetector(
+      onTap: isDisponivel ? () {
+        setState(() {
+          if (isInCart) {
+            _cart.removeWhere((item) => item['index'] == produtoIndex);
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text("$nome removido do carrinho!"), backgroundColor: Colors.grey, duration: Duration(seconds: 1)),
+            );
+          } else {
+            _cart.add({"nome": nome, "preco": preco, "index": produtoIndex});
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text("$nome adicionado ao carrinho!"), backgroundColor: AppColors.pinkStrong, duration: Duration(seconds: 1)),
+            );
+          }
+        });
+      } : null,
+      child: Container(
+        width: cardWidth,
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.06), blurRadius: 8, offset: Offset(0, 4))],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            ClipRRect(
+              borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+              child: Stack(
+                children: [
+                  Image.network(imagem, height: imgHeight, width: cardWidth, fit: BoxFit.cover),
+                  if (!isDisponivel)
+                    Positioned(
+                      top: 6, left: 6,
+                      child: Container(
+                        padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        decoration: BoxDecoration(color: Colors.red, borderRadius: BorderRadius.circular(10)),
+                        child: Text("ESG", style: TextStyle(fontSize: 7, color: Colors.white, fontWeight: FontWeight.bold)),
+                      ),
                     ),
-                  ),
-              ],
+                  if (isInCart)
+                    Positioned(
+                      top: 6, right: 6,
+                      child: Container(
+                        padding: EdgeInsets.all(4),
+                        decoration: BoxDecoration(color: AppColors.pinkStrong, shape: BoxShape.circle),
+                        child: Icon(Icons.check, color: Colors.white, size: 12),
+                      ),
+                    ),
+                ],
+              ),
             ),
-          ),
-          Padding(
-            padding: EdgeInsets.all(8),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(marca, style: TextStyle(fontSize: 9, color: AppColors.pinkStrong, fontWeight: FontWeight.w600, letterSpacing: 1)),
-                SizedBox(height: 4),
-                Text(nome, style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF5A4A42)), maxLines: 2, overflow: TextOverflow.ellipsis),
-                SizedBox(height: 4),
-                Text(preco, style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.pinkStrong)),
-              ],
+            Padding(
+              padding: EdgeInsets.all(8),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(marca, style: TextStyle(fontSize: 9, color: AppColors.pinkStrong, fontWeight: FontWeight.w600, letterSpacing: 1)),
+                  SizedBox(height: 4),
+                  Text(nome, style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF5A4A42)), maxLines: 2, overflow: TextOverflow.ellipsis),
+                  SizedBox(height: 4),
+                  Text(preco, style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.pinkStrong)),
+                ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -730,9 +764,20 @@ class _ProdutosPageState extends State<ProdutosPage> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text("LOAH STÚDIO", style: TextStyle(color: AppColors.brown, fontWeight: FontWeight.w600, fontSize: 18, letterSpacing: 2)),
-              GestureDetector(
-                onTap: () => Navigator.pop(context),
-                child: Icon(Icons.close, color: AppColors.brown),
+              Row(
+                children: [
+                  if (_cart.isNotEmpty)
+                    Container(
+                      padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(color: AppColors.pinkStrong, borderRadius: BorderRadius.circular(12)),
+                      child: Text("${_cart.length} itens", style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold)),
+                    ),
+                  SizedBox(width: 8),
+                  GestureDetector(
+                    onTap: () => Navigator.pop(context),
+                    child: Icon(Icons.close, color: AppColors.brown),
+                  ),
+                ],
               ),
             ],
           ),
@@ -742,7 +787,13 @@ class _ProdutosPageState extends State<ProdutosPage> {
           ...List.generate(menuItems.length, (index) {
             final isSelected = selectedIndex == index;
             return ListTile(
-              leading: Icon(index == 0 ? Icons.home_outlined : index == 1 ? Icons.spa_outlined : index == 2 ? Icons.shopping_bag_outlined : index == 3 ? Icons.calendar_today_outlined : Icons.shopping_cart, color: isSelected ? AppColors.pinkStrong : AppColors.brown),
+              leading: index == 4
+                  ? Badge(
+                      label: Text("${_cart.length}"),
+                      isLabelVisible: _cart.isNotEmpty,
+                      child: Icon(Icons.shopping_cart, color: isSelected ? AppColors.pinkStrong : AppColors.brown),
+                    )
+                  : Icon(index == 0 ? Icons.home_outlined : index == 1 ? Icons.spa_outlined : index == 2 ? Icons.shopping_bag_outlined : Icons.calendar_today_outlined, color: isSelected ? AppColors.pinkStrong : AppColors.brown),
               title: Text(menuItems[index], style: TextStyle(color: isSelected ? AppColors.pinkStrong : AppColors.brown, fontWeight: isSelected ? FontWeight.bold : FontWeight.w500)),
               onTap: () {
                 Navigator.pop(context);
