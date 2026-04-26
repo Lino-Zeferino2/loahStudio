@@ -991,9 +991,31 @@ class _CarrinhoPageState extends State<CarrinhoPage> {
   }
 
   void _removeItem(int index) {
-    setState(() {
-      cartItems.removeAt(index);
-    });
+    String itemName = cartItems[index]['nome'] ?? 'este item';
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Text("Confirmar remoção", style: TextStyle(color: Color(0xFF5A4A42), fontWeight: FontWeight.bold)),
+        content: Text("Tem a certeza que deseja remover \"$itemName\" do carrinho?", style: TextStyle(color: Color(0xFF7A6A62))),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text("Cancelar", style: TextStyle(color: Color(0xFF7A6A62))),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red.shade400),
+            onPressed: () {
+              Navigator.pop(context);
+              setState(() {
+                cartItems.removeAt(index);
+              });
+            },
+            child: Text("Remover", style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
   }
 
   Widget _buildMobileDrawer() {
