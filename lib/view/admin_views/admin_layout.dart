@@ -1,0 +1,669 @@
+import 'package:flutter/material.dart';
+import 'package:loahstudio/constants/colors.dart';
+import 'package:loahstudio/constants/responsive.dart';
+
+
+class AdminLayout extends StatefulWidget {
+  const AdminLayout({super.key});
+
+  @override
+  State<AdminLayout> createState() => _AdminLayoutState();
+}
+
+class _AdminLayoutState extends State<AdminLayout> {
+  int _selectedIndex = 0;
+  bool _isExtended = true;
+
+  final List<AdminMenuItem> _menuItems = [
+    AdminMenuItem(icon: Icons.dashboard, label: 'Dashboard', index: 0),
+    AdminMenuItem(icon: Icons.calendar_month, label: 'Agendamentos', index: 1),
+    AdminMenuItem(icon: Icons.shopping_cart, label: 'Compras', index: 2),
+    AdminMenuItem(icon: Icons.people, label: 'Clientes', index: 3),
+    AdminMenuItem(icon: Icons.inventory, label: 'Produtos', index: 4),
+    AdminMenuItem(icon: Icons.settings, label: 'Configurações', index: 5),
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    final bool isMobile = ResponsiveHelper.isMobile(context);
+    final bool isTablet = ResponsiveHelper.isTablet(context);
+
+    // Ajustar sidebar para tablet/mobile
+    if (isMobile) {
+      _isExtended = false;
+    } else if (isTablet) {
+      _isExtended = false;
+    }
+
+    return Scaffold(
+      backgroundColor: AppColors.lightCreamBg,
+      body: SafeArea(
+        child: Row(
+          children: [
+            // 🔹 Sidebar Lateral Esquerdo
+            _buildSidebar(isMobile, isTablet),
+            // 🔹 Divisor
+            if (!isMobile)
+              Container(
+                width: 1,
+                color: AppColors.grey.withValues(alpha: 0.2),
+              ),
+            // 🔹 Área Principal (Página)
+            Expanded(
+              child: Column(
+                children: [
+                  _buildAppBar(isMobile),
+                  Expanded(
+                    child: _buildContent(),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSidebar(bool isMobile, bool isTablet) {
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 200),
+      width: _isExtended ? 250 : 80,
+      color: AppColors.white,
+      child: Column(
+        children: [
+          // 🔹 Logo / Título do Sidebar
+          Container(
+            height: 80,
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Row(
+              children: [
+                Container(
+                  width: 48,
+                  height: 48,
+                  decoration: BoxDecoration(
+                    color: AppColors.pinkStrong,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Center(
+                    child: Text(
+                      'L',
+                      style: TextStyle(
+                        color: AppColors.white,
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ),
+                if (_isExtended) const SizedBox(width: 12),
+                if (_isExtended)
+                  Expanded(
+                    child: Text(
+                      'Loah\nStúdio',
+                      style: TextStyle(
+                        color: AppColors.brown,
+                        fontSize: isMobile ? 14 : 16,
+                        fontWeight: FontWeight.bold,
+                        height: 1.2,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                      maxLines: 2,
+                    ),
+                  ),
+              ],
+            ),
+          ),
+          const Divider(height: 1),
+          // 🔹 Menu Items
+          Expanded(
+            child: ListView.builder(
+              padding: const EdgeInsets.symmetric(vertical: 8),
+              itemCount: _menuItems.length,
+              itemBuilder: (context, index) {
+                return _buildMenuItem(_menuItems[index], isMobile);
+              },
+            ),
+          ),
+          const Divider(height: 1),
+          // 🔹 Log Out
+          _buildLogoutItem(isMobile),
+          // 🔹 Botão para expandir/recolher sidebar (apenas em desktop)
+          if (!isMobile)
+            Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: IconButton(
+                onPressed: () {
+                  setState(() {
+                    _isExtended = !_isExtended;
+                  });
+                },
+                icon: Icon(
+                  _isExtended ? Icons.chevron_left : Icons.chevron_right,
+                  color: AppColors.grey,
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMenuItem(AdminMenuItem item, bool isMobile) {
+    final bool isSelected = _selectedIndex == item.index;
+
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      child: Material(
+        color: isSelected ? AppColors.pinkStrong.withValues(alpha: 0.1) : Colors.transparent,
+        borderRadius: BorderRadius.circular(12),
+        child: InkWell(
+          onTap: () {
+            setState(() {
+              _selectedIndex = item.index;
+            });
+          },
+          borderRadius: BorderRadius.circular(12),
+          child: Container(
+            padding: EdgeInsets.symmetric(
+              horizontal: _isExtended ? 16 : 12,
+              vertical: 14,
+            ),
+            child: Row(
+              mainAxisAlignment: _isExtended ? MainAxisAlignment.start : MainAxisAlignment.center,
+              children: [
+                Icon(
+                  item.icon,
+                  color: isSelected ? AppColors.pinkStrong : AppColors.grey,
+                  size: 24,
+                ),
+                if (_isExtended) const SizedBox(width: 16),
+                if (_isExtended)
+                  Expanded(
+                    child: Text(
+                      item.label,
+                      style: TextStyle(
+                        color: isSelected ? AppColors.pinkStrong : AppColors.brown,
+                        fontSize: 15,
+                        fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLogoutItem(bool isMobile) {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      child: Material(
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(12),
+        child: InkWell(
+          onTap: () {
+            _showLogoutDialog();
+          },
+          borderRadius: BorderRadius.circular(12),
+          child: Container(
+            padding: EdgeInsets.symmetric(
+              horizontal: _isExtended ? 16 : 12,
+              vertical: 14,
+            ),
+            child: Row(
+              mainAxisAlignment: _isExtended ? MainAxisAlignment.start : MainAxisAlignment.center,
+              children: [
+                const Icon(
+                  Icons.logout,
+                  color: Colors.redAccent,
+                  size: 24,
+                ),
+                if (_isExtended) const SizedBox(width: 16),
+                if (_isExtended)
+                  const Text(
+                    'Log Out',
+                    style: TextStyle(
+                      color: Colors.redAccent,
+                      fontSize: 15,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildAppBar(bool isMobile) {
+    return Container(
+      height: 70,
+      padding: const EdgeInsets.symmetric(horizontal: 24),
+      decoration: BoxDecoration(
+        color: AppColors.white,
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.grey.withValues(alpha: 0.1),
+            blurRadius: 4,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          // 🔹 Título da Página Atual
+          Expanded(
+            child: Text(
+              _menuItems[_selectedIndex].label,
+              style: TextStyle(
+                color: AppColors.brown,
+                fontSize: isMobile ? 20 : 24,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+          // 🔹 Notificações
+          IconButton(
+            onPressed: () {
+              // TODO: Abrir notificações
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Notificações')),
+              );
+            },
+            icon: Stack(
+              children: [
+                const Icon(
+                  Icons.notifications_outlined,
+                  color: AppColors.brown,
+                  size: 28,
+                ),
+                Positioned(
+                  right: 0,
+                  top: 0,
+                  child: Container(
+                    width: 10,
+                    height: 10,
+                    decoration: const BoxDecoration(
+                      color: AppColors.pinkStrong,
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 8),
+          // 🔹 Foto de Perfil
+          Container(
+            width: 44,
+            height: 44,
+            decoration: BoxDecoration(
+              color: AppColors.pinkNude,
+              shape: BoxShape.circle,
+              border: Border.all(
+                color: AppColors.pinkStrong,
+                width: 2,
+              ),
+            ),
+            child: ClipOval(
+              child: Image.asset(
+                'assets/images/logo.png',
+                fit: BoxFit.cover,
+                errorBuilder: (context, error, stackTrace) {
+                  return const Center(
+                    child: Icon(
+                      Icons.person,
+                      color: AppColors.white,
+                      size: 24,
+                    ),
+                  );
+                },
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildContent() {
+    switch (_selectedIndex) {
+      case 0:
+        return const AdminDashboardPage();
+      case 1:
+        return const AdminAgendamentosPage();
+      case 2:
+        return const AdminComprasPage();
+      case 3:
+        return const AdminClientesPage();
+      case 4:
+        return const AdminProdutosPage();
+      case 5:
+        return const AdminConfiguracoesPage();
+      default:
+        return const AdminDashboardPage();
+    }
+  }
+
+  void _showLogoutDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Sair'),
+        content: const Text('Tem certeza que deseja sair da conta admin?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancelar'),
+          ),
+          TextButton(
+            onPressed: () {
+              // TODO: Implementar logout
+              Navigator.pop(context);
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Logout realizado com sucesso')),
+              );
+            },
+            child: const Text(
+              'Sair',
+              style: TextStyle(color: Colors.redAccent),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// 🔹 Modelo para Menu Item
+class AdminMenuItem {
+  final IconData icon;
+  final String label;
+  final int index;
+
+  AdminMenuItem({
+    required this.icon,
+    required this.label,
+    required this.index,
+  });
+}
+
+// 🔹 Placeholder das Páginas (serão implementadas depois)
+class AdminDashboardPage extends StatelessWidget {
+  const AdminDashboardPage({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final bool isMobile = ResponsiveHelper.isMobile(context);
+
+    return SingleChildScrollView(
+      padding: EdgeInsets.all(isMobile ? 16 : 24),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // 🔹 Cards de Estatísticas
+          _buildStatsCards(context),
+          const SizedBox(height: 24),
+          // 🔹 Gráfico ou Tabela de Recent Activity (Placeholder)
+          _buildRecentActivity(context),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStatsCards(BuildContext context) {
+    final bool isMobile = ResponsiveHelper.isMobile(context);
+    final bool isTablet = ResponsiveHelper.isTablet(context);
+
+    int crossAxisCount = isMobile ? 1 : (isTablet ? 2 : 4);
+
+    return GridView.count(
+      crossAxisCount: crossAxisCount,
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      crossAxisSpacing: 16,
+      mainAxisSpacing: 16,
+      childAspectRatio: 1.5,
+      children: [
+        _buildStatCard(
+          context,
+          icon: Icons.calendar_month,
+          label: 'Agendamentos',
+          value: '24',
+          color: AppColors.pinkStrong,
+        ),
+        _buildStatCard(
+          context,
+          icon: Icons.shopping_cart,
+          label: 'Compras',
+          value: 'R\$ 2.450',
+          color: Colors.green,
+        ),
+        _buildStatCard(
+          context,
+          icon: Icons.people,
+          label: 'Clientes',
+          value: '156',
+          color: Colors.blue,
+        ),
+        _buildStatCard(
+          context,
+          icon: Icons.inventory,
+          label: 'Produtos',
+          value: '45',
+          color: Colors.orange,
+        ),
+      ],
+    );
+  }
+
+  Widget _buildStatCard(
+    BuildContext context, {
+    required IconData icon,
+    required String label,
+    required String value,
+    required Color color,
+  }) {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: AppColors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.grey.withValues(alpha: 0.1),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Icon(icon, color: color, size: 32),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                value,
+                style: TextStyle(
+                  color: AppColors.brown,
+                  fontSize: 28,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              Text(
+                label,
+                style: const TextStyle(
+                  color: AppColors.grey,
+                  fontSize: 14,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildRecentActivity(BuildContext context) {
+    final bool isMobile = ResponsiveHelper.isMobile(context);
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: AppColors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.grey.withValues(alpha: 0.1),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Atividade Recente',
+            style: TextStyle(
+              color: AppColors.brown,
+              fontSize: isMobile ? 18 : 20,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 16),
+          // Placeholder para lista de atividades
+          ListView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            itemCount: 5,
+            itemBuilder: (context, index) {
+              return ListTile(
+                leading: CircleAvatar(
+                  backgroundColor: AppColors.pinkStrong.withValues(alpha: 0.1),
+                  child: const Icon(
+                    Icons.person,
+                    color: AppColors.pinkStrong,
+                  ),
+                ),
+                title: Text(
+                  'Cliente ${index + 1}',
+                  style: const TextStyle(
+                    color: AppColors.brown,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                subtitle: Text(
+                  'Agendamento realizado',
+                  style: const TextStyle(color: AppColors.grey),
+                ),
+                trailing: Text(
+                  '${index + 1}h atrás',
+                  style: const TextStyle(color: AppColors.grey),
+                ),
+              );
+            },
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// 🔹 Página de Agendamentos
+class AdminAgendamentosPage extends StatelessWidget {
+  const AdminAgendamentosPage({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Text(
+        'Página de Agendamentos',
+        style: TextStyle(
+          color: AppColors.brown,
+          fontSize: 24,
+        ),
+      ),
+    );
+  }
+}
+
+// 🔹 Página de Compras
+class AdminComprasPage extends StatelessWidget {
+  const AdminComprasPage({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Text(
+        'Página de Compras',
+        style: TextStyle(
+          color: AppColors.brown,
+          fontSize: 24,
+        ),
+      ),
+    );
+  }
+}
+
+// 🔹 Página de Clientes
+class AdminClientesPage extends StatelessWidget {
+  const AdminClientesPage({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Text(
+        'Página de Clientes',
+        style: TextStyle(
+          color: AppColors.brown,
+          fontSize: 24,
+        ),
+      ),
+    );
+  }
+}
+
+// 🔹 Página de Produtos
+class AdminProdutosPage extends StatelessWidget {
+  const AdminProdutosPage({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Text(
+        'Página de Produtos',
+        style: TextStyle(
+          color: AppColors.brown,
+          fontSize: 24,
+        ),
+      ),
+    );
+  }
+}
+
+// 🔹 Página de Configurações
+class AdminConfiguracoesPage extends StatelessWidget {
+  const AdminConfiguracoesPage({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Text(
+        'Página de Configurações',
+        style: TextStyle(
+          color: AppColors.brown,
+          fontSize: 24,
+        ),
+      ),
+    );
+  }
+}

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:loahstudio/view/admin_views/admin_layout.dart';
 import 'package:loahstudio/view/user_views/home/home_page.dart';
 
 void main() {
@@ -41,6 +42,7 @@ class _MyHomePageState extends State<MyHomePage> {
   @override
   Widget build(BuildContext context) {
     
-    return HomePage();
+    return  AdminLayout();
+    //HomePage();
   }
 }
