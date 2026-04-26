@@ -510,14 +510,22 @@ class _CarrinhoPageState extends State<CarrinhoPage> {
   }
 
   void _showCheckoutDialog() {
+    final isMobile = MediaQuery.of(context).size.width < 600;
+    final screenWidth = MediaQuery.of(context).size.width;
+    final dialogWidth = isMobile ? screenWidth * 0.95 : 500.0;
+    final horizontalPad = isMobile ? 16.0 : 30.0;
+    final titleSize = isMobile ? 20.0 : 24.0;
+    final subtitleSize = isMobile ? 14.0 : 16.0;
+
     showDialog(
       context: context,
       builder: (dialogContext) => Dialog(
         backgroundColor: Colors.white,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         child: Container(
-          width: 500,
-          padding: EdgeInsets.all(30),
+          width: dialogWidth,
+          constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.85),
+          padding: EdgeInsets.all(horizontalPad),
           child: SingleChildScrollView(
             child: Column(
               mainAxisSize: MainAxisSize.min,
@@ -530,7 +538,7 @@ class _CarrinhoPageState extends State<CarrinhoPage> {
                     Text(
                       "Finalizar compra",
                       style: TextStyle(
-                        fontSize: 24,
+                        fontSize: titleSize,
                         fontWeight: FontWeight.bold,
                         color: Color(0xFF5A4A42),
                       ),
@@ -541,49 +549,56 @@ class _CarrinhoPageState extends State<CarrinhoPage> {
                     ),
                   ],
                 ),
-                SizedBox(height: 24),
+                SizedBox(height: isMobile ? 16 : 24),
 
                 // Dados de faturação
                 Text(
                   "Dados de faturação",
                   style: TextStyle(
-                    fontSize: 16,
+                    fontSize: subtitleSize,
                     fontWeight: FontWeight.w600,
                     color: Color(0xFF5A4A42),
                   ),
                 ),
-                SizedBox(height: 16),
-                _textField(nomeController, "Nome completo", Icons.person_outline),
-                SizedBox(height: 12),
-                _textField(emailController, "Email", Icons.email_outlined, keyboardType: TextInputType.emailAddress),
-                SizedBox(height: 12),
-                _textField(telefoneController, "Telemóvel", Icons.phone_outlined, keyboardType: TextInputType.phone),
-                SizedBox(height: 24),
+                SizedBox(height: isMobile ? 10 : 16),
+                _textField(nomeController, "Nome completo", Icons.person_outline, isMobile: isMobile),
+                SizedBox(height: isMobile ? 8 : 12),
+                _textField(emailController, "Email", Icons.email_outlined, keyboardType: TextInputType.emailAddress, isMobile: isMobile),
+                SizedBox(height: isMobile ? 8 : 12),
+                _textField(telefoneController, "Telemóvel", Icons.phone_outlined, keyboardType: TextInputType.phone, isMobile: isMobile),
+                SizedBox(height: isMobile ? 16 : 24),
 
                 // Morada
                 Text(
                   "Morada de entrega",
                   style: TextStyle(
-                    fontSize: 16,
+                    fontSize: subtitleSize,
                     fontWeight: FontWeight.w600,
                     color: Color(0xFF5A4A42),
                   ),
                 ),
-                SizedBox(height: 16),
-                _textField(moradaController, "Morada", Icons.location_on_outlined),
-                SizedBox(height: 12),
-                Row(
-                  children: [
-                    Expanded(
-                      child: _textField(cpController, "Código Postal", Icons.markunread_outlined, width: 150),
-                    ),
-                    SizedBox(width: 12),
-                    Expanded(
-                      child: _textField(cidadeController, "Cidade", Icons.location_city_outlined),
-                    ),
-                  ],
-                ),
-                SizedBox(height: 24),
+                SizedBox(height: isMobile ? 10 : 16),
+                _textField(moradaController, "Morada", Icons.location_on_outlined, isMobile: isMobile),
+                SizedBox(height: isMobile ? 8 : 12),
+                // Campos CP e Cidade lado a lado no desktop, empilhados no mobile
+                if (isMobile) ...[
+                  _textField(cpController, "Código Postal", Icons.markunread_outlined, isMobile: isMobile),
+                  SizedBox(height: 8),
+                  _textField(cidadeController, "Cidade", Icons.location_city_outlined, isMobile: isMobile),
+                ] else ...[
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _textField(cpController, "Código Postal", Icons.markunread_outlined, width: 150, isMobile: isMobile),
+                      ),
+                      SizedBox(width: 12),
+                      Expanded(
+                        child: _textField(cidadeController, "Cidade", Icons.location_city_outlined, isMobile: isMobile),
+                      ),
+                    ],
+                  ),
+                ],
+                SizedBox(height: isMobile ? 16 : 24),
 
                 // Campos condicionais conforme método - com StatefulBuilder para atualizar em tempo real
                 StatefulBuilder(
@@ -595,134 +610,140 @@ class _CarrinhoPageState extends State<CarrinhoPage> {
                         Text(
                           "Método de pagamento",
                           style: TextStyle(
-                            fontSize: 16,
+                            fontSize: subtitleSize,
                             fontWeight: FontWeight.w600,
                             color: Color(0xFF5A4A42),
                           ),
                         ),
-                        SizedBox(height: 16),
+                        SizedBox(height: isMobile ? 10 : 16),
                         _metodoPagamento("MB Way", "mbway", "assets/icons/mbway.png", pagamentoSelecionado, () {
                           setState(() {
                             pagamentoSelecionado = 'mbway';
                           });
                           setStateDialog(() {});
-                        }),
-                        SizedBox(height: 12),
+                        }, isMobile),
+                        SizedBox(height: isMobile ? 8 : 12),
                         _metodoPagamento("Multibanco", "multibanco", "assets/icons/multibanco.png", pagamentoSelecionado, () {
                           setState(() {
                             pagamentoSelecionado = 'multibanco';
                           });
                           setStateDialog(() {});
-                        }),
-                        SizedBox(height: 12),
+                        }, isMobile),
+                        SizedBox(height: isMobile ? 8 : 12),
                         _metodoPagamento("Cartão de Crédito", "cartao", "assets/icons/cartao.png", pagamentoSelecionado, () {
                           setState(() {
                             pagamentoSelecionado = 'cartao';
                           });
                          setStateDialog(() {});
-                        }),
-                        SizedBox(height: 24),
+                        }, isMobile),
+                        SizedBox(height: isMobile ? 16 : 24),
 
                         if (pagamentoSelecionado == 'mbway') ...[
-                  Text(
-                    "Número MB Way",
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                      color: Color(0xFF5A4A42),
-                    ),
-                  ),
-                  SizedBox(height: 8),
-                  _textField(mbwayNumeroController, "9xxxxxxxxx", Icons.phone_android, keyboardType: TextInputType.phone),
-                ],
-
-                if (pagamentoSelecionado == 'cartao') ...[
-                  Text(
-                    "Dados do cartão",
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                      color: Color(0xFF5A4A42),
-                    ),
-                  ),
-                  SizedBox(height: 8),
-                  _textField(cartaoNomeController, "Nome no cartão", Icons.person_outline),
-                  SizedBox(height: 12),
-                  _textField(cartaoNumeroController, "Número do cartão", Icons.credit_card, keyboardType: TextInputType.number),
-                  SizedBox(height: 12),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: _textField(cartaoValidadeController, "MM/AA", Icons.calendar_today, width: 120),
-                      ),
-                      SizedBox(width: 12),
-                      Expanded(
-                        child: _textField(cartaoCvvController, "CVV", Icons.lock_outline, width: 100),
-                      ),
-                    ],
-                  ),
-                ],
-
-                if (pagamentoSelecionado == 'multibanco') ...[
-                  Container(
-                    padding: EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: Color(0xFFF7F4F2),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          "Dados para Transferência",
-                          style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
-                            color: Color(0xFF5A4A42),
+                          Text(
+                            "Número MB Way",
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                              color: Color(0xFF5A4A42),
+                            ),
                           ),
-                        ),
-                        SizedBox(height: 8),
-                        Text(
-                          "Entidade: 12345",
-                          style: TextStyle(color: Color(0xFF7A6A62)),
-                        ),
-                        Text(
-                          "Referência: 999 999 999",
-                          style: TextStyle(color: Color(0xFF7A6A62)),
-                        ),
-                        Text(
-                          "IBAN: PT50 0000 0000 0000 0000 00",
-                          style: TextStyle(color: Color(0xFF7A6A62)),
-                        ),
-                        SizedBox(height: 8),
-                        Text(
-                          "Após transferência, envie o comprovativo para o nosso email.",
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: Colors.grey,
+                          SizedBox(height: 8),
+                          _textField(mbwayNumeroController, "9xxxxxxxxx", Icons.phone_android, keyboardType: TextInputType.phone, isMobile: isMobile),
+                        ],
+
+                        if (pagamentoSelecionado == 'cartao') ...[
+                          Text(
+                            "Dados do cartão",
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                              color: Color(0xFF5A4A42),
+                            ),
                           ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
+                          SizedBox(height: 8),
+                          _textField(cartaoNomeController, "Nome no cartão", Icons.person_outline, isMobile: isMobile),
+                          SizedBox(height: isMobile ? 8 : 12),
+                          _textField(cartaoNumeroController, "Número do cartão", Icons.credit_card, keyboardType: TextInputType.number, isMobile: isMobile),
+                          SizedBox(height: isMobile ? 8 : 12),
+                          if (isMobile) ...[
+                            _textField(cartaoValidadeController, "MM/AA", Icons.calendar_today, width: double.infinity, isMobile: isMobile),
+                            SizedBox(height: 8),
+                            _textField(cartaoCvvController, "CVV", Icons.lock_outline, width: double.infinity, isMobile: isMobile),
+                          ] else ...[
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: _textField(cartaoValidadeController, "MM/AA", Icons.calendar_today, width: 120, isMobile: isMobile),
+                                ),
+                                SizedBox(width: 12),
+                                Expanded(
+                                  child: _textField(cartaoCvvController, "CVV", Icons.lock_outline, width: 100, isMobile: isMobile),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ],
+
+                        if (pagamentoSelecionado == 'multibanco') ...[
+                          Container(
+                            padding: EdgeInsets.all(isMobile ? 12 : 16),
+                            decoration: BoxDecoration(
+                              color: Color(0xFFF7F4F2),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  "Dados para Transferência",
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w600,
+                                    color: Color(0xFF5A4A42),
+                                  ),
+                                ),
+                                SizedBox(height: 8),
+                                Text(
+                                  "Entidade: 12345",
+                                  style: TextStyle(fontSize: isMobile ? 12 : 14, color: Color(0xFF7A6A62)),
+                                ),
+                                Text(
+                                  "Referência: 999 999 999",
+                                  style: TextStyle(fontSize: isMobile ? 12 : 14, color: Color(0xFF7A6A62)),
+                                ),
+                                Text(
+                                  "IBAN: PT50 0000 0000 0000 0000 00",
+                                  style: TextStyle(fontSize: isMobile ? 12 : 14, color: Color(0xFF7A6A62)),
+                                ),
+                                SizedBox(height: 8),
+                                Text(
+                                  "Após transferência, envie o comprovativo para o nosso email.",
+                                  style: TextStyle(
+                                    fontSize: isMobile ? 10 : 12,
+                                    color: Colors.grey,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
                       ],
                     );
                   },
                 ),
 
-                SizedBox(height: 24),
+                SizedBox(height: isMobile ? 16 : 24),
 
                 // Total e botão
                 Divider(),
-                SizedBox(height: 16),
+                SizedBox(height: isMobile ? 12 : 16),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
                       "Total a pagar",
                       style: TextStyle(
-                        fontSize: 18,
+                        fontSize: isMobile ? 16 : 18,
                         fontWeight: FontWeight.bold,
                         color: Color(0xFF5A4A42),
                       ),
@@ -730,20 +751,20 @@ class _CarrinhoPageState extends State<CarrinhoPage> {
                     Text(
                       "€${totalValue.toStringAsFixed(2)}",
                       style: TextStyle(
-                        fontSize: 24,
+                        fontSize: isMobile ? 20 : 24,
                         fontWeight: FontWeight.bold,
                         color: AppColors.pinkStrong,
                       ),
                     ),
                   ],
                 ),
-                SizedBox(height: 24),
+                SizedBox(height: isMobile ? 16 : 24),
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton(
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.pinkStrong,
-                      padding: EdgeInsets.symmetric(vertical: 16),
+                      padding: EdgeInsets.symmetric(vertical: isMobile ? 14 : 16),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(30),
                       ),
@@ -793,7 +814,7 @@ class _CarrinhoPageState extends State<CarrinhoPage> {
                     child: Text(
                       "Confirmar compra",
                       style: TextStyle(
-                        fontSize: 16,
+                        fontSize: isMobile ? 14 : 16,
                         fontWeight: FontWeight.w600,
                         color: Colors.white,
                       ),
@@ -808,15 +829,18 @@ class _CarrinhoPageState extends State<CarrinhoPage> {
     );
   }
 
-  Widget _textField(TextEditingController controller, String label, IconData icon, {TextInputType? keyboardType, double? width}) {
+  Widget _textField(TextEditingController controller, String label, IconData icon, {TextInputType? keyboardType, double? width, bool isMobile = false}) {
     return Container(
       width: width ?? double.infinity,
       child: TextField(
         controller: controller,
         keyboardType: keyboardType,
+        style: TextStyle(fontSize: isMobile ? 14 : 16),
         decoration: InputDecoration(
           labelText: label,
-          prefixIcon: Icon(icon, size: 20),
+          labelStyle: TextStyle(fontSize: isMobile ? 12 : 14),
+          prefixIcon: Icon(icon, size: isMobile ? 18 : 20),
+          contentPadding: EdgeInsets.symmetric(horizontal: isMobile ? 12 : 16, vertical: isMobile ? 12 : 16),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
             borderSide: BorderSide(color: Colors.grey.shade300),
@@ -834,14 +858,17 @@ class _CarrinhoPageState extends State<CarrinhoPage> {
     );
   }
 
-  Widget _metodoPagamento(String titulo, String valor, String iconPath, String pagamentoSelecionado, [VoidCallback? onTapCallback]) {
+  Widget _metodoPagamento(String titulo, String valor, String iconPath, String pagamentoSelecionado, [VoidCallback? onTapCallback, bool isMobile = false]) {
     final isSelected = pagamentoSelecionado == valor;
+    final fontSize = isMobile ? 14.0 : 16.0;
+    final iconSize = isMobile ? 20.0 : 24.0;
+    final padding = isMobile ? 12.0 : 16.0;
     return GestureDetector(
       onTap: () {
         onTapCallback?.call();
       },
       child: Container(
-        padding: EdgeInsets.all(16),
+        padding: EdgeInsets.all(padding),
         decoration: BoxDecoration(
           border: Border.all(
             color: isSelected ? AppColors.pinkStrong : Colors.grey.shade300,
@@ -853,8 +880,8 @@ class _CarrinhoPageState extends State<CarrinhoPage> {
         child: Row(
           children: [
             Container(
-              width: 24,
-              height: 24,
+              width: isMobile ? 20 : 24,
+              height: isMobile ? 20 : 24,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 border: Border.all(
@@ -865,8 +892,8 @@ class _CarrinhoPageState extends State<CarrinhoPage> {
               child: isSelected
                   ? Center(
                       child: Container(
-                        width: 12,
-                        height: 12,
+                        width: isMobile ? 10 : 12,
+                        height: isMobile ? 10 : 12,
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
                           color: AppColors.pinkStrong,
@@ -875,20 +902,24 @@ class _CarrinhoPageState extends State<CarrinhoPage> {
                     )
                   : null,
             ),
-            SizedBox(width: 16),
+            SizedBox(width: isMobile ? 12 : 16),
             Icon(
               valor == 'mbway' ? Icons.phone_android
                   : valor == 'multibanco' ? Icons.account_balance
                   : Icons.credit_card,
+              size: iconSize,
               color: isSelected ? AppColors.pinkStrong : Color(0xFF5A4A42),
             ),
-            SizedBox(width: 12),
-            Text(
-              titulo,
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
-                color: isSelected ? AppColors.pinkStrong : Color(0xFF5A4A42),
+            SizedBox(width: isMobile ? 8 : 12),
+            Flexible(
+              child: Text(
+                titulo,
+                style: TextStyle(
+                  fontSize: fontSize,
+                  fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+                  color: isSelected ? AppColors.pinkStrong : Color(0xFF5A4A42),
+                ),
+                overflow: TextOverflow.ellipsis,
               ),
             ),
           ],
@@ -898,6 +929,11 @@ class _CarrinhoPageState extends State<CarrinhoPage> {
   }
 
   void _showConfirmacaoDialog() {
+    final isMobile = MediaQuery.of(context).size.width < 600;
+    final iconSize = isMobile ? 60.0 : 80.0;
+    final titleSize = isMobile ? 20.0 : 24.0;
+    final textSize = isMobile ? 14.0 : 16.0;
+
     showDialog(
       context: context,
       builder: (dialogContext) => AlertDialog(
@@ -908,30 +944,30 @@ class _CarrinhoPageState extends State<CarrinhoPage> {
             Icon(
               Icons.check_circle,
               color: Colors.green,
-              size: 80,
+              size: iconSize,
             ),
-            SizedBox(height: 20),
+            SizedBox(height: isMobile ? 16 : 20),
             Text(
               "Encomenda confirmada!",
               style: TextStyle(
-                fontSize: 24,
+                fontSize: titleSize,
                 fontWeight: FontWeight.bold,
                 color: Color(0xFF5A4A42),
               ),
             ),
-            SizedBox(height: 12),
+            SizedBox(height: 8),
             Text(
               "receberá uma confirmação no email:\n${emailController.text}",
               textAlign: TextAlign.center,
               style: TextStyle(
-                fontSize: 16,
+                fontSize: textSize,
                 color: Color(0xFF7A6A62),
               ),
             ),
             if (pagamentoSelecionado == 'mbway') ...[
-              SizedBox(height: 20),
+              SizedBox(height: isMobile ? 12.0 : 20.0),
               Container(
-                padding: EdgeInsets.all(16),
+                padding: EdgeInsets.all(isMobile ? 12.0 : 16.0),
                 decoration: BoxDecoration(
                   color: Color(0xFFF7F4F2),
                   borderRadius: BorderRadius.circular(12),
@@ -940,23 +976,23 @@ class _CarrinhoPageState extends State<CarrinhoPage> {
                   children: [
                     Text(
                       "Pagamento via MB Way",
-                      style: TextStyle(fontWeight: FontWeight.w600),
+                      style: TextStyle(fontWeight: FontWeight.w600, fontSize: textSize),
                     ),
                     SizedBox(height: 8),
                     Text(
                       "Enviará um pedido de pagamento\npara o seu número.",
                       textAlign: TextAlign.center,
-                      style: TextStyle(fontSize: 14, color: Color(0xFF7A6A62)),
+                      style: TextStyle(fontSize: isMobile ? 12 : 14, color: Color(0xFF7A6A62)),
                     ),
                   ],
                 ),
               ),
             ],
-            SizedBox(height: 20),
+            SizedBox(height: isMobile ? 16 : 20),
             ElevatedButton(
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.pinkStrong,
-                padding: EdgeInsets.symmetric(horizontal: 40, vertical: 14),
+                padding: EdgeInsets.symmetric(horizontal: isMobile ? 24 : 40, vertical: isMobile ? 12 : 14),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(25),
                 ),
@@ -982,7 +1018,7 @@ class _CarrinhoPageState extends State<CarrinhoPage> {
                   MaterialPageRoute(builder: (_) => ProdutosPage()),
                 );
               },
-              child: Text("Continuar a compras", style: TextStyle(color: Colors.white)),
+              child: Text("Continuar a compras", style: TextStyle(color: Colors.white, fontSize: isMobile ? 14 : 16)),
             ),
           ],
         ),

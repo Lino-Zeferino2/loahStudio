@@ -144,7 +144,7 @@ class _ProdutosPageState extends State<ProdutosPage> {
             ),
             if (isMobile)
               GestureDetector(
-                onTap: () => Scaffold.of(context).openEndDrawer(),
+                onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => CarrinhoPage(existingCart: _cart))),
                 child: Badge(
                   label: Text("${_cart.length}"),
                   isLabelVisible: _cart.isNotEmpty,
