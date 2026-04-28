@@ -3,7 +3,8 @@
     "allow": [
       "Bash(flutter analyze)",
       "Bash(flutter analyze lib/view/user_views/produtos/produtos_page.dart)",
-      "Bash(flutter pub get)"
+      "Bash(flutter pub get)",
+      "Bash(flutter analyze lib/view/admin_views/pages/admin_produtos_page.dart)"
     ]
   }
 }
