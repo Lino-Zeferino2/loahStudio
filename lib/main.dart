@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:loahstudio/view/admin_views/auth_page.dart';
+import 'package:loahstudio/view/user_views/home/home_page.dart';
 
 void main() {
   runApp(const MyApp());
@@ -16,7 +17,8 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
       ),
-      home: const AuthPage(),
+      home:  HomePage(), 
+      //HomePage(),  AuthPage(),
     );
   }
 }

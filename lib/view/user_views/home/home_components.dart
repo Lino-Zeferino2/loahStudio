@@ -649,7 +649,7 @@ class SpecialtySection extends StatelessWidget {
   }
 }
 
-// 🔹 Seção Galeria Loah
+// 🔹 Seção SiteConfig.galeriaTitulo
 class GaleriaLoahSection extends StatelessWidget {
    GaleriaLoahSection({super.key});
 
@@ -683,7 +683,7 @@ class GaleriaLoahSection extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                "Galeria Loah",
+                "SiteConfig.galeriaTitulo",
                 style: TextStyle(
                   fontSize: 24,
                   fontWeight: FontWeight.bold,
@@ -747,7 +747,7 @@ class GaleriaLoahSection extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                "Galeria Loah",
+                "SiteConfig.galeriaTitulo",
                 style: TextStyle(
                   fontSize: 36,
                   fontWeight: FontWeight.bold,
