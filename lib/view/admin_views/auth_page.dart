@@ -1,9 +1,10 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:loahstudio/constants/colors.dart';
 import 'package:loahstudio/constants/responsive.dart';
 import 'package:loahstudio/view/admin_views/admin_layout.dart';
 import 'package:loahstudio/controller/auth_controller.dart';
-
+import 'package:loahstudio/view/user_views/home/home_page.dart';
 class AuthPage extends StatefulWidget {
   const AuthPage({super.key});
 
@@ -62,36 +63,32 @@ class _AuthPageState extends State<AuthPage> {
     }
   }
 
-  void _submit() {
+ void _submit() {
     if (_isSubmitting) return;
 
     final formState = _formKey.currentState;
     if (formState == null || !formState.validate()) return;
-
-    if (_isLogin) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Login em desenvolvimento')),
-      );
-      return;
-    }
-
-    final nome = _nameController.text;
-    final email = _emailController.text;
-    final password = _passwordController.text;
 
     setState(() {
       _isLoading = true;
       _isSubmitting = true;
     });
 
-    authController.registerUser(
-      nome: nome,
-      email: email,
-      password: password,
-      onComplete: _onRegisterComplete,
-    );
+    if (_isLogin) {
+      authController.loginUser(
+        email: _emailController.text,
+        password: _passwordController.text,
+        onComplete: _onAuthComplete,
+      );
+    } else {
+      authController.registerUser(
+        nome: _nameController.text,
+        email: _emailController.text,
+        password: _passwordController.text,
+        onComplete: _onAuthComplete,
+      );
+    }
   }
-
   @override
   Widget build(BuildContext context) {
     final bool isMobile = ResponsiveHelper.isMobile(context);
@@ -379,10 +376,10 @@ class _AuthPageState extends State<AuthPage> {
                       const SizedBox(height: 24),
                       IconButton(
                         onPressed: () {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                                content: Text('Voltando para o site...')),
-                          );
+                         Navigator.of(context).pushAndRemoveUntil(
+      MaterialPageRoute(builder: (_) => HomePage()),
+      (route) => false,
+    );
                         },
                         icon: Row(
                           mainAxisSize: MainAxisSize.min,
@@ -419,4 +416,45 @@ class _AuthPageState extends State<AuthPage> {
       ),
     );
   }
+
+  void _onAuthComplete(bool success, String? error) async {
+  if (!mounted) return;
+
+  if (!success) {
+    setState(() {
+      _isLoading = false;
+      _isSubmitting = false;
+    });
+    if (error != null && error.isNotEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(error), backgroundColor: Colors.red),
+      );
+    }
+    return;
+  }
+
+  final user = FirebaseAuth.instance.currentUser;
+  final role = user != null ? await authController.getUserRole(user.uid) : null;
+
+  if (!mounted) return;
+
+  setState(() {
+    _isLoading = false;
+    _isSubmitting = false;
+  });
+
+  ScaffoldMessenger.of(context).showSnackBar(
+    SnackBar(
+      content: Text(_isLogin ? 'Sessão iniciada!' : 'Conta criada com sucesso!'),
+      backgroundColor: Colors.green,
+    ),
+  );
+
+  Navigator.of(context).pushReplacement(
+    MaterialPageRoute(
+      builder: (_) => role == 'admin' ? const AdminLayout() : HomePage(),
+    ),
+  );
+}
+
 }

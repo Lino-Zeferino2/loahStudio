@@ -1,6 +1,8 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:loahstudio/constants/colors.dart';
 import 'package:loahstudio/constants/responsive.dart';
+import 'package:loahstudio/view/admin_views/auth_page.dart';
 import 'package:loahstudio/view/user_views/home/home_components.dart';
 import 'package:loahstudio/view/user_views/servicos/servicos_page.dart';
 import 'package:loahstudio/view/user_views/agendamento/agendamento_page.dart';
@@ -85,6 +87,7 @@ class _HomePageState extends State<HomePage> {
                 title: Text("Agendamento", style: TextStyle(color: selectedIndex == 3 ? AppColors.pinkNude : AppColors.brown, fontWeight: selectedIndex == 3 ? FontWeight.bold : FontWeight.normal)),
                 onTap: () => _navigateTo(3),
               ),
+              _buildAuthMenuItem(isMobile: true),
               Spacer(),
               ElevatedButton(
                 style: ElevatedButton.styleFrom(
@@ -181,6 +184,7 @@ class _HomePageState extends State<HomePage> {
                   );
                 }),
                 SizedBox(width: 20),
+                _buildAuthMenuItem(), 
                 ElevatedButton(
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.pinkStrong,
@@ -235,4 +239,49 @@ class _HomePageState extends State<HomePage> {
       setState(() => selectedIndex = index);
     }
   }
+
+  Widget _buildAuthMenuItem({bool isMobile = false}) {
+  return StreamBuilder<User?>(
+    stream: FirebaseAuth.instance.authStateChanges(),
+    builder: (context, snapshot) {
+      final isLoggedIn = snapshot.data != null;
+
+      if (isMobile) {
+        return ListTile(
+          leading: Icon(isLoggedIn ? Icons.logout : Icons.login, color: AppColors.brown),
+          title: Text(
+            isLoggedIn ? "Logout" : "Login",
+            style: TextStyle(color: AppColors.brown, fontWeight: FontWeight.w500),
+          ),
+          onTap: () async {
+            if (isLoggedIn) {
+              await FirebaseAuth.instance.signOut();
+              if (context.mounted) Navigator.pop(context);
+            } else {
+              Navigator.pop(context);
+              Navigator.push(context, MaterialPageRoute(builder: (_) => const AuthPage()));
+            }
+          },
+        );
+      }
+
+      return GestureDetector(
+        onTap: () async {
+          if (isLoggedIn) {
+            await FirebaseAuth.instance.signOut();
+          } else {
+            Navigator.push(context, MaterialPageRoute(builder: (_) => const AuthPage()));
+          }
+        },
+        child: Padding(
+          padding: EdgeInsets.symmetric(horizontal: 12),
+          child: Text(
+            isLoggedIn ? "Logout" : "Login",
+            style: TextStyle(color: AppColors.brown, fontSize: 16, fontWeight: FontWeight.w500),
+          ),
+        ),
+      );
+    },
+  );
+}
 }

@@ -47,29 +47,29 @@ class DefaultFirebaseOptions {
   }
 
   static const FirebaseOptions web = FirebaseOptions(
-    apiKey: 'AIzaSyBRIuI_dT73XToy1lIzII98qGi8Ffj6Pos',
-    appId: '1:606822904099:web:41a08ca4abe7d8a349dc96',
-    messagingSenderId: '606822904099',
-    projectId: 'loahstudioo',
-    authDomain: 'loahstudioo.firebaseapp.com',
-    storageBucket: 'loahstudioo.firebasestorage.app',
-    measurementId: 'G-3H35XM3WVE',
+    apiKey: 'AIzaSyBHEPe0xt7Tx5fHJR4jjYm2U-yDiKpW_nk',
+    appId: '1:626704167393:web:999437f30da14d7d79e2a0',
+    messagingSenderId: '626704167393',
+    projectId: 'myloahstudio',
+    authDomain: 'myloahstudio.firebaseapp.com',
+    storageBucket: 'myloahstudio.firebasestorage.app',
+    measurementId: 'G-QTLLNSE862',
   );
 
   static const FirebaseOptions android = FirebaseOptions(
-    apiKey: 'AIzaSyDfiUl8hwL7usMaEATcLNCk1CABZzi0D4Q',
-    appId: '1:606822904099:android:f8b7ba94ca41887549dc96',
-    messagingSenderId: '606822904099',
-    projectId: 'loahstudioo',
-    storageBucket: 'loahstudioo.firebasestorage.app',
+    apiKey: 'AIzaSyAxAsac3No-4KQ8qqueMCnFZkts9SEAWyk',
+    appId: '1:626704167393:android:8f0670ca85cf560b79e2a0',
+    messagingSenderId: '626704167393',
+    projectId: 'myloahstudio',
+    storageBucket: 'myloahstudio.firebasestorage.app',
   );
 
   static const FirebaseOptions ios = FirebaseOptions(
-    apiKey: 'AIzaSyD7Sim8RmlEY3kmvv2CkhYlY41LsjQngJY',
-    appId: '1:606822904099:ios:22f23d451443aa1e49dc96',
-    messagingSenderId: '606822904099',
-    projectId: 'loahstudioo',
-    storageBucket: 'loahstudioo.firebasestorage.app',
+    apiKey: 'AIzaSyAuj3RgcxiEqeHguRO9zBVx8uoTgwQIAAs',
+    appId: '1:626704167393:ios:ce20bd457abd9c1b79e2a0',
+    messagingSenderId: '626704167393',
+    projectId: 'myloahstudio',
+    storageBucket: 'myloahstudio.firebasestorage.app',
     iosBundleId: 'com.portifolio.linozeferino.loahstudio',
   );
 }

@@ -1,13 +1,13 @@
 {
   "project_info": {
-    "project_number": "606822904099",
-    "project_id": "loahstudioo",
-    "storage_bucket": "loahstudioo.firebasestorage.app"
+    "project_number": "626704167393",
+    "project_id": "myloahstudio",
+    "storage_bucket": "myloahstudio.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:606822904099:android:f8b7ba94ca41887549dc96",
+        "mobilesdk_app_id": "1:626704167393:android:8f0670ca85cf560b79e2a0",
         "android_client_info": {
           "package_name": "com.portifolio.linozeferino.loahstudio"
         }
@@ -15,7 +15,7 @@
       "oauth_client": [],
       "api_key": [
         {
-          "current_key": "AIzaSyDfiUl8hwL7usMaEATcLNCk1CABZzi0D4Q"
+          "current_key": "AIzaSyAxAsac3No-4KQ8qqueMCnFZkts9SEAWyk"
         }
       ],
       "services": {
