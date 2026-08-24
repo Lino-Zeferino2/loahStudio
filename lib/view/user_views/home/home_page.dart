@@ -1,14 +1,18 @@
+// ignore_for_file: library_private_types_in_public_api
+
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:loahstudio/constants/colors.dart';
 import 'package:loahstudio/constants/responsive.dart';
-import 'package:loahstudio/view/admin_views/auth_page.dart';
+import 'package:loahstudio/view/auth/auth_page.dart';
 import 'package:loahstudio/view/user_views/home/home_components.dart';
 import 'package:loahstudio/view/user_views/servicos/servicos_page.dart';
 import 'package:loahstudio/view/user_views/agendamento/agendamento_page.dart';
 import 'package:loahstudio/view/user_views/produtos/produtos_page.dart';
 
 class HomePage extends StatefulWidget {
+  const HomePage({super.key});
+
   @override
   _HomePageState createState() => _HomePageState();
 }

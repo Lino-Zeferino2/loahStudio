@@ -1,3 +1,5 @@
+// ignore_for_file: library_private_types_in_public_api
+
 import 'package:flutter/material.dart';
 import 'package:loahstudio/constants/colors.dart';
 import 'package:loahstudio/constants/responsive.dart';
@@ -6,6 +8,8 @@ import 'package:loahstudio/view/user_views/agendamento/agendamento_page.dart';
 import 'package:loahstudio/view/user_views/produtos/produtos_page.dart';
 
 class ServicosPage extends StatefulWidget {
+  const ServicosPage({super.key});
+
   @override
   _ServicosPageState createState() => _ServicosPageState();
 }
@@ -287,7 +291,7 @@ class _ServicosPageState extends State<ServicosPage> {
                 borderRadius: BorderRadius.circular(16),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.1),
+                    color: Colors.black.withValues(alpha: 0.1),
                     blurRadius: 15,
                     offset: Offset(0, 8),
                   ),
@@ -365,7 +369,7 @@ class _ServicosPageState extends State<ServicosPage> {
                 borderRadius: BorderRadius.circular(20),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.1),
+                    color: Colors.black.withValues(alpha: 0.1),
                     blurRadius: 20,
                     offset: Offset(0, 10),
                   ),
@@ -439,7 +443,7 @@ class _ServicosPageState extends State<ServicosPage> {
             border: isSelected ? Border.all(color: AppColors.pinkStrong, width: 2) : null,
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.06),
+                color: Colors.black.withValues(alpha: 0.06),
                 blurRadius: 10,
                 offset: Offset(0, 4),
               ),
@@ -637,7 +641,7 @@ class _ServicosPageState extends State<ServicosPage> {
           border: isSelected ? Border.all(color: AppColors.pinkStrong, width: 2) : null,
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.06),
+              color: Colors.black.withValues(alpha: 0.06),
               blurRadius: 15,
               offset: Offset(0, 5),
             ),
@@ -779,7 +783,7 @@ class _ServicosPageState extends State<ServicosPage> {
                 borderRadius: BorderRadius.circular(12),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.06),
+                    color: Colors.black.withValues(alpha: 0.06),
                     blurRadius: 10,
                     offset: Offset(0, 4),
                   ),
@@ -834,7 +838,7 @@ class _ServicosPageState extends State<ServicosPage> {
                 borderRadius: BorderRadius.circular(12),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.06),
+                    color: Colors.black.withValues(alpha: 0.06),
                     blurRadius: 10,
                     offset: Offset(0, 4),
                   ),
@@ -897,7 +901,7 @@ class _ServicosPageState extends State<ServicosPage> {
                     borderRadius: BorderRadius.circular(16),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.06),
+                        color: Colors.black.withValues(alpha: 0.06),
                         blurRadius: 15,
                         offset: Offset(0, 5),
                       ),
@@ -964,7 +968,7 @@ class _ServicosPageState extends State<ServicosPage> {
                     borderRadius: BorderRadius.circular(16),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.06),
+                        color: Colors.black.withValues(alpha: 0.06),
                         blurRadius: 15,
                         offset: Offset(0, 5),
                       ),
@@ -1029,7 +1033,7 @@ class _ServicosPageState extends State<ServicosPage> {
               borderRadius: BorderRadius.circular(16),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.06),
+                  color: Colors.black.withValues(alpha: 0.06),
                   blurRadius: 15,
                   offset: Offset(0, 5),
                 ),

@@ -23,6 +23,7 @@ class _AuthPageState extends State<AuthPage> {
   final _passwordController = TextEditingController();
   final _nameController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
+  final _telefoneController = TextEditingController();
 
   final AuthController authController = AuthController();
 
@@ -32,6 +33,7 @@ class _AuthPageState extends State<AuthPage> {
     _passwordController.dispose();
     _nameController.dispose();
     _confirmPasswordController.dispose();
+    _telefoneController.dispose();
     super.dispose();
   }
 
@@ -81,12 +83,13 @@ class _AuthPageState extends State<AuthPage> {
         onComplete: _onAuthComplete,
       );
     } else {
-      authController.registerUser(
-        nome: _nameController.text,
-        email: _emailController.text,
-        password: _passwordController.text,
-        onComplete: _onAuthComplete,
-      );
+    authController.registerUser(
+      nome: _nameController.text,
+      email: _emailController.text,
+      password: _passwordController.text,
+      telefone: _telefoneController.text,
+      onComplete: _onAuthComplete,
+    );
     }
   }
   @override
@@ -175,9 +178,42 @@ class _AuthPageState extends State<AuthPage> {
                             return null;
                           },
                         ),
-                        const SizedBox(height: 16),
-                      ],
-
+                      const SizedBox(height: 16),
+                      TextFormField(
+                        controller: _telefoneController,
+                        keyboardType: TextInputType.phone,
+                        decoration: InputDecoration(
+                          labelText: 'Telemóvel',
+                          prefixIcon: const Icon(Icons.phone, color: AppColors.grey),
+                          filled: true,
+                          fillColor: AppColors.lightCreamBg,
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide.none,
+                          ),
+                        ),
+                       validator: (value) {
+                        if (_isLogin) return null;
+                        final trimmed = value?.trim() ?? '';
+                        if (trimmed.isEmpty) {
+                          return 'Por favor, insira o seu número de telemóvel';
+                        }
+                        final digitsOnly = trimmed.replaceAll(RegExp(r'[^0-9]'), '');
+                        // Aceita com ou sem prefixo 351 (com ou sem +)
+                        final localNumber = digitsOnly.startsWith('351')
+                            ? digitsOnly.substring(3)
+                            : digitsOnly;
+                        if (localNumber.length != 9) {
+                          return 'Número de telemóvel inválido';
+                        }
+                        if (!RegExp(r'^[92368]').hasMatch(localNumber)) {
+                          return 'Número de telemóvel inválido';
+                        }
+                        return null;
+                      },
+                      ),
+                      const SizedBox(height: 16),
+                    ],
                       // Campo Email
                       TextFormField(
                         controller: _emailController,
@@ -377,10 +413,10 @@ class _AuthPageState extends State<AuthPage> {
                       IconButton(
                         onPressed: () {
                          Navigator.of(context).pushAndRemoveUntil(
-      MaterialPageRoute(builder: (_) => HomePage()),
-      (route) => false,
-    );
-                        },
+                         MaterialPageRoute(builder: (_) => HomePage()),
+                            (route) => false,
+                          );
+                         },
                         icon: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [

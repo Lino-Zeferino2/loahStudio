@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:loahstudio/constants/colors.dart';
 import 'package:loahstudio/constants/responsive.dart';
+import 'package:loahstudio/controller/auth_controller.dart';
 import 'package:loahstudio/view/admin_views/pages/admin_agendamentos_page.dart';
 import 'package:loahstudio/view/admin_views/pages/admin_clientes_page.dart';
 import 'package:loahstudio/view/admin_views/pages/admin_compras_page.dart';
@@ -8,6 +9,7 @@ import 'package:loahstudio/view/admin_views/pages/admin_configuracoes_page.dart'
 import 'package:loahstudio/view/admin_views/pages/admin_dashboard_page.dart';
 import 'package:loahstudio/view/admin_views/pages/admin_produtos_page.dart';
 import 'package:loahstudio/view/admin_views/pages/admin_servicos_page.dart';
+import 'package:loahstudio/view/user_views/home/home_page.dart';
 
 
 class AdminLayout extends StatefulWidget {
@@ -359,34 +361,49 @@ class _AdminLayoutState extends State<AdminLayout> {
     }
   }
 
-  void _showLogoutDialog() {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Sair'),
-        content: const Text('Tem certeza que deseja sair da conta admin?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancelar'),
+ void _showLogoutDialog() {
+  showDialog(
+    context: context,
+    builder: (dialogContext) => AlertDialog(
+      title: const Text('Sair'),
+      content: const Text('Tem certeza que deseja sair da conta admin?'),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(dialogContext),
+          child: const Text('Cancelar'),
+        ),
+        TextButton(
+          onPressed: () async {
+            Navigator.pop(dialogContext); // fecha o diálogo primeiro
+
+            final authController = AuthController();
+            await authController.logoutUser(
+              onComplete: (success, errorMessage) {
+                if (!mounted) return;
+
+                if (success) {
+                  Navigator.of(context).pushAndRemoveUntil(
+                    MaterialPageRoute(builder: (_) => const HomePage()), // troca pelo teu widget de login real
+                    (route) => false,
+                  );
+                } else {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text(errorMessage ?? 'Erro ao sair.')),
+                  );
+                }
+              },
+            );
+          },
+          child: const Text(
+            'Sair',
+            style: TextStyle(color: Colors.redAccent),
           ),
-          TextButton(
-            onPressed: () {
-              // TODO: Implementar logout
-              Navigator.pop(context);
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Logout realizado com sucesso')),
-              );
-            },
-            child: const Text(
-              'Sair',
-              style: TextStyle(color: Colors.redAccent),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+        ),
+      ],
+    ),
+  );
+}
+
 }
 
 // 🔹 Modelo para Menu Item

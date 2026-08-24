@@ -1,3 +1,5 @@
+// ignore_for_file: library_private_types_in_public_api
+
 import 'package:flutter/material.dart';
 import 'package:loahstudio/constants/colors.dart';
 import 'package:loahstudio/view/user_views/home/home_page.dart';
@@ -6,6 +8,8 @@ import 'package:loahstudio/view/user_views/servicos/servicos_page.dart';
 import 'package:loahstudio/view/user_views/carrinho/carrinho_page.dart';
 
 class ProdutosPage extends StatefulWidget {
+  const ProdutosPage({super.key});
+
   @override
   _ProdutosPageState createState() => _ProdutosPageState();
 }
@@ -23,7 +27,6 @@ class _ProdutosPageState extends State<ProdutosPage> {
 
   // Carrinho de compras
   final List<Map<String, dynamic>> _cart = [];
-  int _selectedProductIndex = -1;
 
   late final List<Map<String, String>> produtos;
   late final List<Map<String, String>> produtosDestaque;
@@ -424,7 +427,7 @@ class _ProdutosPageState extends State<ProdutosPage> {
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(16),
-          boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.06), blurRadius: 8, offset: Offset(0, 4))],
+          boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.06), blurRadius: 8, offset: Offset(0, 4))],
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -485,7 +488,7 @@ class _ProdutosPageState extends State<ProdutosPage> {
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.08),
+            color: Colors.black.withValues(alpha: 0.08),
             blurRadius: 20,
             offset: Offset(0, 10),
           ),
@@ -611,7 +614,7 @@ class _ProdutosPageState extends State<ProdutosPage> {
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.06),
+            color: Colors.black.withValues(alpha: 0.06),
             blurRadius: 15,
             offset: Offset(0, 8),
           ),
@@ -841,7 +844,6 @@ class _ProdutosPageState extends State<ProdutosPage> {
                   );
                 } else {
                   // Adicionar ao carrinho
-                  _selectedProductIndex = produtoIndex ?? -1;
                   _cart.add({
                     'index': produtoIndex,
                     'nome': nome,
@@ -866,7 +868,7 @@ class _ProdutosPageState extends State<ProdutosPage> {
           borderRadius: BorderRadius.circular(20),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.1),
+              color: Colors.black.withValues(alpha: 0.1),
               blurRadius: 10,
               offset: Offset(0, 4),
             ),

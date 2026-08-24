@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:loahstudio/firebase_options.dart';
-import 'package:loahstudio/view/admin_views/auth_page.dart';
+import 'package:loahstudio/view/auth/auth_page.dart';
 
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:cloud_firestore/cloud_firestore.dart';

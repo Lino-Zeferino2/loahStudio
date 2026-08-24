@@ -1,3 +1,5 @@
+// ignore_for_file: library_private_types_in_public_api
+
 import 'package:flutter/material.dart';
 import 'package:loahstudio/constants/colors.dart';
 import 'package:loahstudio/constants/responsive.dart';
@@ -6,6 +8,8 @@ import 'package:loahstudio/view/user_views/servicos/servicos_page.dart';
 import 'package:loahstudio/view/user_views/produtos/produtos_page.dart';
 
 class AgendamentoPage extends StatefulWidget {
+  const AgendamentoPage({super.key});
+
   @override
   _AgendamentoPageState createState() => _AgendamentoPageState();
 }
@@ -270,7 +274,7 @@ class _AgendamentoPageState extends State<AgendamentoPage> {
           borderRadius: BorderRadius.circular(20),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.06),
+              color: Colors.black.withValues(alpha: 0.06),
               blurRadius: 20,
               offset: Offset(0, 10),
             ),
@@ -537,7 +541,7 @@ class _AgendamentoPageState extends State<AgendamentoPage> {
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.06),
+              color: Colors.black.withValues(alpha: 0.06),
               blurRadius: 10,
               offset: Offset(0, 4),
             ),
@@ -663,7 +667,7 @@ class _AgendamentoPageState extends State<AgendamentoPage> {
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.06),
+            color: Colors.black.withValues(alpha: 0.06),
             blurRadius: 15,
             offset: Offset(0, 5),
           ),

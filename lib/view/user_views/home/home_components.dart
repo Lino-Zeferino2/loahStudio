@@ -48,7 +48,7 @@ class HeroSection extends StatelessWidget {
                     borderRadius: BorderRadius.circular(12),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.08),
+                        color: Colors.black.withValues(alpha: 0.08),
                         blurRadius: 15,
                         offset: Offset(0, 8),
                       ),
@@ -233,7 +233,7 @@ class HeroSection extends StatelessWidget {
                       borderRadius: BorderRadius.circular(16),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.08),
+                          color: Colors.black.withValues(alpha: 0.08),
                           blurRadius: 20,
                           offset: Offset(0, 10),
                         ),
@@ -484,7 +484,7 @@ class SpecialtySection extends StatelessWidget {
           borderRadius: BorderRadius.circular(20),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.08),
+              color: Colors.black.withValues(alpha: 0.08),
               blurRadius: 20,
               offset: Offset(0, 10),
             ),
@@ -571,7 +571,7 @@ class SpecialtySection extends StatelessWidget {
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.08),
+              color: Colors.black.withValues(alpha: 0.08),
               blurRadius: 15,
               offset: Offset(0, 8),
             ),
@@ -808,7 +808,7 @@ class GaleriaLoahSection extends StatelessWidget {
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.1),
+            color: Colors.black.withValues(alpha: 0.1),
             blurRadius: 15,
             offset: Offset(0, 8),
           ),
@@ -855,7 +855,7 @@ class GaleriaLoahSection extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.1),
+            color: Colors.black.withValues(alpha: 0.1),
             blurRadius: 10,
             offset: Offset(0, 6),
           ),
@@ -924,7 +924,7 @@ class LoahEssenciaSection extends StatelessWidget {
               borderRadius: BorderRadius.circular(20),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.12),
+                  color: Colors.black.withValues(alpha: 0.12),
                   blurRadius: 20,
                   offset: Offset(0, 10),
                 ),
@@ -998,7 +998,7 @@ class LoahEssenciaSection extends StatelessWidget {
                     borderRadius: BorderRadius.circular(24),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.12),
+                        color: Colors.black.withValues(alpha: 0.12),
                         blurRadius: 30,
                         offset: Offset(0, 15),
                       ),
@@ -1256,7 +1256,7 @@ class NossosPilaresSection extends StatelessWidget {
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.06),
+            color: Colors.black.withValues(alpha: 0.06),
             blurRadius: 15,
             offset: Offset(0, 8),
           ),
@@ -1331,7 +1331,7 @@ class NossosPilaresSection extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.06),
+            color: Colors.black.withValues(alpha: 0.06),
             blurRadius: 12,
             offset: Offset(0, 6),
           ),
@@ -1481,7 +1481,7 @@ class TestemunhosSection extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.06), blurRadius: 20, offset: Offset(0, 8))],
+        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.06), blurRadius: 20, offset: Offset(0, 8))],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1528,7 +1528,7 @@ class TestemunhosSection extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.06), blurRadius: 15, offset: Offset(0, 6))],
+        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.06), blurRadius: 15, offset: Offset(0, 6))],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1607,7 +1607,7 @@ class ProntaBrilharSection extends StatelessWidget {
           SizedBox(height: 16),
           Text(
             "Agende já o seu momento de beleza e conquiste o look perfeito.\nNossa equipa está pronta para tornar o seu visual inesquecível.",
-            style: TextStyle(fontSize: 14, color: Colors.white.withOpacity(0.9), height: 1.5),
+            style: TextStyle(fontSize: 14, color: Colors.white.withValues(alpha: 0.9), height: 1.5),
             textAlign: TextAlign.center,
           ),
           SizedBox(height: 30),
@@ -1654,7 +1654,7 @@ class ProntaBrilharSection extends StatelessWidget {
           SizedBox(height: 20),
           Text(
             "Agende já o seu momento de beleza e conquiste o look perfeito.\nNossa equipa está pronta para tornar o seu visual inesquecível.",
-            style: TextStyle(fontSize: 18, color: Colors.white.withOpacity(0.9), height: 1.6),
+            style: TextStyle(fontSize: 18, color: Colors.white.withValues(alpha: 0.9), height: 1.6),
             textAlign: TextAlign.center,
           ),
           SizedBox(height: 40),

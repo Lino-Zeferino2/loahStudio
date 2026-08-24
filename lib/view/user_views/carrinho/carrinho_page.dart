@@ -1,5 +1,6 @@
+// ignore_for_file: library_private_types_in_public_api
+
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:loahstudio/constants/colors.dart';
 import 'package:loahstudio/constants/responsive.dart';
 import 'package:loahstudio/view/user_views/home/home_page.dart';
@@ -9,7 +10,7 @@ import 'package:loahstudio/view/user_views/agendamento/agendamento_page.dart';
 
 class CarrinhoPage extends StatefulWidget {
   final List<Map<String, dynamic>> existingCart;
-  CarrinhoPage({this.existingCart = const []});
+  const CarrinhoPage({super.key, this.existingCart = const []});
   @override
   _CarrinhoPageState createState() => _CarrinhoPageState();
 }
@@ -124,7 +125,7 @@ class _CarrinhoPageState extends State<CarrinhoPage> {
   @override
   Widget build(BuildContext context) {
     final isMobile = MediaQuery.of(context).size.width < 600;
-    final headerTitleSize = ResponsiveHelper.headerTitleSize(context);
+    ResponsiveHelper.headerTitleSize(context);
 
     return Scaffold(
       endDrawer: isMobile ? _buildMobileDrawer() : null,
@@ -345,7 +346,7 @@ class _CarrinhoPageState extends State<CarrinhoPage> {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 15,
             offset: Offset(0, 5),
           ),
@@ -860,7 +861,7 @@ class _CarrinhoPageState extends State<CarrinhoPage> {
   }
 
   Widget _textField(TextEditingController controller, String label, IconData icon, {TextInputType? keyboardType, double? width, bool isMobile = false}) {
-    return Container(
+    return SizedBox(
       width: width ?? double.infinity,
       child: TextField(
         controller: controller,
@@ -1197,7 +1198,7 @@ class _CarrinhoPageState extends State<CarrinhoPage> {
             decoration: BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.circular(16),
-              boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.06), blurRadius: 10, offset: Offset(0, 4))],
+              boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.06), blurRadius: 10, offset: Offset(0, 4))],
             ),
             child: Column(
               children: [
@@ -1266,7 +1267,7 @@ class _CarrinhoPageState extends State<CarrinhoPage> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.06), blurRadius: 20, offset: Offset(0, 10))],
+        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.06), blurRadius: 20, offset: Offset(0, 10))],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1308,7 +1309,7 @@ class _CarrinhoPageState extends State<CarrinhoPage> {
     return Container(
       margin: EdgeInsets.only(bottom: 8),
       padding: EdgeInsets.all(8),
-      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(10), boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 6, offset: Offset(0, 2))]),
+      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(10), boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 6, offset: Offset(0, 2))]),
       child: IntrinsicHeight(
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -1356,7 +1357,11 @@ class _CarrinhoPageState extends State<CarrinhoPage> {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       GestureDetector(
-                        onTap: () => setState(() { if (quantidade > 1) cartItems[index]['quantidade'] = quantidade - 1; else _removeItem(index); }),
+                        onTap: () => setState(() { if (quantidade > 1) {
+                          cartItems[index]['quantidade'] = quantidade - 1;
+                        } else {
+                          _removeItem(index);
+                        } }),
                         child: Container(padding: EdgeInsets.all(3), decoration: BoxDecoration(color: Color(0xFFF7F4F2), borderRadius: BorderRadius.circular(4)), child: Icon(Icons.remove, size: 10, color: Color(0xFF5A4A42))),
                       ),
                       Padding(padding: EdgeInsets.symmetric(horizontal: 4), child: Text("$quantidade", style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Color(0xFF5A4A42)))),

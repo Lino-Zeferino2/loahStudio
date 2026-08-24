@@ -1,4 +1,3 @@
-import 'package:flutter/material.dart';
 
 class SiteConfig {
   // Hero Section
@@ -56,6 +55,6 @@ class SiteConfig {
   static String footerHorario = 'Horário';
   static String footerHorarioTexto = 'Seg - Sex: 9h às 19hSábado: 9h às 14hDomingo: Encerrado';
   static String footerEmail = 'contato@loahstudio.com';
-  static String footerTelefone = '(11) 99999-9999';
-  static String footerEndereco = 'Av. Paulista, 1000 - São Paulo';
+  static String footerTelefone = '(351) 999999999';
+  static String footerEndereco = 'Av. Paulista, 1000 - Castelo Branco';
 }

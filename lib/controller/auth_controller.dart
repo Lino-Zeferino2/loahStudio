@@ -48,29 +48,52 @@ class AuthController {
       onComplete(false, 'Erro: ${e.toString()}');
     }
   }
-Future<String?> getUserRole(String uid) async {
-  try {
-    final doc = await _firestore.collection('clientes').doc(uid).get();
-    if (doc.exists) {
-      return doc.data()?['role'] as String?;
+
+  Future<String?> getUserRole(String uid) async {
+    try {
+      final doc = await _firestore.collection('clientes').doc(uid).get();
+      if (doc.exists) {
+        return doc.data()?['role'] as String?;
+      }
+      return null;
+    } catch (e) {
+      debugPrint('Erro ao obter role: $e');
+      return null;
     }
-    return null;
-  } catch (e) {
-    debugPrint('Erro ao obter role: $e');
-    return null;
   }
-}
+
+  // ---------------- LOGOUT ----------------
+  Future<void> logoutUser({
+    required AuthCallback onComplete,
+  }) async {
+    try {
+      debugPrint('A terminar sessão do utilizador: ${_auth.currentUser?.uid}');
+      await _auth.signOut();
+      debugPrint('Logout bem-sucedido');
+      onComplete(true, null);
+    } catch (e) {
+      debugPrint('Erro ao terminar sessão: $e');
+      onComplete(false, 'Erro ao terminar sessão: ${e.toString()}');
+    }
+  }
+
+  String _normalizePhonePT(String raw) {
+    final digitsOnly = raw.trim().replaceAll(RegExp(r'[^0-9]'), '');
+    final localNumber = digitsOnly.startsWith('351')
+        ? digitsOnly.substring(3)
+        : digitsOnly;
+    return '+351$localNumber';
+  }
+
   // ---------------- REGISTO ----------------
   void registerUser({
     required String nome,
     required String email,
     required String password,
+    required String telefone,
     required AuthCallback onComplete,
   }) async {
     _isLoading = true;
-    // NOTA: removida a chamada onComplete(false, null) que existia aqui.
-    // Estava a desligar o estado de "a processar" imediatamente, antes
-    // de qualquer chamada ao Firebase ter começado.
 
     try {
       debugPrint('A criar utilizador com email: ${email.trim()}');
@@ -105,7 +128,8 @@ Future<String?> getUserRole(String uid) async {
         await _firestore.collection('clientes').doc(uid).set({
           'nome': nome.trim(),
           'email': email.trim(),
-           'role': 'user',
+          'telefone': _normalizePhonePT(telefone),
+          'role': 'user',
           'status': 'ativo',
           'dataCadastro': Timestamp.now(),
         }).timeout(
@@ -124,9 +148,6 @@ Future<String?> getUserRole(String uid) async {
       _isLoading = false;
 
       if (!firestoreOk) {
-        // A conta Auth foi criada, mas os dados do utilizador não foram
-        // gravados. Isto NÃO deve ser engolido silenciosamente — o utilizador
-        // (e tu, em produção) precisam de saber que algo ficou incompleto.
         onComplete(
           false,
           'Conta criada, mas houve um erro a guardar os teus dados. '
@@ -174,7 +195,7 @@ Future<String?> getUserRole(String uid) async {
       case 'too-many-requests':
         return 'Demasiadas tentativas. Tente novamente mais tarde.';
       default:
-        return 'Erro: ${code}';
+        return 'Erro: $code';
     }
   }
 }
