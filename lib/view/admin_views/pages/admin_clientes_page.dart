@@ -181,12 +181,269 @@ class _AdminClientesPageState extends State<AdminClientesPage> {
 
   Widget _buildStatChip(String label, String value) => Container(padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6), decoration: BoxDecoration(color: AppColors.lightCreamBg, borderRadius: BorderRadius.circular(8)), child: Column(children: [Text(label, style: const TextStyle(color: AppColors.grey, fontSize: 10)), Text(value, style: const TextStyle(color: AppColors.brown, fontSize: 13, fontWeight: FontWeight.w500))]));
 
-  void _showDetalhesDialog(Map<String, dynamic> cliente) {
-    final DateTime? dataCadastro = cliente['dataCadastro'] as DateTime?;
-    final DateTime? ultimoAgendamento = cliente['ultimoAgendamento'] as DateTime?;
-    final DateTime? ultimaCompra = cliente['ultimaCompra'] as DateTime?;
-    showDialog(context: context, builder: (context) => AlertDialog(title: Row(children: [Container(width: 40, height: 40, decoration: BoxDecoration(color: AppColors.pinkNude.withValues(alpha: 0.3), shape: BoxShape.circle), child: Center(child: Text(cliente['avatar'] as String, style: const TextStyle(color: AppColors.pinkStrong, fontSize: 16, fontWeight: FontWeight.bold)))), const SizedBox(width: 12), Expanded(child: Text(cliente['nome'] as String))]), content: SingleChildScrollView(child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [Text('Email: ${cliente["email"]}'), Text('Telefone: ${cliente["telefone"]}'), Text('Endereço: ${(cliente["endereco"] as String).isEmpty ? "-" : cliente["endereco"]}'), const Divider(), Text('Cadastro: ${dataCadastro ?? "-"}'), Text('Último Serviço: ${ultimoAgendamento ?? "Nunca"}'), Text('Última Compra: ${ultimaCompra ?? "Nunca"}'), const Divider(), Text('Total Serviços: ${cliente["totalAgendamentos"]}'), Text('Total Compras: ${cliente["totalCompras"]}'), Text('Total Gasto: € ${(cliente["totalGasto"] as double).toStringAsFixed(2).replaceAll(".", ",")}', style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.pinkStrong))])), actions: [TextButton(onPressed: () => Navigator.pop(context), child: const Text('Fechar'))]));
+void _showDetalhesDialog(Map<String, dynamic> cliente) {
+  final bool isMobile = ResponsiveHelper.isMobile(context);
+  final String status = cliente['status'] as String;
+  Color statusColor;
+  switch (status) {
+    case 'ativo': statusColor = Colors.green; break;
+    case 'bloqueado': statusColor = Colors.red; break;
+    default: statusColor = Colors.grey;
   }
 
-  void _showBloquearDialog(Map<String, dynamic> cliente) => showDialog(context: context, builder: (context) => AlertDialog(title: const Row(children: [Icon(Icons.block, color: Colors.red), SizedBox(width: 8), Text('Bloquear Cliente')]), content: Text('Tem certeza que deseja BLOQUEAR o cliente ${cliente['nome']}?\n\nO cliente não poderá mais agendar serviços ou comprar produtos.'), actions: [TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancelar')), ElevatedButton(onPressed: () { Navigator.pop(context); _atualizarStatus(cliente['id'] as String, 'bloqueado'); }, style: ElevatedButton.styleFrom(backgroundColor: Colors.red, foregroundColor: AppColors.white), child: const Text('Bloquear'))]));
+  showDialog(
+    context: context,
+    builder: (dialogContext) => Dialog(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      insetPadding: EdgeInsets.symmetric(horizontal: isMobile ? 16 : 60, vertical: 24),
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 480, maxHeight: 640),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Cabeçalho
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.fromLTRB(24, 24, 16, 24),
+              decoration: BoxDecoration(
+                color: AppColors.pinkNude.withValues(alpha: 0.25),
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    width: 64,
+                    height: 64,
+                    decoration: BoxDecoration(
+                      color: AppColors.pinkStrong,
+                      shape: BoxShape.circle,
+                      border: Border.all(color: AppColors.white, width: 3),
+                      boxShadow: [BoxShadow(color: AppColors.grey.withValues(alpha: 0.2), blurRadius: 8)],
+                    ),
+                    child: Center(
+                      child: Text(
+                        cliente['avatar'] as String,
+                        style: const TextStyle(color: AppColors.white, fontSize: 24, fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          cliente['nome'] as String,
+                          style: const TextStyle(color: AppColors.brown, fontSize: 19, fontWeight: FontWeight.bold),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(height: 6),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+                          decoration: BoxDecoration(
+                            color: statusColor.withValues(alpha: 0.12),
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: Text(
+                            status.toUpperCase(),
+                            style: TextStyle(color: statusColor, fontSize: 11, fontWeight: FontWeight.bold, letterSpacing: 0.5),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  IconButton(
+                    onPressed: () => Navigator.pop(dialogContext),
+                    icon: const Icon(Icons.close, color: AppColors.grey),
+                    splashRadius: 20,
+                  ),
+                ],
+              ),
+            ),
+            // Corpo
+            Flexible(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _buildDetailSection('Contacto', Icons.contact_page_outlined, [
+                      _buildDetailRow(Icons.email_outlined, 'Email', (cliente['email'] as String).isEmpty ? '—' : cliente['email'] as String),
+                      _buildDetailRow(Icons.phone_outlined, 'Telefone', (cliente['telefone'] as String).isEmpty ? '—' : cliente['telefone'] as String),
+                      _buildDetailRow(Icons.location_on_outlined, 'Endereço', (cliente['endereco'] as String).isEmpty ? '—' : cliente['endereco'] as String),
+                    ]),
+                    const SizedBox(height: 20),
+                    _buildDetailSection('Atividade', Icons.timeline_outlined, [
+                      _buildDetailRow(Icons.event_available_outlined, 'Cliente desde', _formatData(cliente['dataCadastro'] as DateTime?)),
+                      _buildDetailRow(Icons.content_cut_outlined, 'Último serviço', _formatData(cliente['ultimoAgendamento'] as DateTime?)),
+                      _buildDetailRow(Icons.shopping_bag_outlined, 'Última compra', _formatData(cliente['ultimaCompra'] as DateTime?)),
+                    ]),
+                    const SizedBox(height: 20),
+                    _buildDetailSection('Resumo', Icons.bar_chart_outlined, []),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        Expanded(child: _buildSummaryCard('Serviços', '${cliente["totalAgendamentos"]}', Icons.content_cut)),
+                        const SizedBox(width: 12),
+                        Expanded(child: _buildSummaryCard('Compras', '${cliente["totalCompras"]}', Icons.shopping_bag)),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [AppColors.pinkStrong, AppColors.pinkStrong.withValues(alpha: 0.75)],
+                          begin: Alignment.centerLeft,
+                          end: Alignment.centerRight,
+                        ),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Text('Total Gasto', style: TextStyle(color: AppColors.white, fontSize: 14, fontWeight: FontWeight.w500)),
+                          Text(
+                            '€ ${(cliente["totalGasto"] as double).toStringAsFixed(2).replaceAll('.', ',')}',
+                            style: const TextStyle(color: AppColors.white, fontSize: 20, fontWeight: FontWeight.bold),
+                          ),
+                        ],
+                      ),
+                    ),
+                    if ((cliente['notas'] as String).isNotEmpty) ...[
+                      const SizedBox(height: 20),
+                      _buildDetailSection('Notas', Icons.sticky_note_2_outlined, []),
+                      const SizedBox(height: 8),
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(14),
+                        decoration: BoxDecoration(
+                          color: AppColors.lightCreamBg,
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(color: AppColors.grey.withValues(alpha: 0.15)),
+                        ),
+                        child: Text(
+                          cliente['notas'] as String,
+                          style: const TextStyle(color: AppColors.brown, fontSize: 13, height: 1.4),
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ),
+            // Rodapé com ações
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                border: Border(top: BorderSide(color: AppColors.grey.withValues(alpha: 0.15))),
+              ),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: () {},
+                      icon: const Icon(Icons.edit_outlined, size: 18),
+                      label: const Text('Editar'),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: AppColors.pinkStrong,
+                        side: const BorderSide(color: AppColors.pinkStrong),
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: ElevatedButton.icon(
+                      onPressed: () {
+                        Navigator.pop(dialogContext);
+                        if (status == 'ativo') {
+                          _showBloquearDialog(cliente);
+                        } else if (status == 'bloqueado') {
+                          _atualizarStatus(cliente['id'] as String, 'ativo');
+                        }
+                      },
+                      icon: Icon(status == 'ativo' ? Icons.block : Icons.lock_open, size: 18),
+                      label: Text(status == 'ativo' ? 'Bloquear' : 'Desbloquear'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: status == 'ativo' ? Colors.red : Colors.orange,
+                        foregroundColor: AppColors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    ),
+  );
+}
+
+Widget _buildDetailSection(String title, IconData icon, List<Widget> rows) {
+  return Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      Row(
+        children: [
+          Icon(icon, size: 16, color: AppColors.pinkStrong),
+          const SizedBox(width: 6),
+          Text(
+            title.toUpperCase(),
+            style: const TextStyle(color: AppColors.grey, fontSize: 12, fontWeight: FontWeight.bold, letterSpacing: 0.5),
+          ),
+        ],
+      ),
+      if (rows.isNotEmpty) const SizedBox(height: 10),
+      ...rows,
+    ],
+  );
+}
+
+Widget _buildDetailRow(IconData icon, String label, String value) {
+  return Padding(
+    padding: const EdgeInsets.symmetric(vertical: 6),
+    child: Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Icon(icon, size: 16, color: AppColors.grey),
+        const SizedBox(width: 10),
+        SizedBox(
+          width: 90,
+          child: Text(label, style: const TextStyle(color: AppColors.grey, fontSize: 13)),
+        ),
+        Expanded(
+          child: Text(value, style: const TextStyle(color: AppColors.brown, fontSize: 13, fontWeight: FontWeight.w500)),
+        ),
+      ],
+    ),
+  );
+}
+
+Widget _buildSummaryCard(String label, String value, IconData icon) {
+  return Container(
+    padding: const EdgeInsets.all(14),
+    decoration: BoxDecoration(
+      color: AppColors.lightCreamBg,
+      borderRadius: BorderRadius.circular(12),
+    ),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Icon(icon, size: 18, color: AppColors.pinkStrong),
+        const SizedBox(height: 8),
+        Text(value, style: const TextStyle(color: AppColors.brown, fontSize: 20, fontWeight: FontWeight.bold)),
+        Text(label, style: const TextStyle(color: AppColors.grey, fontSize: 12)),
+      ],
+    ),
+  );
+}
+
+
+void _showBloquearDialog(Map<String, dynamic> cliente) => showDialog(context: context, builder: (context) => AlertDialog(title: const Row(children: [Icon(Icons.block, color: Colors.red), SizedBox(width: 8), Text('Bloquear Cliente')]), content: Text('Tem certeza que deseja BLOQUEAR o cliente ${cliente['nome']}?\n\nO cliente não poderá mais agendar serviços ou comprar produtos.'), actions: [TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancelar')), ElevatedButton(onPressed: () { Navigator.pop(context); _atualizarStatus(cliente['id'] as String, 'bloqueado'); }, style: ElevatedButton.styleFrom(backgroundColor: Colors.red, foregroundColor: AppColors.white), child: const Text('Bloquear'))]));
+
+ String _formatData(DateTime? d) => d == null ? 'Nunca' : '${d.day.toString().padLeft(2, '0')}/${d.month.toString().padLeft(2, '0')}/${d.year}';
 }
