@@ -224,6 +224,7 @@ class PilaresEditor extends StatelessWidget {
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
             itemCount: pilares.length,
+            // ignore: deprecated_member_use
             onReorder: (oldIndex, newIndex) {
               final novaLista = List<Pilar>.from(pilares);
               if (newIndex > oldIndex) newIndex -= 1;

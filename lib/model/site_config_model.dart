@@ -42,13 +42,18 @@ class HorarioFuncionamento {
   final Turno manha;
   final Turno tarde;
   final Turno noite;
+  final int intervaloAgendamentoMinutos;
 
   const HorarioFuncionamento({
     this.diasFuncionamento = const ['segunda', 'terca', 'quarta', 'quinta', 'sexta'],
     this.manha = const Turno(ativo: true, horaInicio: '09:00', horaFim: '12:00'),
     this.tarde = const Turno(ativo: true, horaInicio: '14:00', horaFim: '18:00'),
     this.noite = const Turno(ativo: false, horaInicio: '19:00', horaFim: '22:00'),
+    this.intervaloAgendamentoMinutos = 30,
   });
+
+  /// Opções válidas de intervalo entre horários de agendamento.
+  static const List<int> opcoesIntervalo = [0, 1, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60];
 
   factory HorarioFuncionamento.fromMap(Map<String, dynamic>? map) {
     if (map == null) return const HorarioFuncionamento();
@@ -59,34 +64,38 @@ class HorarioFuncionamento {
               ?.map((e) => e.toString())
               .toList() ??
           const ['segunda', 'terca', 'quarta', 'quinta', 'sexta'],
-      manha: Turno.fromMap(turnos?['manha'] as Map<String, dynamic>?),
+          manha: Turno.fromMap(turnos?['manha'] as Map<String, dynamic>?),
       tarde: Turno.fromMap(turnos?['tarde'] as Map<String, dynamic>?),
       noite: Turno.fromMap(turnos?['noite'] as Map<String, dynamic>?),
+      intervaloAgendamentoMinutos: (map['intervaloAgendamentoMinutos'] as num?)?.toInt() ?? 30,
     );
   }
 
   Map<String, dynamic> toMap() {
     return {
       'diasFuncionamento': diasFuncionamento,
-      'turnos': {
+           'turnos': {
         'manha': manha.toMap(),
         'tarde': tarde.toMap(),
         'noite': noite.toMap(),
       },
+      'intervaloAgendamentoMinutos': intervaloAgendamentoMinutos,
     };
   }
 
-  HorarioFuncionamento copyWith({
+   HorarioFuncionamento copyWith({
     List<String>? diasFuncionamento,
     Turno? manha,
     Turno? tarde,
     Turno? noite,
+    int? intervaloAgendamentoMinutos,
   }) {
     return HorarioFuncionamento(
       diasFuncionamento: diasFuncionamento ?? this.diasFuncionamento,
       manha: manha ?? this.manha,
       tarde: tarde ?? this.tarde,
       noite: noite ?? this.noite,
+      intervaloAgendamentoMinutos: intervaloAgendamentoMinutos ?? this.intervaloAgendamentoMinutos,
     );
   }
 }
@@ -122,6 +131,7 @@ class Pilar {
     );
   }
 
+  // ignore: unintended_html_in_doc_comment
   /// Converte uma lista dinâmica vinda do Firestore em List<Pilar> de forma segura.
   /// Nunca lança erro mesmo que o campo não exista ou venha malformado.
   static List<Pilar> listaFromDynamic(dynamic raw) {

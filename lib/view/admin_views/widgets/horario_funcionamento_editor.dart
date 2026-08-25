@@ -232,11 +232,53 @@ class HorarioFuncionamentoEditor extends StatelessWidget {
             icon: Icons.wb_cloudy_outlined,
             turno: horario.tarde,
             onTurnoChanged: (t) => onChanged(horario.copyWith(tarde: t))),
-        _buildTurnoRow(context,
+               _buildTurnoRow(context,
             nome: 'Noite',
             icon: Icons.nights_stay_outlined,
             turno: horario.noite,
             onTurnoChanged: (t) => onChanged(horario.copyWith(noite: t))),
+        SizedBox(height: 20),
+        Text('Intervalo entre agendamentos',
+            style: TextStyle(
+                fontWeight: FontWeight.w600,
+                color: AppColors.brown,
+                fontSize: 14)),
+        SizedBox(height: 4),
+        Text(
+          'Tempo entre cada horário disponível para marcação (ex: slots de 30 em 30 minutos).',
+          style: TextStyle(fontSize: 12, color: AppColors.grey),
+        ),
+        SizedBox(height: 10),
+        Container(
+          padding: EdgeInsets.symmetric(horizontal: 12),
+          decoration: BoxDecoration(
+            color: AppColors.white,
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: AppColors.grey.withValues(alpha: 0.4)),
+          ),
+          child: DropdownButtonHideUnderline(
+            child: DropdownButton<int>(
+              value: HorarioFuncionamento.opcoesIntervalo
+                      .contains(horario.intervaloAgendamentoMinutos)
+                  ? horario.intervaloAgendamentoMinutos
+                  : 30,
+              isExpanded: true,
+              icon: Icon(Icons.expand_more, color: AppColors.pinkStrong),
+              style: TextStyle(color: AppColors.brown, fontSize: 15),
+              items: HorarioFuncionamento.opcoesIntervalo.map((minutos) {
+                return DropdownMenuItem<int>(
+                  value: minutos,
+                  child: Text('$minutos minutos'),
+                );
+              }).toList(),
+              onChanged: (novoValor) {
+                if (novoValor != null) {
+                  onChanged(horario.copyWith(intervaloAgendamentoMinutos: novoValor));
+                }
+              },
+            ),
+          ),
+        ),
       ],
     );
   }
