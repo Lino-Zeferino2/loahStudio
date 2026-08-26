@@ -225,7 +225,7 @@ class _AdminProdutosPageState extends State<AdminProdutosPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
+          SizedBox(
             height: 130,
             width: double.infinity,
             child: produto.imagemUrl != null && produto.imagemUrl!.isNotEmpty

@@ -39,7 +39,10 @@ class _AdminConfiguracoesPageState extends State<AdminConfiguracoesPage> {
   final _footerHorarioTextoCtrl = TextEditingController();
   final _footerEmailCtrl = TextEditingController();
   final _footerTelefoneCtrl = TextEditingController();
-  final _footerEnderecoCtrl = TextEditingController();
+    final _footerEnderecoCtrl = TextEditingController();
+  final _footerWhatsappCtrl = TextEditingController();
+  final _footerInstagramCtrl = TextEditingController();
+  final _footerTiktokCtrl = TextEditingController();
 
   HorarioFuncionamento _horario = const HorarioFuncionamento();
   List<Pilar> _pilares = [];
@@ -77,6 +80,9 @@ class _AdminConfiguracoesPageState extends State<AdminConfiguracoesPage> {
     _footerEmailCtrl.text = config.footerEmail;
     _footerTelefoneCtrl.text = config.footerTelefone;
     _footerEnderecoCtrl.text = config.footerEndereco;
+    _footerWhatsappCtrl.text = config.footerWhatsapp;
+    _footerInstagramCtrl.text = config.footerInstagram;
+    _footerTiktokCtrl.text = config.footerTiktok;
     setState(() {
       _horario = config.horarioFuncionamento;
       _pilares = List<Pilar>.from(config.pilares);
@@ -112,6 +118,9 @@ class _AdminConfiguracoesPageState extends State<AdminConfiguracoesPage> {
       footerEmail: _footerEmailCtrl.text.trim(),
       footerTelefone: _footerTelefoneCtrl.text.trim(),
       footerEndereco: _footerEnderecoCtrl.text.trim(),
+      footerWhatsapp: _footerWhatsappCtrl.text.trim(),
+      footerInstagram: _footerInstagramCtrl.text.trim(),
+      footerTiktok: _footerTiktokCtrl.text.trim(),
       horarioFuncionamento: _horario,
     );
 
@@ -175,7 +184,10 @@ class _AdminConfiguracoesPageState extends State<AdminConfiguracoesPage> {
     _footerHorarioTextoCtrl.dispose();
     _footerEmailCtrl.dispose();
     _footerTelefoneCtrl.dispose();
-    _footerEnderecoCtrl.dispose();
+       _footerEnderecoCtrl.dispose();
+    _footerWhatsappCtrl.dispose();
+    _footerInstagramCtrl.dispose();
+    _footerTiktokCtrl.dispose();
     super.dispose();
   }
 
@@ -265,11 +277,22 @@ class _AdminConfiguracoesPageState extends State<AdminConfiguracoesPage> {
                 onChanged: (novoHorario) => setState(() => _horario = novoHorario),
               ),
             ]),
-            SizedBox(height: 20),
-            ConfigSectionCard(title: 'Footer Section', icon: Icons.menu, children: [
+                       ConfigSectionCard(title: 'Footer Section', icon: Icons.menu, children: [
               ConfigTextField(label: 'Nome', controller: _footerNomeCtrl),
               ConfigTextField(label: 'Copyright', controller: _footerCopyrightCtrl),
               ConfigTextField(label: 'Título "Redes Sociais"', controller: _footerRedesSociaisCtrl),
+              ConfigTextField(
+                label: 'WhatsApp (número com código do país, ex: 351999999999)',
+                controller: _footerWhatsappCtrl,
+              ),
+              ConfigTextField(
+                label: 'Instagram (link do perfil, ex: https://instagram.com/loahstudio)',
+                controller: _footerInstagramCtrl,
+              ),
+              ConfigTextField(
+                label: 'TikTok (link do perfil, ex: https://tiktok.com/@loahstudio)',
+                controller: _footerTiktokCtrl,
+              ),
               ConfigTextField(label: 'Título "Horário"', controller: _footerHorarioCtrl),
               ConfigTextField(label: 'Texto do horário', controller: _footerHorarioTextoCtrl, maxLines: 3),
               ConfigTextField(label: 'Email', controller: _footerEmailCtrl),

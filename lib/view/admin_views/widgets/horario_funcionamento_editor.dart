@@ -111,7 +111,7 @@ class HorarioFuncionamentoEditor extends StatelessWidget {
                 scale: 0.85,
                 child: Switch(
                   value: turno.ativo,
-                  activeColor: AppColors.pinkStrong,
+                  activeThumbColor: AppColors.pinkStrong,
                   onChanged: (valor) =>
                       onTurnoChanged(turno.copyWith(ativo: valor)),
                 ),

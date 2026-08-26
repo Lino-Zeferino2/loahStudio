@@ -179,6 +179,9 @@ class SiteConfigModel {
   final String footerEmail;
   final String footerTelefone;
   final String footerEndereco;
+  final String footerWhatsapp;
+  final String footerInstagram;
+  final String footerTiktok;
 
   // Horário de funcionamento
   final HorarioFuncionamento horarioFuncionamento;
@@ -209,6 +212,9 @@ class SiteConfigModel {
     this.footerEmail = '',
     this.footerTelefone = '',
     this.footerEndereco = '',
+    this.footerWhatsapp = '',
+    this.footerInstagram = '',
+    this.footerTiktok = '',
     this.horarioFuncionamento = const HorarioFuncionamento(),
     this.atualizadoEm,
   });
@@ -246,6 +252,9 @@ class SiteConfigModel {
       footerEmail: data['footerEmail'] as String? ?? '',
       footerTelefone: data['footerTelefone'] as String? ?? '',
       footerEndereco: data['footerEndereco'] as String? ?? '',
+      footerWhatsapp: data['footerWhatsapp'] as String? ?? '',
+      footerInstagram: data['footerInstagram'] as String? ?? '',
+      footerTiktok: data['footerTiktok'] as String? ?? '',
       horarioFuncionamento: HorarioFuncionamento.fromMap(
           data['horarioFuncionamento'] as Map<String, dynamic>?),
       atualizadoEm: (data['atualizadoEm'] as Timestamp?)?.toDate(),
@@ -277,6 +286,9 @@ class SiteConfigModel {
       'footerEmail': footerEmail,
       'footerTelefone': footerTelefone,
       'footerEndereco': footerEndereco,
+      'footerWhatsapp': footerWhatsapp,
+      'footerInstagram': footerInstagram,
+      'footerTiktok': footerTiktok,
       'horarioFuncionamento': horarioFuncionamento.toMap(),
       'atualizadoEm': FieldValue.serverTimestamp(),
     };
@@ -305,7 +317,10 @@ class SiteConfigModel {
     String? footerHorarioTexto,
     String? footerEmail,
     String? footerTelefone,
-    String? footerEndereco,
+      String? footerEndereco,
+    String? footerWhatsapp,
+    String? footerInstagram,
+    String? footerTiktok,
     HorarioFuncionamento? horarioFuncionamento,
   }) {
     return SiteConfigModel(
@@ -331,7 +346,10 @@ class SiteConfigModel {
       footerHorarioTexto: footerHorarioTexto ?? this.footerHorarioTexto,
       footerEmail: footerEmail ?? this.footerEmail,
       footerTelefone: footerTelefone ?? this.footerTelefone,
-      footerEndereco: footerEndereco ?? this.footerEndereco,
+           footerEndereco: footerEndereco ?? this.footerEndereco,
+      footerWhatsapp: footerWhatsapp ?? this.footerWhatsapp,
+      footerInstagram: footerInstagram ?? this.footerInstagram,
+      footerTiktok: footerTiktok ?? this.footerTiktok,
       horarioFuncionamento: horarioFuncionamento ?? this.horarioFuncionamento,
       atualizadoEm: atualizadoEm,
     );
