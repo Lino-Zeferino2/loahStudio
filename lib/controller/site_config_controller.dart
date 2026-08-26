@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:typed_data';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/foundation.dart';
@@ -18,7 +19,7 @@ class SiteConfigController extends ChangeNotifier {
   bool isLoading = false;
   bool isSaving = false;
   bool isUploadingHeroImage = false;
-  bool isUploadingGaleriaImage = false;
+  bool isUploadingGaleriaImagens = false;
   String? errorMessage;
 
   DocumentReference<Map<String, dynamic>> get _docRef =>
@@ -58,14 +59,7 @@ class SiteConfigController extends ChangeNotifier {
     }
   }
 
-  Future<String?> _pickAndUploadImagem({required String pastaStorage}) async {
-    final XFile? arquivo = await _picker.pickImage(
-      source: ImageSource.gallery,
-      imageQuality: 85,
-      maxWidth: 1920,
-    );
-    if (arquivo == null) return null;
-
+  Future<String> _enviarArquivo(XFile arquivo, String pastaStorage) async {
     final nomeArquivo = '${DateTime.now().millisecondsSinceEpoch}_${arquivo.name}';
     final ref = _storage.ref().child('site_config/$pastaStorage/$nomeArquivo');
 
@@ -79,15 +73,21 @@ class SiteConfigController extends ChangeNotifier {
     return await ref.getDownloadURL();
   }
 
+  /// Upload de imagem única (usado no Hero).
   Future<String?> selecionarEEnviarHeroImagem() async {
     isUploadingHeroImage = true;
     errorMessage = null;
     notifyListeners();
     try {
-      final url = await _pickAndUploadImagem(pastaStorage: 'hero');
-      if (url != null) {
-        config = config.copyWith(heroImagemUrl: url);
-      }
+      final XFile? arquivo = await _picker.pickImage(
+        source: ImageSource.gallery,
+        imageQuality: 85,
+        maxWidth: 1920,
+      );
+      if (arquivo == null) return null;
+
+      final url = await _enviarArquivo(arquivo, 'hero');
+      config = config.copyWith(heroImagemUrl: url);
       return url;
     } catch (e) {
       errorMessage = 'Erro ao enviar imagem: $e';
@@ -98,22 +98,44 @@ class SiteConfigController extends ChangeNotifier {
     }
   }
 
-  Future<String?> selecionarEEnviarGaleriaImagem() async {
-    isUploadingGaleriaImage = true;
+  /// Upload de múltiplas imagens (usado na Galeria). Adiciona à lista existente.
+  Future<void> selecionarEEnviarGaleriaImagens() async {
+    isUploadingGaleriaImagens = true;
     errorMessage = null;
     notifyListeners();
     try {
-      final url = await _pickAndUploadImagem(pastaStorage: 'galeria');
-      if (url != null) {
-        config = config.copyWith(galeriaImagemUrl: url);
+      final List<XFile> arquivos = await _picker.pickMultiImage(
+        imageQuality: 85,
+        maxWidth: 1920,
+      );
+      if (arquivos.isEmpty) return;
+
+      final List<String> novasUrls = [];
+      for (final arquivo in arquivos) {
+        final url = await _enviarArquivo(arquivo, 'galeria');
+        novasUrls.add(url);
       }
-      return url;
+
+      config = config.copyWith(
+        galeriaImagens: [...config.galeriaImagens, ...novasUrls],
+      );
     } catch (e) {
-      errorMessage = 'Erro ao enviar imagem: $e';
-      return null;
+      errorMessage = 'Erro ao enviar imagens: $e';
     } finally {
-      isUploadingGaleriaImage = false;
+      isUploadingGaleriaImagens = false;
       notifyListeners();
+    }
+  }
+
+  /// Remove uma imagem da galeria (da lista e, se possível, do Storage).
+  Future<void> removerGaleriaImagem(String url) async {
+    final novaLista = List<String>.from(config.galeriaImagens)..remove(url);
+    config = config.copyWith(galeriaImagens: novaLista);
+    notifyListeners();
+    try {
+      await _storage.refFromURL(url).delete();
+    } catch (_) {
+      // Ignora falha ao apagar do Storage (ex: ficheiro já não existe).
     }
   }
 }

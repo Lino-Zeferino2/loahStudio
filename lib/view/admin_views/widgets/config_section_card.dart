@@ -25,15 +25,24 @@ class ConfigSectionCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(children: [
-            Icon(icon, color: AppColors.pinkStrong, size: 24),
-            SizedBox(width: 8),
-            Text(title,
-                style: TextStyle(
-                    color: AppColors.brown,
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold)),
-          ]),
+             Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Icon(icon, color: AppColors.pinkStrong, size: 22),
+              SizedBox(width: 8),
+              Flexible(
+                child: Text(
+                  title,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                      color: AppColors.brown,
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold),
+                ),
+              ),
+            ],
+          ),
           SizedBox(height: 16),
           ...children,
         ],

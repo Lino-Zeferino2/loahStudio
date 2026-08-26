@@ -210,7 +210,7 @@ Widget _buildServicosList(List<Servico> servicos, bool isMobile, bool isTablet) 
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-         Container(
+         SizedBox(
               height: 130,
               width: double.infinity,
               child: servico.imagemUrl != null && servico.imagemUrl!.isNotEmpty

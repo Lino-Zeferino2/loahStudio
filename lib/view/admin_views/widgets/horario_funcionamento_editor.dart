@@ -95,51 +95,85 @@ class HorarioFuncionamentoEditor extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
+                Row(
             children: [
               Icon(icon,
-                  size: 20,
+                  size: 18,
                   color: turno.ativo ? AppColors.pinkStrong : AppColors.grey),
-              SizedBox(width: 8),
-              Expanded(
+              SizedBox(width: 6),
+              Flexible(
                 child: Text(nome,
+                    overflow: TextOverflow.ellipsis,
                     style: TextStyle(
                         fontWeight: FontWeight.w600, color: AppColors.brown)),
               ),
-              Switch(
-                value: turno.ativo,
-                activeColor: AppColors.pinkStrong,
-                onChanged: (valor) =>
-                    onTurnoChanged(turno.copyWith(ativo: valor)),
+              Transform.scale(
+                scale: 0.85,
+                child: Switch(
+                  value: turno.ativo,
+                  activeColor: AppColors.pinkStrong,
+                  onChanged: (valor) =>
+                      onTurnoChanged(turno.copyWith(ativo: valor)),
+                ),
               ),
             ],
           ),
           if (turno.ativo) ...[
             SizedBox(height: 8),
-            Row(
-              children: [
-                Expanded(
-                  child: _buildHoraButton(
-                    label: 'Início',
-                    hora: turno.horaInicio,
-                    onTap: () => _selecionarHora(context,
-                        turno: turno,
-                        isInicio: true,
-                        onTurnoChanged: onTurnoChanged),
-                  ),
-                ),
-                SizedBox(width: 12),
-                Expanded(
-                  child: _buildHoraButton(
-                    label: 'Fim',
-                    hora: turno.horaFim,
-                    onTap: () => _selecionarHora(context,
-                        turno: turno,
-                        isInicio: false,
-                        onTurnoChanged: onTurnoChanged),
-                  ),
-                ),
-              ],
+            LayoutBuilder(
+              builder: (context, constraints) {
+                // Em ecrãs muito estreitos, empilha os campos de hora
+                // em vez de os colocar lado a lado, evitando overflow.
+                final empilhar = constraints.maxWidth < 260;
+                if (empilhar) {
+                  return Column(
+                    children: [
+                      _buildHoraButton(
+                        label: 'Início',
+                        hora: turno.horaInicio,
+                        onTap: () => _selecionarHora(context,
+                            turno: turno,
+                            isInicio: true,
+                            onTurnoChanged: onTurnoChanged),
+                      ),
+                      SizedBox(height: 8),
+                      _buildHoraButton(
+                        label: 'Fim',
+                        hora: turno.horaFim,
+                        onTap: () => _selecionarHora(context,
+                            turno: turno,
+                            isInicio: false,
+                            onTurnoChanged: onTurnoChanged),
+                      ),
+                    ],
+                  );
+                }
+                return Row(
+                  children: [
+                    Expanded(
+                      child: _buildHoraButton(
+                        label: 'Início',
+                        hora: turno.horaInicio,
+                        onTap: () => _selecionarHora(context,
+                            turno: turno,
+                            isInicio: true,
+                            onTurnoChanged: onTurnoChanged),
+                      ),
+                    ),
+                    SizedBox(width: 12),
+                    Expanded(
+                      child: _buildHoraButton(
+                        label: 'Fim',
+                        hora: turno.horaFim,
+                        onTap: () => _selecionarHora(context,
+                            turno: turno,
+                            isInicio: false,
+                            onTurnoChanged: onTurnoChanged),
+                      ),
+                    ),
+                  ],
+                );
+              },
             ),
           ],
         ],
@@ -156,23 +190,30 @@ class HorarioFuncionamentoEditor extends StatelessWidget {
       onTap: onTap,
       borderRadius: BorderRadius.circular(8),
       child: Container(
-        padding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        width: double.infinity,
+        padding: EdgeInsets.symmetric(horizontal: 10, vertical: 8),
         decoration: BoxDecoration(
           color: AppColors.white,
           borderRadius: BorderRadius.circular(8),
           border: Border.all(color: AppColors.grey.withValues(alpha: 0.4)),
         ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
           children: [
-            Text(label, style: TextStyle(fontSize: 12, color: AppColors.grey)),
+            Text(label, style: TextStyle(fontSize: 11, color: AppColors.grey)),
+            SizedBox(height: 2),
             Row(
+              mainAxisSize: MainAxisSize.min,
               children: [
-                Text(hora,
-                    style: TextStyle(
-                        color: AppColors.brown, fontWeight: FontWeight.w600)),
+                Flexible(
+                  child: Text(hora,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                          color: AppColors.brown, fontWeight: FontWeight.w600)),
+                ),
                 SizedBox(width: 4),
-                Icon(Icons.access_time, size: 16, color: AppColors.pinkStrong),
+                Icon(Icons.access_time, size: 14, color: AppColors.pinkStrong),
               ],
             ),
           ],
@@ -232,7 +273,7 @@ class HorarioFuncionamentoEditor extends StatelessWidget {
             icon: Icons.wb_cloudy_outlined,
             turno: horario.tarde,
             onTurnoChanged: (t) => onChanged(horario.copyWith(tarde: t))),
-               _buildTurnoRow(context,
+        _buildTurnoRow(context,
             nome: 'Noite',
             icon: Icons.nights_stay_outlined,
             turno: horario.noite,

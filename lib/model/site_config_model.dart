@@ -2,8 +2,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 
 class Turno {
   final bool ativo;
-  final String horaInicio; // formato "HH:mm"
-  final String horaFim; // formato "HH:mm"
+  final String horaInicio;
+  final String horaFim;
 
   const Turno({
     this.ativo = false,
@@ -52,8 +52,7 @@ class HorarioFuncionamento {
     this.intervaloAgendamentoMinutos = 30,
   });
 
-  /// Opções válidas de intervalo entre horários de agendamento.
-  static const List<int> opcoesIntervalo = [0, 1, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60];
+  static const List<int> opcoesIntervalo = [1, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60];
 
   factory HorarioFuncionamento.fromMap(Map<String, dynamic>? map) {
     if (map == null) return const HorarioFuncionamento();
@@ -64,7 +63,7 @@ class HorarioFuncionamento {
               ?.map((e) => e.toString())
               .toList() ??
           const ['segunda', 'terca', 'quarta', 'quinta', 'sexta'],
-          manha: Turno.fromMap(turnos?['manha'] as Map<String, dynamic>?),
+      manha: Turno.fromMap(turnos?['manha'] as Map<String, dynamic>?),
       tarde: Turno.fromMap(turnos?['tarde'] as Map<String, dynamic>?),
       noite: Turno.fromMap(turnos?['noite'] as Map<String, dynamic>?),
       intervaloAgendamentoMinutos: (map['intervaloAgendamentoMinutos'] as num?)?.toInt() ?? 30,
@@ -74,7 +73,7 @@ class HorarioFuncionamento {
   Map<String, dynamic> toMap() {
     return {
       'diasFuncionamento': diasFuncionamento,
-           'turnos': {
+      'turnos': {
         'manha': manha.toMap(),
         'tarde': tarde.toMap(),
         'noite': noite.toMap(),
@@ -83,7 +82,7 @@ class HorarioFuncionamento {
     };
   }
 
-   HorarioFuncionamento copyWith({
+  HorarioFuncionamento copyWith({
     List<String>? diasFuncionamento,
     Turno? manha,
     Turno? tarde,
@@ -95,7 +94,8 @@ class HorarioFuncionamento {
       manha: manha ?? this.manha,
       tarde: tarde ?? this.tarde,
       noite: noite ?? this.noite,
-      intervaloAgendamentoMinutos: intervaloAgendamentoMinutos ?? this.intervaloAgendamentoMinutos,
+      intervaloAgendamentoMinutos:
+          intervaloAgendamentoMinutos ?? this.intervaloAgendamentoMinutos,
     );
   }
 }
@@ -131,9 +131,6 @@ class Pilar {
     );
   }
 
-  // ignore: unintended_html_in_doc_comment
-  /// Converte uma lista dinâmica vinda do Firestore em List<Pilar> de forma segura.
-  /// Nunca lança erro mesmo que o campo não exista ou venha malformado.
   static List<Pilar> listaFromDynamic(dynamic raw) {
     if (raw == null || raw is! List) return const [];
     return raw
@@ -156,7 +153,7 @@ class SiteConfigModel {
   // Galeria
   final String galeriaTitulo;
   final String galeriaSubtitulo;
-  final String? galeriaImagemUrl;
+  final List<String> galeriaImagens;
 
   // Essência
   final String essenciaTitulo;
@@ -196,7 +193,7 @@ class SiteConfigModel {
     this.specialtyDescricao = '',
     this.galeriaTitulo = '',
     this.galeriaSubtitulo = '',
-    this.galeriaImagemUrl,
+    this.galeriaImagens = const [],
     this.essenciaTitulo = '',
     this.essenciaDescricao = '',
     this.pilaresTitulo = '',
@@ -230,7 +227,10 @@ class SiteConfigModel {
       specialtyDescricao: data['specialtyDescricao'] as String? ?? '',
       galeriaTitulo: data['galeriaTitulo'] as String? ?? '',
       galeriaSubtitulo: data['galeriaSubtitulo'] as String? ?? '',
-      galeriaImagemUrl: data['galeriaImagemUrl'] as String?,
+      galeriaImagens: (data['galeriaImagens'] as List<dynamic>?)
+              ?.map((e) => e.toString())
+              .toList() ??
+          const [],
       essenciaTitulo: data['essenciaTitulo'] as String? ?? '',
       essenciaDescricao: data['essenciaDescricao'] as String? ?? '',
       pilaresTitulo: data['pilaresTitulo'] as String? ?? '',
@@ -261,7 +261,7 @@ class SiteConfigModel {
       'specialtyDescricao': specialtyDescricao,
       'galeriaTitulo': galeriaTitulo,
       'galeriaSubtitulo': galeriaSubtitulo,
-      'galeriaImagemUrl': galeriaImagemUrl,
+      'galeriaImagens': galeriaImagens,
       'essenciaTitulo': essenciaTitulo,
       'essenciaDescricao': essenciaDescricao,
       'pilaresTitulo': pilaresTitulo,
@@ -290,7 +290,7 @@ class SiteConfigModel {
     String? specialtyDescricao,
     String? galeriaTitulo,
     String? galeriaSubtitulo,
-    String? galeriaImagemUrl,
+    List<String>? galeriaImagens,
     String? essenciaTitulo,
     String? essenciaDescricao,
     String? pilaresTitulo,
@@ -316,7 +316,7 @@ class SiteConfigModel {
       specialtyDescricao: specialtyDescricao ?? this.specialtyDescricao,
       galeriaTitulo: galeriaTitulo ?? this.galeriaTitulo,
       galeriaSubtitulo: galeriaSubtitulo ?? this.galeriaSubtitulo,
-      galeriaImagemUrl: galeriaImagemUrl ?? this.galeriaImagemUrl,
+      galeriaImagens: galeriaImagens ?? this.galeriaImagens,
       essenciaTitulo: essenciaTitulo ?? this.essenciaTitulo,
       essenciaDescricao: essenciaDescricao ?? this.essenciaDescricao,
       pilaresTitulo: pilaresTitulo ?? this.pilaresTitulo,

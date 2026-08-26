@@ -3,12 +3,12 @@ import 'package:loahstudio/constants/colors.dart';
 import 'package:loahstudio/constants/responsive.dart';
 import 'package:loahstudio/controller/site_config_controller.dart';
 import 'package:loahstudio/model/site_config_model.dart';
+import 'package:loahstudio/view/admin_views/widgets/config_galeria_imagens_field.dart';
 import 'package:loahstudio/view/admin_views/widgets/config_image_upload_field.dart';
 import 'package:loahstudio/view/admin_views/widgets/config_section_card.dart';
 import 'package:loahstudio/view/admin_views/widgets/config_text_field.dart';
 import 'package:loahstudio/view/admin_views/widgets/horario_funcionamento_editor.dart';
 import 'package:loahstudio/view/admin_views/widgets/pilares_editor.dart';
-
 class AdminConfiguracoesPage extends StatefulWidget {
   const AdminConfiguracoesPage({super.key});
 
@@ -32,7 +32,7 @@ class _AdminConfiguracoesPageState extends State<AdminConfiguracoesPage> {
   final _testemunhosTituloCtrl = TextEditingController();
   final _prontaTituloCtrl = TextEditingController();
   final _prontaDescricaoCtrl = TextEditingController();
-    final _footerNomeCtrl = TextEditingController();
+  final _footerNomeCtrl = TextEditingController();
   final _footerCopyrightCtrl = TextEditingController();
   final _footerRedesSociaisCtrl = TextEditingController();
   final _footerHorarioCtrl = TextEditingController();
@@ -43,6 +43,7 @@ class _AdminConfiguracoesPageState extends State<AdminConfiguracoesPage> {
 
   HorarioFuncionamento _horario = const HorarioFuncionamento();
   List<Pilar> _pilares = [];
+
   @override
   void initState() {
     super.initState();
@@ -65,11 +66,10 @@ class _AdminConfiguracoesPageState extends State<AdminConfiguracoesPage> {
     _essenciaTituloCtrl.text = config.essenciaTitulo;
     _essenciaDescricaoCtrl.text = config.essenciaDescricao;
     _pilaresTituloCtrl.text = config.pilaresTitulo;
-    _pilares = List<Pilar>.from(config.pilares);
     _testemunhosTituloCtrl.text = config.testemunhosTitulo;
     _prontaTituloCtrl.text = config.prontaBrilharTitulo;
     _prontaDescricaoCtrl.text = config.prontaBrilharDescricao;
-        _footerNomeCtrl.text = config.footerNome;
+    _footerNomeCtrl.text = config.footerNome;
     _footerCopyrightCtrl.text = config.footerCopyright;
     _footerRedesSociaisCtrl.text = config.footerRedesSociais;
     _footerHorarioCtrl.text = config.footerHorario;
@@ -77,7 +77,10 @@ class _AdminConfiguracoesPageState extends State<AdminConfiguracoesPage> {
     _footerEmailCtrl.text = config.footerEmail;
     _footerTelefoneCtrl.text = config.footerTelefone;
     _footerEnderecoCtrl.text = config.footerEndereco;
-    setState(() => _horario = config.horarioFuncionamento);
+    setState(() {
+      _horario = config.horarioFuncionamento;
+      _pilares = List<Pilar>.from(config.pilares);
+    });
   }
 
   void _onControllerChanged() {
@@ -93,7 +96,7 @@ class _AdminConfiguracoesPageState extends State<AdminConfiguracoesPage> {
       specialtyDescricao: _specialtyDescricaoCtrl.text.trim(),
       galeriaTitulo: _galeriaTituloCtrl.text.trim(),
       galeriaSubtitulo: _galeriaDescricaoCtrl.text.trim(),
-      galeriaImagemUrl: _controller.config.galeriaImagemUrl,
+      galeriaImagens: _controller.config.galeriaImagens,
       essenciaTitulo: _essenciaTituloCtrl.text.trim(),
       essenciaDescricao: _essenciaDescricaoCtrl.text.trim(),
       pilaresTitulo: _pilaresTituloCtrl.text.trim(),
@@ -101,7 +104,7 @@ class _AdminConfiguracoesPageState extends State<AdminConfiguracoesPage> {
       testemunhosTitulo: _testemunhosTituloCtrl.text.trim(),
       prontaBrilharTitulo: _prontaTituloCtrl.text.trim(),
       prontaBrilharDescricao: _prontaDescricaoCtrl.text.trim(),
-            footerNome: _footerNomeCtrl.text.trim(),
+      footerNome: _footerNomeCtrl.text.trim(),
       footerCopyright: _footerCopyrightCtrl.text.trim(),
       footerRedesSociais: _footerRedesSociaisCtrl.text.trim(),
       footerHorario: _footerHorarioCtrl.text.trim(),
@@ -127,17 +130,20 @@ class _AdminConfiguracoesPageState extends State<AdminConfiguracoesPage> {
 
   Future<void> _selecionarHeroImagem() async {
     await _controller.selecionarEEnviarHeroImagem();
-    if (_controller.errorMessage != null && mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-            content: Text(_controller.errorMessage!),
-            backgroundColor: Colors.red),
-      );
-    }
+    _mostrarErroSeExistir();
   }
 
-  Future<void> _selecionarGaleriaImagem() async {
-    await _controller.selecionarEEnviarGaleriaImagem();
+  Future<void> _adicionarGaleriaImagens() async {
+    await _controller.selecionarEEnviarGaleriaImagens();
+    _mostrarErroSeExistir();
+  }
+
+  Future<void> _removerGaleriaImagem(String url) async {
+    await _controller.removerGaleriaImagem(url);
+    _mostrarErroSeExistir();
+  }
+
+  void _mostrarErroSeExistir() {
     if (_controller.errorMessage != null && mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -162,7 +168,7 @@ class _AdminConfiguracoesPageState extends State<AdminConfiguracoesPage> {
     _testemunhosTituloCtrl.dispose();
     _prontaTituloCtrl.dispose();
     _prontaDescricaoCtrl.dispose();
-        _footerNomeCtrl.dispose();
+    _footerNomeCtrl.dispose();
     _footerCopyrightCtrl.dispose();
     _footerRedesSociaisCtrl.dispose();
     _footerHorarioCtrl.dispose();
@@ -196,85 +202,84 @@ class _AdminConfiguracoesPageState extends State<AdminConfiguracoesPage> {
         label: Text(_controller.isSaving ? 'A guardar...' : 'Salvar',
             style: TextStyle(color: Colors.white)),
       ),
-            body: SingleChildScrollView(
+      body: SingleChildScrollView(
         padding: EdgeInsets.all(isMobile ? 16 : 24),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-              ConfigSectionCard(title: 'Hero Section', icon: Icons.home, children: [
-                ConfigImageUploadField(
-                  label: 'Imagem principal',
-                  imagemUrl: _controller.config.heroImagemUrl,
-                  isUploading: _controller.isUploadingHeroImage,
-                  onUploadPressed: _selecionarHeroImagem,
-                ),
-                SizedBox(height: 16),
-                ConfigTextField(label: 'Título', controller: _heroTituloCtrl),
-                ConfigTextField(label: 'Descrição', controller: _heroDescricaoCtrl, maxLines: 3),
-              ]),
-              SizedBox(height: 20),
-              ConfigSectionCard(title: 'Specialty Section', icon: Icons.star, children: [
-                ConfigTextField(label: 'Título', controller: _specialtyTituloCtrl),
-                ConfigTextField(label: 'Descrição', controller: _specialtyDescricaoCtrl, maxLines: 3),
-              ]),
-              SizedBox(height: 20),
-              ConfigSectionCard(title: 'Galeria Section', icon: Icons.photo_library, children: [
-                ConfigImageUploadField(
-                  label: 'Imagem da galeria',
-                  imagemUrl: _controller.config.galeriaImagemUrl,
-                  isUploading: _controller.isUploadingGaleriaImage,
-                  onUploadPressed: _selecionarGaleriaImagem,
-                ),
-                SizedBox(height: 16),
-                ConfigTextField(label: 'Título', controller: _galeriaTituloCtrl),
-                ConfigTextField(label: 'Descrição', controller: _galeriaDescricaoCtrl, maxLines: 2),
-              ]),
-              SizedBox(height: 20),
-              ConfigSectionCard(title: 'Essência Section', icon: Icons.favorite, children: [
-                ConfigTextField(label: 'Título', controller: _essenciaTituloCtrl),
-                ConfigTextField(label: 'Descrição', controller: _essenciaDescricaoCtrl, maxLines: 3),
-              ]),
-              SizedBox(height: 20),
-                           ConfigSectionCard(title: 'Pilares Section', icon: Icons.account_balance, children: [
-                ConfigTextField(label: 'Título geral', controller: _pilaresTituloCtrl),
-                SizedBox(height: 8),
-                PilaresEditor(
-                  pilares: _pilares,
-                  onChanged: (novaLista) => setState(() => _pilares = novaLista),
-                ),
-              ]),
-              SizedBox(height: 20),
-              ConfigSectionCard(title: 'Testemunhos Section', icon: Icons.format_quote, children: [
-                ConfigTextField(label: 'Título', controller: _testemunhosTituloCtrl),
-              ]),
-              SizedBox(height: 20),
-              ConfigSectionCard(title: 'Pronta a Brilhar Section', icon: Icons.auto_awesome, children: [
-                ConfigTextField(label: 'Título', controller: _prontaTituloCtrl),
-                ConfigTextField(label: 'Descrição', controller: _prontaDescricaoCtrl, maxLines: 2),
-              ]),
-              SizedBox(height: 20),
-              ConfigSectionCard(title: 'Horário de Funcionamento', icon: Icons.schedule, children: [
-                HorarioFuncionamentoEditor(
-                  horario: _horario,
-                  onChanged: (novoHorario) => setState(() => _horario = novoHorario),
-                ),
-              ]),
-              SizedBox(height: 20),
-                         ConfigSectionCard(title: 'Footer Section', icon: Icons.menu, children: [
-                ConfigTextField(label: 'Nome', controller: _footerNomeCtrl),
-                ConfigTextField(label: 'Copyright', controller: _footerCopyrightCtrl),
-                ConfigTextField(label: 'Título "Redes Sociais"', controller: _footerRedesSociaisCtrl),
-                ConfigTextField(label: 'Título "Horário"', controller: _footerHorarioCtrl),
-                ConfigTextField(label: 'Texto do horário', controller: _footerHorarioTextoCtrl, maxLines: 3),
-                ConfigTextField(label: 'Email', controller: _footerEmailCtrl),
-                ConfigTextField(label: 'Telefone', controller: _footerTelefoneCtrl),
-                ConfigTextField(label: 'Endereço', controller: _footerEnderecoCtrl, maxLines: 2),
-              ]),
-              SizedBox(height: 80),
-            ],
-          ),
+            ConfigSectionCard(title: 'Hero Section', icon: Icons.home, children: [
+              ConfigImageUploadField(
+                label: 'Imagem principal',
+                imagemUrl: _controller.config.heroImagemUrl,
+                isUploading: _controller.isUploadingHeroImage,
+                onUploadPressed: _selecionarHeroImagem,
+              ),
+              SizedBox(height: 16),
+              ConfigTextField(label: 'Título', controller: _heroTituloCtrl),
+              ConfigTextField(label: 'Descrição', controller: _heroDescricaoCtrl, maxLines: 3),
+            ]),
+            SizedBox(height: 20),
+            ConfigSectionCard(title: 'Specialty Section', icon: Icons.star, children: [
+              ConfigTextField(label: 'Título', controller: _specialtyTituloCtrl),
+              ConfigTextField(label: 'Descrição', controller: _specialtyDescricaoCtrl, maxLines: 3),
+            ]),
+            SizedBox(height: 20),
+            ConfigSectionCard(title: 'Galeria Section', icon: Icons.photo_library, children: [
+              ConfigTextField(label: 'Título', controller: _galeriaTituloCtrl),
+              ConfigTextField(label: 'Descrição', controller: _galeriaDescricaoCtrl, maxLines: 2),
+              SizedBox(height: 16),
+              ConfigGaleriaImagensField(
+                imagens: _controller.config.galeriaImagens,
+                isUploading: _controller.isUploadingGaleriaImagens,
+                onAdicionarPressed: _adicionarGaleriaImagens,
+                onRemoverImagem: _removerGaleriaImagem,
+              ),
+            ]),
+            SizedBox(height: 20),
+            ConfigSectionCard(title: 'Essência Section', icon: Icons.favorite, children: [
+              ConfigTextField(label: 'Título', controller: _essenciaTituloCtrl),
+              ConfigTextField(label: 'Descrição', controller: _essenciaDescricaoCtrl, maxLines: 3),
+            ]),
+            SizedBox(height: 20),
+            ConfigSectionCard(title: 'Pilares Section', icon: Icons.account_balance, children: [
+              ConfigTextField(label: 'Título geral', controller: _pilaresTituloCtrl),
+              SizedBox(height: 8),
+              PilaresEditor(
+                pilares: _pilares,
+                onChanged: (novaLista) => setState(() => _pilares = novaLista),
+              ),
+            ]),
+            SizedBox(height: 20),
+            ConfigSectionCard(title: 'Testemunhos Section', icon: Icons.format_quote, children: [
+              ConfigTextField(label: 'Título', controller: _testemunhosTituloCtrl),
+            ]),
+            SizedBox(height: 20),
+            ConfigSectionCard(title: 'Pronta a Brilhar Section', icon: Icons.auto_awesome, children: [
+              ConfigTextField(label: 'Título', controller: _prontaTituloCtrl),
+              ConfigTextField(label: 'Descrição', controller: _prontaDescricaoCtrl, maxLines: 2),
+            ]),
+            SizedBox(height: 20),
+            ConfigSectionCard(title: 'Horário de Funcionamento', icon: Icons.schedule, children: [
+              HorarioFuncionamentoEditor(
+                horario: _horario,
+                onChanged: (novoHorario) => setState(() => _horario = novoHorario),
+              ),
+            ]),
+            SizedBox(height: 20),
+            ConfigSectionCard(title: 'Footer Section', icon: Icons.menu, children: [
+              ConfigTextField(label: 'Nome', controller: _footerNomeCtrl),
+              ConfigTextField(label: 'Copyright', controller: _footerCopyrightCtrl),
+              ConfigTextField(label: 'Título "Redes Sociais"', controller: _footerRedesSociaisCtrl),
+              ConfigTextField(label: 'Título "Horário"', controller: _footerHorarioCtrl),
+              ConfigTextField(label: 'Texto do horário', controller: _footerHorarioTextoCtrl, maxLines: 3),
+              ConfigTextField(label: 'Email', controller: _footerEmailCtrl),
+              ConfigTextField(label: 'Telefone', controller: _footerTelefoneCtrl),
+              ConfigTextField(label: 'Endereço', controller: _footerEnderecoCtrl, maxLines: 2),
+            ]),
+            SizedBox(height: 80),
+          ],
         ),
-      );
-    
+      ),
+    );
   }
 }
