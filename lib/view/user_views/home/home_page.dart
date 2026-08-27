@@ -4,8 +4,18 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:loahstudio/constants/colors.dart';
 import 'package:loahstudio/constants/responsive.dart';
+import 'package:loahstudio/controller/home_controller.dart';
 import 'package:loahstudio/view/auth/auth_page.dart';
-import 'package:loahstudio/view/user_views/home/home_components.dart';
+import 'package:loahstudio/view/user_views/home/widgets/hero_section.dart';
+import 'package:loahstudio/view/user_views/home/widgets/servicos_destaque_section.dart';
+import 'package:loahstudio/view/user_views/home/widgets/produtos_destaque_section.dart';
+import 'package:loahstudio/view/user_views/home/widgets/galeria_section.dart';
+import 'package:loahstudio/view/user_views/home/widgets/essencia_section.dart';
+import 'package:loahstudio/view/user_views/home/widgets/pilares_section.dart';
+import 'package:loahstudio/view/user_views/home/widgets/avaliacoes_section.dart';
+import 'package:loahstudio/view/user_views/home/widgets/pronta_brilhar_section.dart';
+import 'package:loahstudio/view/user_views/widgets/footer_section.dart';
+import 'package:loahstudio/view/user_views/home/widgets/whatsapp_floating_button.dart';
 import 'package:loahstudio/view/user_views/servicos/servicos_page.dart';
 import 'package:loahstudio/view/user_views/agendamento/agendamento_page.dart';
 import 'package:loahstudio/view/user_views/produtos/produtos_page.dart';
@@ -18,23 +28,42 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
+  final HomeController _controller = HomeController();
+
   int selectedIndex = 0;
   int? hoverIndex;
 
-  final List<String> menuItems = [
-    "Início",
-    "Serviços",
-    "Produtos",
-    "Agendamento",
-  ];
+  final List<String> menuItems = ["Início", "Serviços", "Produtos", "Agendamento"];
+
+  @override
+  void initState() {
+    super.initState();
+    _controller.addListener(_onControllerChanged);
+    _controller.carregarDados();
+  }
+
+  void _onControllerChanged() {
+    if (mounted) setState(() {});
+  }
+
+  @override
+  void dispose() {
+    _controller.removeListener(_onControllerChanged);
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     final isMobile = ResponsiveHelper.isMobile(context);
-    if (isMobile) {
-      return _buildMobileScaffold();
-    }
-    return _buildDesktopScaffold();
+    final scaffold = isMobile ? _buildMobileScaffold() : _buildDesktopScaffold();
+    final numeroWhatsapp = _controller.config.footerWhatsapp.replaceAll(RegExp(r'[^0-9]'), '');
+
+    return Stack(
+      children: [
+        scaffold,
+        Positioned(bottom: 24, right: 20, child: WhatsappFloatingButton(numeroWhatsapp: numeroWhatsapp)),
+      ],
+    );
   }
 
   Widget _buildMobileScaffold() {
@@ -43,16 +72,7 @@ class _HomePageState extends State<HomePage> {
         automaticallyImplyLeading: false,
         backgroundColor: Colors.transparent,
         elevation: 0,
-     
-        title: Text(
-          "LOAH STÚDIO",
-          style: TextStyle(
-            color: AppColors.brown,
-            fontWeight: FontWeight.w600,
-            fontSize: 18,
-            letterSpacing: 2,
-          ),
-        ),
+        title: Text("LOAH STÚDIO", style: TextStyle(color: AppColors.brown, fontWeight: FontWeight.w600, fontSize: 18, letterSpacing: 2)),
         centerTitle: true,
       ),
       endDrawer: Drawer(
@@ -62,45 +82,16 @@ class _HomePageState extends State<HomePage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                "LOAH STÚDIO",
-                style: TextStyle(
-                  color: AppColors.brown,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 20,
-                ),
-              ),
+              Text("LOAH STÚDIO", style: TextStyle(color: AppColors.brown, fontWeight: FontWeight.bold, fontSize: 20)),
               SizedBox(height: 40),
-              ListTile(
-                leading: Icon(Icons.home, color: selectedIndex == 0 ? AppColors.pinkNude : AppColors.brown),
-                title: Text("Início", style: TextStyle(color: selectedIndex == 0 ? AppColors.pinkNude : AppColors.brown, fontWeight: selectedIndex == 0 ? FontWeight.bold : FontWeight.normal)),
-                onTap: () => _navigateTo(0),
-              ),
-              ListTile(
-                leading: Icon(Icons.face, color: selectedIndex == 1 ? AppColors.pinkNude : AppColors.brown),
-                title: Text("Serviços", style: TextStyle(color: selectedIndex == 1 ? AppColors.pinkNude : AppColors.brown, fontWeight: selectedIndex == 1 ? FontWeight.bold : FontWeight.normal)),
-                onTap: () => _navigateTo(1),
-              ),
-              ListTile(
-                leading: Icon(Icons.shopping_bag, color: selectedIndex == 2 ? AppColors.pinkNude : AppColors.brown),
-                title: Text("Produtos", style: TextStyle(color: selectedIndex == 2 ? AppColors.pinkNude : AppColors.brown, fontWeight: selectedIndex == 2 ? FontWeight.bold : FontWeight.normal)),
-                onTap: () => _navigateTo(2),
-              ),
-              ListTile(
-                leading: Icon(Icons.event, color: selectedIndex == 3 ? AppColors.pinkNude : AppColors.brown),
-                title: Text("Agendamento", style: TextStyle(color: selectedIndex == 3 ? AppColors.pinkNude : AppColors.brown, fontWeight: selectedIndex == 3 ? FontWeight.bold : FontWeight.normal)),
-                onTap: () => _navigateTo(3),
-              ),
+              ListTile(leading: Icon(Icons.home, color: selectedIndex == 0 ? AppColors.pinkNude : AppColors.brown), title: Text("Início", style: TextStyle(color: selectedIndex == 0 ? AppColors.pinkNude : AppColors.brown, fontWeight: selectedIndex == 0 ? FontWeight.bold : FontWeight.normal)), onTap: () => _navigateTo(0)),
+              ListTile(leading: Icon(Icons.face, color: selectedIndex == 1 ? AppColors.pinkNude : AppColors.brown), title: Text("Serviços", style: TextStyle(color: selectedIndex == 1 ? AppColors.pinkNude : AppColors.brown, fontWeight: selectedIndex == 1 ? FontWeight.bold : FontWeight.normal)), onTap: () => _navigateTo(1)),
+              ListTile(leading: Icon(Icons.shopping_bag, color: selectedIndex == 2 ? AppColors.pinkNude : AppColors.brown), title: Text("Produtos", style: TextStyle(color: selectedIndex == 2 ? AppColors.pinkNude : AppColors.brown, fontWeight: selectedIndex == 2 ? FontWeight.bold : FontWeight.normal)), onTap: () => _navigateTo(2)),
+              ListTile(leading: Icon(Icons.event, color: selectedIndex == 3 ? AppColors.pinkNude : AppColors.brown), title: Text("Agendamento", style: TextStyle(color: selectedIndex == 3 ? AppColors.pinkNude : AppColors.brown, fontWeight: selectedIndex == 3 ? FontWeight.bold : FontWeight.normal)), onTap: () => _navigateTo(3)),
               _buildAuthMenuItem(isMobile: true),
               Spacer(),
               ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.pinkStrong,
-                  padding: EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                ),
+                style: ElevatedButton.styleFrom(backgroundColor: AppColors.pinkStrong, padding: EdgeInsets.symmetric(horizontal: 20, vertical: 12), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20))),
                 onPressed: () {
                   Navigator.pop(context);
                   Navigator.push(context, MaterialPageRoute(builder: (_) => ServicosPage()));
@@ -117,21 +108,23 @@ class _HomePageState extends State<HomePage> {
           child: Column(
             children: [
               SizedBox(height: 20),
-              HeroSection(),
+              HeroSection(config: _controller.config),
               SizedBox(height: ResponsiveHelper.sectionSpacing(context)),
-              SpecialtySection(),
+              ServicosDestaqueSection(tituloConfig: _controller.config.specialtyTitulo, descricaoConfig: _controller.config.specialtyDescricao, servicos: _controller.servicosDestaque, isLoading: _controller.isLoading),
               SizedBox(height: ResponsiveHelper.sectionSpacing(context)),
-              GaleriaLoahSection(),
+              ProdutosDestaqueSection(produtos: _controller.produtosDestaque, isLoading: _controller.isLoading),
               SizedBox(height: ResponsiveHelper.sectionSpacing(context)),
-              LoahEssenciaSection(),
+              GaleriaSection(config: _controller.config),
               SizedBox(height: ResponsiveHelper.sectionSpacing(context)),
-              NossosPilaresSection(),
+              EssenciaSection(config: _controller.config),
               SizedBox(height: ResponsiveHelper.sectionSpacing(context)),
-              TestemunhosSection(),
+              PilaresSection(config: _controller.config),
               SizedBox(height: ResponsiveHelper.sectionSpacing(context)),
-              ProntaBrilharSection(),
+              AvaliacoesSection(avaliacoes: _controller.avaliacoes, isLoading: _controller.isLoading, isSubmitting: _controller.isSubmittingAvaliacao, onEnviarAvaliacao: _controller.enviarAvaliacao),
+              SizedBox(height: ResponsiveHelper.sectionSpacing(context)),
+              ProntaBrilharSection(config: _controller.config),
               SizedBox(height: 40),
-              FooterSection(),
+              FooterSection(config: _controller.config),
             ],
           ),
         ),
@@ -148,16 +141,7 @@ class _HomePageState extends State<HomePage> {
         title: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text(
-              "LOAH STÚDIO",
-              style: TextStyle(
-                color: AppColors.brown,
-                fontWeight: FontWeight.w600,
-                fontSize: 22,
-                letterSpacing: 3,
-                height: 1.2,
-              ),
-            ),
+            Text("LOAH STÚDIO", style: TextStyle(color: AppColors.brown, fontWeight: FontWeight.w600, fontSize: 22, letterSpacing: 3, height: 1.2)),
             Row(
               children: [
                 ...List.generate(menuItems.length, (index) {
@@ -172,31 +156,16 @@ class _HomePageState extends State<HomePage> {
                         duration: Duration(milliseconds: 200),
                         margin: EdgeInsets.symmetric(horizontal: 12),
                         padding: EdgeInsets.symmetric(vertical: 8),
-                        decoration: BoxDecoration(
-                          border: isSelected ? Border(bottom: BorderSide(color: AppColors.pinkNude, width: 2)) : null,
-                        ),
-                        child: Text(
-                          menuItems[index],
-                          style: TextStyle(
-                            color: isSelected || isHover ? AppColors.pinkNude : AppColors.brown,
-                            fontSize: 16,
-                            fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
-                          ),
-                        ),
+                        decoration: BoxDecoration(border: isSelected ? Border(bottom: BorderSide(color: AppColors.pinkNude, width: 2)) : null),
+                        child: Text(menuItems[index], style: TextStyle(color: isSelected || isHover ? AppColors.pinkNude : AppColors.brown, fontSize: 16, fontWeight: isSelected ? FontWeight.bold : FontWeight.w500)),
                       ),
                     ),
                   );
                 }),
                 SizedBox(width: 20),
-                _buildAuthMenuItem(), 
+                _buildAuthMenuItem(),
                 ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.pinkStrong,
-                    padding: EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                  ),
+                  style: ElevatedButton.styleFrom(backgroundColor: AppColors.pinkStrong, padding: EdgeInsets.symmetric(horizontal: 20, vertical: 12), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20))),
                   onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => ServicosPage())),
                   child: Text("Agendar", style: TextStyle(color: Colors.white)),
                 ),
@@ -210,21 +179,23 @@ class _HomePageState extends State<HomePage> {
           child: Column(
             children: [
               SizedBox(height: 40),
-              HeroSection(),
+              HeroSection(config: _controller.config),
               SizedBox(height: 100),
-              SpecialtySection(),
+              ServicosDestaqueSection(tituloConfig: _controller.config.specialtyTitulo, descricaoConfig: _controller.config.specialtyDescricao, servicos: _controller.servicosDestaque, isLoading: _controller.isLoading),
               SizedBox(height: 100),
-              GaleriaLoahSection(),
+              ProdutosDestaqueSection(produtos: _controller.produtosDestaque, isLoading: _controller.isLoading),
               SizedBox(height: 100),
-              LoahEssenciaSection(),
+              GaleriaSection(config: _controller.config),
               SizedBox(height: 100),
-              NossosPilaresSection(),
+              EssenciaSection(config: _controller.config),
               SizedBox(height: 100),
-              TestemunhosSection(),
+              PilaresSection(config: _controller.config),
               SizedBox(height: 100),
-              ProntaBrilharSection(),
+              AvaliacoesSection(avaliacoes: _controller.avaliacoes, isLoading: _controller.isLoading, isSubmitting: _controller.isSubmittingAvaliacao, onEnviarAvaliacao: _controller.enviarAvaliacao),
+              SizedBox(height: 100),
+              ProntaBrilharSection(config: _controller.config),
               SizedBox(height: 60),
-              FooterSection(),
+              FooterSection(config: _controller.config),
             ],
           ),
         ),
@@ -245,47 +216,36 @@ class _HomePageState extends State<HomePage> {
   }
 
   Widget _buildAuthMenuItem({bool isMobile = false}) {
-  return StreamBuilder<User?>(
-    stream: FirebaseAuth.instance.authStateChanges(),
-    builder: (context, snapshot) {
-      final isLoggedIn = snapshot.data != null;
-
-      if (isMobile) {
-        return ListTile(
-          leading: Icon(isLoggedIn ? Icons.logout : Icons.login, color: AppColors.brown),
-          title: Text(
-            isLoggedIn ? "Logout" : "Login",
-            style: TextStyle(color: AppColors.brown, fontWeight: FontWeight.w500),
-          ),
+    return StreamBuilder<User?>(
+      stream: FirebaseAuth.instance.authStateChanges(),
+      builder: (context, snapshot) {
+        final isLoggedIn = snapshot.data != null;
+        if (isMobile) {
+          return ListTile(
+            leading: Icon(isLoggedIn ? Icons.logout : Icons.login, color: AppColors.brown),
+            title: Text(isLoggedIn ? "Logout" : "Login", style: TextStyle(color: AppColors.brown, fontWeight: FontWeight.w500)),
+            onTap: () async {
+              if (isLoggedIn) {
+                await FirebaseAuth.instance.signOut();
+                if (context.mounted) Navigator.pop(context);
+              } else {
+                Navigator.pop(context);
+                Navigator.push(context, MaterialPageRoute(builder: (_) => const AuthPage()));
+              }
+            },
+          );
+        }
+        return GestureDetector(
           onTap: () async {
             if (isLoggedIn) {
               await FirebaseAuth.instance.signOut();
-              if (context.mounted) Navigator.pop(context);
             } else {
-              Navigator.pop(context);
               Navigator.push(context, MaterialPageRoute(builder: (_) => const AuthPage()));
             }
           },
+          child: Padding(padding: EdgeInsets.symmetric(horizontal: 12), child: Text(isLoggedIn ? "Logout" : "Login", style: TextStyle(color: AppColors.brown, fontSize: 16, fontWeight: FontWeight.w500))),
         );
-      }
-
-      return GestureDetector(
-        onTap: () async {
-          if (isLoggedIn) {
-            await FirebaseAuth.instance.signOut();
-          } else {
-            Navigator.push(context, MaterialPageRoute(builder: (_) => const AuthPage()));
-          }
-        },
-        child: Padding(
-          padding: EdgeInsets.symmetric(horizontal: 12),
-          child: Text(
-            isLoggedIn ? "Logout" : "Login",
-            style: TextStyle(color: AppColors.brown, fontSize: 16, fontWeight: FontWeight.w500),
-          ),
-        ),
-      );
-    },
-  );
-}
+      },
+    );
+  }
 }
