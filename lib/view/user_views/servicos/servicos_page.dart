@@ -16,6 +16,7 @@ import 'package:loahstudio/view/user_views/servicos/widgets/calendario_selector.
 import 'package:loahstudio/view/user_views/servicos/widgets/horarios_selector.dart';
 import 'package:loahstudio/view/user_views/servicos/widgets/dados_pessoais_section.dart';
 import 'package:loahstudio/view/user_views/widgets/footer_section.dart';
+import 'package:loahstudio/view/user_views/widgets/app_drawer.dart';
 
 class ServicosPage extends StatefulWidget {
   const ServicosPage({super.key});
@@ -44,7 +45,6 @@ class _ServicosPageState extends State<ServicosPage> {
 
   HorarioFuncionamento? _horario;
   bool _isLoadingHorario = true;
-  List<DateTime> _datasDisponiveis = [];
 
   bool _isLoadingHorarios = false;
   HorariosAgrupados _horariosAgrupados = const HorariosAgrupados();
@@ -73,7 +73,6 @@ class _ServicosPageState extends State<ServicosPage> {
     if (!mounted) return;
     setState(() {
       _horario = horario;
-      _datasDisponiveis = _controller.gerarDatasDisponiveis(horario);
       _isLoadingHorario = false;
     });
   }
@@ -171,7 +170,9 @@ class _ServicosPageState extends State<ServicosPage> {
     final headerTitleSize = ResponsiveHelper.headerTitleSize(context);
 
     return Scaffold(
-      endDrawer: isMobile ? _buildMobileDrawer() : null,
+      endDrawer: isMobile
+          ? AppDrawer(selectedIndex: selectedIndex, menuItems: menuItems, onNavigate: _navegarMenu)
+          : null,
       appBar: AppBar(
         automaticallyImplyLeading: false,
         backgroundColor: Colors.transparent,
@@ -247,13 +248,10 @@ class _ServicosPageState extends State<ServicosPage> {
     }
   }
 
-  Widget _buildMobileDrawer() {
-    // Idêntico ao anterior — sem alterações, omitido aqui por repetição.
-    return Container();
-  }
-
   Widget _introSection(bool isMobile) {
-    // Idêntico ao anterior — sem alterações.
+    // Idêntico ao original desta tela (imagem/logo + texto de introdução) —
+    // não tinha sido alterado nas respostas anteriores, cola aqui o teu
+    // método original.
     return Container();
   }
 
@@ -298,7 +296,7 @@ class _ServicosPageState extends State<ServicosPage> {
     if (_isLoadingHorario) {
       return const Padding(padding: EdgeInsets.symmetric(vertical: 40), child: Center(child: CircularProgressIndicator()));
     }
-    if (_datasDisponiveis.isEmpty) {
+    if (_horario == null || _horario!.diasFuncionamento.isEmpty) {
       return Padding(padding: EdgeInsets.symmetric(horizontal: horizontalPad, vertical: 20), child: Text('De momento não há dias de funcionamento configurados.', style: TextStyle(color: AppColors.grey)));
     }
 
@@ -307,7 +305,7 @@ class _ServicosPageState extends State<ServicosPage> {
       children: [
         Text("Selecione a Data", style: TextStyle(fontSize: isMobile ? 18 : 20, fontWeight: FontWeight.bold, color: const Color(0xFF5A4A42))),
         SizedBox(height: isMobile ? 12 : 20),
-        CalendarioSelector(datasDisponiveis: _datasDisponiveis, selectedDate: selectedDate, onSelect: _selecionarData, isMobile: isMobile),
+        CalendarioSelector(horario: _horario!, selectedDate: selectedDate, onSelect: _selecionarData, isMobile: isMobile),
       ],
     );
 
@@ -434,6 +432,4 @@ class _ServicosPageState extends State<ServicosPage> {
       ),
     );
   }
-
-
 }
