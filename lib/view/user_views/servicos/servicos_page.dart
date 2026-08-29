@@ -15,6 +15,7 @@ import 'package:loahstudio/view/user_views/servicos/widgets/servico_card.dart';
 import 'package:loahstudio/view/user_views/servicos/widgets/calendario_selector.dart';
 import 'package:loahstudio/view/user_views/servicos/widgets/horarios_selector.dart';
 import 'package:loahstudio/view/user_views/servicos/widgets/dados_pessoais_section.dart';
+import 'package:loahstudio/view/user_views/servicos/widgets/servicos_search_filter.dart';
 import 'package:loahstudio/view/user_views/widgets/build_auth_menu_item.dart';
 import 'package:loahstudio/view/user_views/widgets/footer_section.dart';
 import 'package:loahstudio/view/user_views/widgets/app_drawer.dart';
@@ -53,6 +54,12 @@ class _ServicosPageState extends State<ServicosPage> {
   bool _isSubmitting = false;
 
   final List<String> menuItems = ["Início", "Serviços", "Produtos", "Agendamento"];
+  final TextEditingController _searchController = TextEditingController();
+  String _searchQuery = '';
+  String _categoriaSelecionada = 'todas';
+  bool _mostrarTodosServicos = false;
+
+static const int _limiteInicial = 6;
 
   @override
   void initState() {
@@ -66,6 +73,7 @@ class _ServicosPageState extends State<ServicosPage> {
     emailController.dispose();
     telefoneController.dispose();
     observacaoController.dispose();
+    _searchController.dispose();
     super.dispose();
   }
 
@@ -165,6 +173,8 @@ class _ServicosPageState extends State<ServicosPage> {
     }
   }
 
+  
+
   @override
   Widget build(BuildContext context) {
     final isMobile = ResponsiveHelper.isMobile(context);
@@ -256,42 +266,241 @@ class _ServicosPageState extends State<ServicosPage> {
     // método original.
     return Container();
   }
+Widget _servicosList(bool isMobile) {
+  final double horizontalPad = isMobile ? 16.0 : 60.0;
+  final double titleSize = isMobile ? 20.0 : 28.0;
 
-  Widget _servicosList(bool isMobile) {
-    final double horizontalPad = isMobile ? 16.0 : 60.0;
-    final double titleSize = isMobile ? 20.0 : 28.0;
+  return Container(
+    padding: EdgeInsets.symmetric(horizontal: horizontalPad),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text("Escolha o seu serviço", style: TextStyle(fontSize: titleSize, fontWeight: FontWeight.bold, color: const Color(0xFF5A4A42))),
+            if (isMobile)
+              StreamBuilder<List<Servico>>(
+                stream: _controller.streamServicosDisponiveis(),
+                builder: (context, snapshot) {
+                  final categorias = (snapshot.data ?? [])
+                      .map((s) => s.categoria)
+                      .where((c) => c.isNotEmpty)
+                      .toSet()
+                      .toList()
+                    ..sort();
+                  return _botaoFiltroMobile(categorias);
+                },
+              ),
+          ],
+        ),
+        SizedBox(height: isMobile ? 16.0 : 30.0),
+        StreamBuilder<List<Servico>>(
+          stream: _controller.streamServicosDisponiveis(),
+          builder: (context, snapshot) {
+            if (snapshot.hasError) return Text('Erro ao carregar serviços: ${snapshot.error}', style: const TextStyle(color: Colors.red));
+            if (!snapshot.hasData) return const Padding(padding: EdgeInsets.symmetric(vertical: 40), child: Center(child: CircularProgressIndicator()));
 
-    return Container(
-      padding: EdgeInsets.symmetric(horizontal: horizontalPad),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text("Escolha o seu serviço", style: TextStyle(fontSize: titleSize, fontWeight: FontWeight.bold, color: const Color(0xFF5A4A42))),
-          SizedBox(height: isMobile ? 16.0 : 30.0),
-          StreamBuilder<List<Servico>>(
-            stream: _controller.streamServicosDisponiveis(),
-            builder: (context, snapshot) {
-              if (snapshot.hasError) return Text('Erro ao carregar serviços: ${snapshot.error}', style: const TextStyle(color: Colors.red));
-              if (!snapshot.hasData) return const Padding(padding: EdgeInsets.symmetric(vertical: 40), child: Center(child: CircularProgressIndicator()));
-              final servicos = snapshot.data!;
-              if (servicos.isEmpty) {
-                return Padding(padding: const EdgeInsets.symmetric(vertical: 40), child: Center(child: Text('Ainda não há serviços disponíveis. Volta em breve!', style: TextStyle(color: AppColors.grey))));
-              }
-              return Column(
-                children: servicos.map((s) => ServicoCard(
-                  servico: s,
-                  isSelected: selectedServico?.id == s.id,
-                  isMobile: isMobile,
-                  onTap: () => _selecionarServico(s),
-                )).toList(),
-              );
-            },
-          ),
-        ],
+            final todosServicos = snapshot.data!;
+            if (todosServicos.isEmpty) {
+              return Padding(padding: const EdgeInsets.symmetric(vertical: 40), child: Center(child: Text('Ainda não há serviços disponíveis. Volta em breve!', style: TextStyle(color: AppColors.grey))));
+            }
+
+            final categorias = todosServicos.map((s) => s.categoria).where((c) => c.isNotEmpty).toSet().toList()..sort();
+
+            var filtrados = todosServicos;
+            if (_categoriaSelecionada != 'todas') {
+              filtrados = filtrados.where((s) => s.categoria == _categoriaSelecionada).toList();
+            }
+            if (_searchQuery.isNotEmpty) {
+              final q = _searchQuery.toLowerCase();
+              filtrados = filtrados.where((s) => s.nome.toLowerCase().contains(q) || s.categoria.toLowerCase().contains(q)).toList();
+            }
+
+            final temMais = filtrados.length > _limiteInicial;
+            final exibidos = (_mostrarTodosServicos || !temMais) ? filtrados : filtrados.take(_limiteInicial).toList();
+
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // No desktop mantém-se exatamente como antes, inline.
+                // No mobile o filtro deixou de aparecer aqui — foi para
+                // dentro do ícone no cabeçalho (ver _botaoFiltroMobile).
+                if (!isMobile) ...[
+                  ServicosSearchFilter(
+                    searchController: _searchController,
+                    onSearchChanged: (v) => setState(() { _searchQuery = v; _mostrarTodosServicos = false; }),
+                    categorias: categorias,
+                    categoriaSelecionada: _categoriaSelecionada,
+                    onCategoriaChanged: (v) => setState(() { _categoriaSelecionada = v; _mostrarTodosServicos = false; }),
+                    isMobile: false,
+                  ),
+                  SizedBox(height: isMobile ? 16 : 24),
+                ],
+                if (exibidos.isEmpty)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 40),
+                    child: Center(child: Text('Nenhum serviço encontrado para esta pesquisa.', style: TextStyle(color: AppColors.grey))),
+                  )
+                else if (isMobile)
+                  GridView.builder(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 2,
+                      mainAxisSpacing: 12,
+                      crossAxisSpacing: 12,
+                      mainAxisExtent: 235,
+                    ),
+                    itemCount: exibidos.length,
+                    itemBuilder: (context, index) => ServicoCard(
+                      servico: exibidos[index],
+                      isSelected: selectedServico?.id == exibidos[index].id,
+                      isMobile: true,
+                      onTap: () => _selecionarServico(exibidos[index]),
+                    ),
+                  )
+                else
+                  Column(children: exibidos.map((s) => ServicoCard(
+                    servico: s,
+                    isSelected: selectedServico?.id == s.id,
+                    isMobile: false,
+                    onTap: () => _selecionarServico(s),
+                  )).toList()),
+                if (temMais) ...[
+                  const SizedBox(height: 16),
+                  Center(
+                    child: TextButton.icon(
+                      onPressed: () => setState(() => _mostrarTodosServicos = !_mostrarTodosServicos),
+                      icon: Icon(_mostrarTodosServicos ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down, color: AppColors.pinkStrong),
+                      label: Text(
+                        _mostrarTodosServicos ? 'Ver menos' : 'Ver mais (${filtrados.length - _limiteInicial})',
+                        style: TextStyle(color: AppColors.pinkStrong, fontWeight: FontWeight.w600),
+                      ),
+                    ),
+                  ),
+                ],
+              ],
+            );
+          },
+        ),
+      ],
+    ),
+  );
+}
+
+/// Botão de filtro compacto para mobile: mostra um ícone com badge
+/// (bolinha) quando há filtro/pesquisa ativos, e ao tocar abre um
+/// bottom sheet com todas as opções (mesmo widget ServicosSearchFilter).
+Widget _botaoFiltroMobile(List<String> categorias) {
+  final filtroAtivo = _categoriaSelecionada != 'todas' || _searchQuery.isNotEmpty;
+
+  return Stack(
+    clipBehavior: Clip.none,
+    children: [
+      IconButton(
+        onPressed: () => _abrirFiltrosMobile(categorias),
+        icon: Icon(Icons.tune, color: AppColors.pinkStrong),
+        style: IconButton.styleFrom(
+          backgroundColor: const Color(0xFFF7F4F2),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        ),
       ),
-    );
-  }
+      if (filtroAtivo)
+        Positioned(
+          top: 4,
+          right: 4,
+          child: Container(
+            width: 9,
+            height: 9,
+            decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle),
+          ),
+        ),
+    ],
+  );
+}
 
+void _abrirFiltrosMobile(List<String> categorias) {
+  showModalBottomSheet(
+    context: context,
+    isScrollControlled: true,
+    backgroundColor: Colors.transparent,
+    builder: (sheetContext) {
+      return StatefulBuilder(
+        builder: (sheetContext, setSheetState) {
+          return Container(
+            padding: EdgeInsets.only(
+              left: 16,
+              right: 16,
+              top: 12,
+              bottom: MediaQuery.of(sheetContext).viewInsets.bottom + 20,
+            ),
+            decoration: const BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Center(
+                  child: Container(
+                    width: 40,
+                    height: 4,
+                    margin: const EdgeInsets.only(bottom: 16),
+                    decoration: BoxDecoration(color: Colors.grey.shade300, borderRadius: BorderRadius.circular(4)),
+                  ),
+                ),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text("Filtrar serviços", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF5A4A42))),
+                    TextButton(
+                      onPressed: () {
+                        setState(() { _categoriaSelecionada = 'todas'; _searchQuery = ''; _searchController.clear(); _mostrarTodosServicos = false; });
+                        setSheetState(() {});
+                      },
+                      child: Text("Limpar", style: TextStyle(color: AppColors.pinkStrong)),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                ServicosSearchFilter(
+                  searchController: _searchController,
+                  onSearchChanged: (v) {
+                    setState(() { _searchQuery = v; _mostrarTodosServicos = false; });
+                    setSheetState(() {});
+                  },
+                  categorias: categorias,
+                  categoriaSelecionada: _categoriaSelecionada,
+                  onCategoriaChanged: (v) {
+                    setState(() { _categoriaSelecionada = v; _mostrarTodosServicos = false; });
+                    setSheetState(() {});
+                  },
+                  isMobile: false,
+                ),
+                const SizedBox(height: 16),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.pinkStrong,
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(25)),
+                    ),
+                    onPressed: () => Navigator.pop(sheetContext),
+                    child: const Text("Ver resultados", style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
+                  ),
+                ),
+              ],
+            ),
+          );
+        },
+      );
+    },
+  );
+}
+  
   Widget _calendarSection(bool isMobile) {
     final double horizontalPad = isMobile ? 16.0 : 60.0;
 
