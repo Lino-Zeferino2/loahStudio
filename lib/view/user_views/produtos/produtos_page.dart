@@ -1,3 +1,5 @@
+// ignore_for_file: library_private_types_in_public_api
+
 import 'package:flutter/material.dart';
 import 'package:loahstudio/constants/colors.dart';
 import 'package:loahstudio/controller/home_controller.dart';
@@ -5,13 +7,14 @@ import 'package:loahstudio/controller/produtos_controller.dart';
 import 'package:loahstudio/model/produto_model.dart';
 import 'package:loahstudio/view/user_views/home/home_page.dart';
 import 'package:loahstudio/view/user_views/agendamento/agendamento_page.dart';
+import 'package:loahstudio/view/user_views/produtos/widgets/produtos_destaque_carousel.dart';
 import 'package:loahstudio/view/user_views/servicos/servicos_page.dart';
 import 'package:loahstudio/view/user_views/carrinho/carrinho_page.dart';
 import 'package:loahstudio/view/user_views/produtos/widgets/produto_card_destaque.dart';
 import 'package:loahstudio/view/user_views/produtos/widgets/produto_card_grid.dart';
 import 'package:loahstudio/view/user_views/widgets/build_auth_menu_item.dart';
 import 'package:loahstudio/view/user_views/widgets/footer_section.dart';
-
+import 'package:loahstudio/view/user_views/produtos/produto_detalhe_page.dart';
 class ProdutosPage extends StatefulWidget {
   const ProdutosPage({super.key});
 
@@ -21,6 +24,7 @@ class ProdutosPage extends StatefulWidget {
 
 class _ProdutosPageState extends State<ProdutosPage> {
   final ProdutosController _controller = ProdutosController();
+  // ignore: non_constant_identifier_names
   final HomeController _HomeController = HomeController();
   int selectedIndex = 2;
   int? hoverIndex;
@@ -52,6 +56,18 @@ class _ProdutosPageState extends State<ProdutosPage> {
       }
     });
   }
+  void _abrirDetalhes(Produto produto) {
+  Navigator.push(
+    context,
+    MaterialPageRoute(
+      builder: (_) => ProdutoDetalhePage(
+        produto: produto,
+        isInCart: _isInCart(produto.id),
+        onToggleCart: () => _toggleCart(produto),
+      ),
+    ),
+  );
+}
 
   @override
   Widget build(BuildContext context) {
@@ -155,43 +171,61 @@ class _ProdutosPageState extends State<ProdutosPage> {
     );
   }
 
-  Widget _produtosDestaqueSection(List<Produto> produtosDestaque) {
-    final isMobile = MediaQuery.of(context).size.width < 600;
-    final hPad = isMobile ? 12.0 : 60.0;
-    final hList = isMobile ? 320.0 : 380.0;
-    final titSize = isMobile ? 16.0 : 24.0;
+Widget _produtosDestaqueSection(List<Produto> produtosDestaque) {
+  final isMobile = MediaQuery.of(context).size.width < 600;
+  final hPad = isMobile ? 12.0 : 60.0;
+  final titSize = isMobile ? 16.0 : 24.0;
 
-    return Container(
-      padding: EdgeInsets.symmetric(horizontal: hPad),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(children: [
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-              decoration: BoxDecoration(color: AppColors.pinkStrong, borderRadius: BorderRadius.circular(12)),
-              child: const Text("NOVO", style: TextStyle(fontSize: 9, color: Colors.white, fontWeight: FontWeight.bold, letterSpacing: 1)),
-            ),
-            const SizedBox(width: 8),
-            Text("Em Destaque", style: TextStyle(fontSize: titSize, fontWeight: FontWeight.bold, color: const Color(0xFF5A4A42))),
-          ]),
-          SizedBox(height: isMobile ? 12 : 24),
+  return Container(
+    padding: EdgeInsets.symmetric(horizontal: hPad),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(children: [
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+            decoration: BoxDecoration(color: AppColors.pinkStrong, borderRadius: BorderRadius.circular(12)),
+            child: const Text("NOVO", style: TextStyle(fontSize: 9, color: Colors.white, fontWeight: FontWeight.bold, letterSpacing: 1)),
+          ),
+          const SizedBox(width: 8),
+          Text("Em Destaque", style: TextStyle(fontSize: titSize, fontWeight: FontWeight.bold, color: const Color(0xFF5A4A42))),
+        ]),
+        SizedBox(height: isMobile ? 12 : 24),
+        if (isMobile)
+          ProdutosDestaqueCarousel(
+            produtos: produtosDestaque,
+            isInCart: _isInCart,
+            onToggleCart: _toggleCart,
+            onOpenDetalhes: _abrirDetalhes,
+          )
+        else
           SizedBox(
-            height: hList,
+            height: 380,
             child: ListView.builder(
               scrollDirection: Axis.horizontal,
               itemCount: produtosDestaque.length,
               itemBuilder: (context, index) {
                 final produto = produtosDestaque[index];
-                return ProdutoCardDestaque(produto: produto, isInCart: _isInCart(produto.id), onToggleCart: () => _toggleCart(produto));
+                return Padding(
+                  padding: const EdgeInsets.only(right: 24),
+                  child: SizedBox(
+                    width: 300,
+                    child: ProdutoCardDestaque(
+                      produto: produto,
+                      isInCart: _isInCart(produto.id),
+                      isMobile: false,
+                      onToggleCart: () => _toggleCart(produto),
+                      onOpenDetalhes: () => _abrirDetalhes(produto),
+                    ),
+                  ),
+                );
               },
             ),
           ),
-        ],
-      ),
-    );
-  }
-
+      ],
+    ),
+  );
+}
   Widget _todosProdutosSection(List<Produto> produtos) {
     final isMobile = MediaQuery.of(context).size.width < 600;
     final hPad = isMobile ? 12.0 : 60.0;
@@ -224,12 +258,13 @@ class _ProdutosPageState extends State<ProdutosPage> {
               itemBuilder: (context, index) {
                 final produto = produtos[index];
                 return ProdutoCardGrid(
-                  produto: produto,
-                  isInCart: _isInCart(produto.id),
-                  isCompact: true,
-                  onToggleCart: () => _toggleCart(produto),
-                  width: MediaQuery.of(context).size.width / 2 - 20,
-                );
+  produto: produto,
+  isInCart: _isInCart(produto.id),
+  isCompact: true, // ou false no desktop
+  onToggleCart: () => _toggleCart(produto),
+  onOpenDetalhes: () => _abrirDetalhes(produto),
+  width: MediaQuery.of(context).size.width / 2 - 20, // só no mobile
+);
               },
             )
           else
@@ -240,7 +275,7 @@ class _ProdutosPageState extends State<ProdutosPage> {
                 produto: produto,
                 isInCart: _isInCart(produto.id),
                 isCompact: false,
-                onToggleCart: () => _toggleCart(produto),
+                onToggleCart: () => _toggleCart(produto),  onOpenDetalhes: () => _abrirDetalhes(produto),
               )).toList(),
             ),
         ],

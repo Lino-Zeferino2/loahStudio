@@ -5,8 +5,9 @@ import 'package:loahstudio/model/produto_model.dart';
 class ProdutoCardGrid extends StatelessWidget {
   final Produto produto;
   final bool isInCart;
-  final bool isCompact; // versão mobile mais pequena
+  final bool isCompact;
   final VoidCallback onToggleCart;
+  final VoidCallback onOpenDetalhes;
   final double width;
 
   const ProdutoCardGrid({
@@ -15,6 +16,7 @@ class ProdutoCardGrid extends StatelessWidget {
     required this.isInCart,
     required this.isCompact,
     required this.onToggleCart,
+    required this.onOpenDetalhes,
     this.width = 260,
   });
 
@@ -26,7 +28,7 @@ class ProdutoCardGrid extends StatelessWidget {
     final imgHeight = isCompact ? 90.0 : 180.0;
 
     return GestureDetector(
-      onTap: isDisponivel ? onToggleCart : null,
+      onTap: onOpenDetalhes,
       child: Container(
         width: isCompact ? width : 260,
         decoration: BoxDecoration(
@@ -43,34 +45,10 @@ class ProdutoCardGrid extends StatelessWidget {
                 children: [
                   _imagem(imgHeight, isCompact ? width : 260),
                   if (!isDisponivel)
-                    Positioned(
-                      top: 8, left: 8,
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                        decoration: BoxDecoration(color: Colors.red, borderRadius: BorderRadius.circular(10)),
-                        child: Text('ESGOTADO', style: TextStyle(fontSize: isCompact ? 7 : 9, color: Colors.white, fontWeight: FontWeight.bold)),
-                      ),
-                    )
+                    Positioned(top: 8, left: 8, child: _miniBadge('ESGOTADO', Colors.red, isCompact))
                   else if (produto.estoqueBaixo)
-                    Positioned(
-                      top: 8, left: 8,
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                        decoration: BoxDecoration(color: Colors.orange, borderRadius: BorderRadius.circular(10)),
-                        child: Text('POUCAS UNID.', style: TextStyle(fontSize: isCompact ? 7 : 9, color: Colors.white, fontWeight: FontWeight.bold)),
-                      ),
-                    ),
-                  if (isInCart)
-                    Positioned(
-                      top: 8, right: 8,
-                      child: Container(
-                        padding: const EdgeInsets.all(4),
-                        decoration: const BoxDecoration(color: AppColors.pinkStrong, shape: BoxShape.circle),
-                        child: const Icon(Icons.check, color: Colors.white, size: 12),
-                      ),
-                    ),
-                  if (!isCompact && isDisponivel)
-                    Positioned(top: 12, right: 12, child: _cartButtonDesktop()),
+                    Positioned(top: 8, left: 8, child: _miniBadge('POUCAS UNID.', Colors.orange, isCompact)),
+                  Positioned(top: 8, right: 8, child: _cartButton(isDisponivel)),
                 ],
               ),
             ),
@@ -108,16 +86,25 @@ class ProdutoCardGrid extends StatelessWidget {
         child: const Center(child: Icon(Icons.shopping_bag_outlined, size: 32, color: AppColors.pinkStrong)),
       );
 
-  Widget _cartButtonDesktop() {
-    return Container(
-      width: 40,
-      height: 40,
-      decoration: BoxDecoration(
-        color: isInCart ? AppColors.pinkStrong : Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.1), blurRadius: 10, offset: const Offset(0, 4))],
+  Widget _miniBadge(String texto, Color cor, bool isCompact) => Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+        decoration: BoxDecoration(color: cor, borderRadius: BorderRadius.circular(10)),
+        child: Text(texto, style: TextStyle(fontSize: isCompact ? 7 : 9, color: Colors.white, fontWeight: FontWeight.bold)),
+      );
+
+  Widget _cartButton(bool isDisponivel) {
+    return GestureDetector(
+      onTap: isDisponivel ? onToggleCart : null,
+      child: Container(
+        width: isCompact ? 28 : 40,
+        height: isCompact ? 28 : 40,
+        decoration: BoxDecoration(
+          color: isInCart ? AppColors.pinkStrong : Colors.white,
+          shape: BoxShape.circle,
+          boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.1), blurRadius: 8, offset: const Offset(0, 3))],
+        ),
+        child: Icon(isInCart ? Icons.check : Icons.add_shopping_cart, color: isInCart ? Colors.white : (isDisponivel ? AppColors.pinkStrong : Colors.grey), size: isCompact ? 14 : 20),
       ),
-      child: Icon(isInCart ? Icons.check : Icons.shopping_bag_outlined, color: isInCart ? Colors.white : AppColors.pinkStrong, size: 20),
     );
   }
 }
