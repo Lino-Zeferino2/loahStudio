@@ -3,24 +3,28 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 class Produto {
   final String? id;
   final String nome;
+  final String marca;
   final String descricao;
   final String categoria;
   final double preco;
   final int estoque;
   final int estoqueMinimo;
   final bool disponivel;
+  final bool destaque;
   final String? imagemUrl;
   final DateTime? criadoEm;
 
   Produto({
     this.id,
     required this.nome,
+    this.marca = '',
     required this.descricao,
     required this.categoria,
     required this.preco,
     required this.estoque,
     this.estoqueMinimo = 5,
     this.disponivel = true,
+    this.destaque = false,
     this.imagemUrl,
     this.criadoEm,
   });
@@ -33,12 +37,14 @@ class Produto {
     return Produto(
       id: doc.id,
       nome: data['nome'] as String? ?? '',
+      marca: data['marca'] as String? ?? '',
       descricao: data['descricao'] as String? ?? '',
       categoria: data['categoria'] as String? ?? '',
       preco: (data['preco'] as num?)?.toDouble() ?? 0.0,
       estoque: data['estoque'] as int? ?? 0,
       estoqueMinimo: data['estoqueMinimo'] as int? ?? 5,
       disponivel: data['disponivel'] as bool? ?? true,
+      destaque: data['destaque'] as bool? ?? false,
       imagemUrl: data['imagemUrl'] as String?,
       criadoEm: (data['criadoEm'] as Timestamp?)?.toDate(),
     );
@@ -47,12 +53,14 @@ class Produto {
   Map<String, dynamic> toMap() {
     return {
       'nome': nome,
+      'marca': marca,
       'descricao': descricao,
       'categoria': categoria,
       'preco': preco,
       'estoque': estoque,
       'estoqueMinimo': estoqueMinimo,
       'disponivel': disponivel,
+      'destaque': destaque,
       'imagemUrl': imagemUrl,
       'criadoEm': criadoEm != null ? Timestamp.fromDate(criadoEm!) : Timestamp.now(),
     };

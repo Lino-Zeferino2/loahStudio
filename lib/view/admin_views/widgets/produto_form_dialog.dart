@@ -39,8 +39,9 @@ class ProdutoFormDialog extends StatefulWidget {
 class _ProdutoFormDialogState extends State<ProdutoFormDialog> {
   final _formKey = GlobalKey<FormState>();
   final _controller = ProdutosController();
+  late final TextEditingController _marcaController;
   final _picker = ImagePicker();
-
+  
   late final TextEditingController _nomeController;
   late final TextEditingController _descricaoController;
   late final TextEditingController _precoController;
@@ -52,7 +53,7 @@ class _ProdutoFormDialogState extends State<ProdutoFormDialog> {
   String? _imagemUrlAtual;
   bool _disponivel = true;
   bool _isSaving = false;
-
+  bool _destaque = false;
   bool get _isEdicao => widget.produto != null;
 
   @override
@@ -67,6 +68,9 @@ class _ProdutoFormDialogState extends State<ProdutoFormDialog> {
     _categoriaController = TextEditingController(text: p?.categoria ?? '');
     _imagemUrlAtual = p?.imagemUrl;
     _disponivel = p?.disponivel ?? true;
+    _marcaController = TextEditingController(text: p?.marca ?? '');
+    _disponivel = p?.disponivel ?? true;
+    _destaque = p?.destaque ?? false;
   }
 
   @override
@@ -77,6 +81,7 @@ class _ProdutoFormDialogState extends State<ProdutoFormDialog> {
     _estoqueController.dispose();
     _estoqueMinimoController.dispose();
     _categoriaController.dispose();
+    _marcaController.dispose();
     super.dispose();
   }
 
@@ -109,29 +114,33 @@ class _ProdutoFormDialogState extends State<ProdutoFormDialog> {
 
     bool sucesso;
     if (_isEdicao) {
-      sucesso = await _controller.updateProduto(
-        widget.produto!.id!,
-        {
-          'nome': _nomeController.text.trim(),
-          'descricao': _descricaoController.text.trim(),
-          'categoria': _categoriaController.text.trim(),
-          'preco': preco,
-          'estoque': estoque,
-          'estoqueMinimo': estoqueMinimo,
-          'disponivel': _disponivel,
-        },
-        imagem: _imagemSelecionada,
-      );
+    sucesso = await _controller.updateProduto(
+  widget.produto!.id!,
+  {
+    'nome': _nomeController.text.trim(),
+    'marca': _marcaController.text.trim(),
+    'descricao': _descricaoController.text.trim(),
+    'categoria': _categoriaController.text.trim(),
+    'preco': preco,
+    'estoque': estoque,
+    'estoqueMinimo': estoqueMinimo,
+    'disponivel': _disponivel,
+    'destaque': _destaque,
+  },
+  imagem: _imagemSelecionada,
+);
     } else {
       final novoProduto = Produto(
-        nome: _nomeController.text.trim(),
-        descricao: _descricaoController.text.trim(),
-        categoria: _categoriaController.text.trim(),
-        preco: preco,
-        estoque: estoque,
-        estoqueMinimo: estoqueMinimo,
-        disponivel: _disponivel,
-      );
+  nome: _nomeController.text.trim(),
+  marca: _marcaController.text.trim(),
+  descricao: _descricaoController.text.trim(),
+  categoria: _categoriaController.text.trim(),
+  preco: preco,
+  estoque: estoque,
+  estoqueMinimo: estoqueMinimo,
+  disponivel: _disponivel,
+  destaque: _destaque,
+);
       sucesso = await _controller.addProduto(novoProduto, imagem: _imagemSelecionada);
     }
 
@@ -187,7 +196,13 @@ class _ProdutoFormDialogState extends State<ProdutoFormDialog> {
                       ),
                       const SizedBox(height: 14),
                       TextFormField(
+                        controller: _marcaController,
+                        decoration: _inputDecoration('Marca (opcional)', Icons.local_offer_outlined),
+                      ),
+                      const SizedBox(height: 14),
+                      TextFormField(
                         controller: _descricaoController,
+
                         maxLines: 3,
                         decoration: _inputDecoration('Descrição', Icons.description_outlined),
                         validator: (v) =>
@@ -258,13 +273,23 @@ class _ProdutoFormDialogState extends State<ProdutoFormDialog> {
                         },
                       ),
                       const SizedBox(height: 14),
-                      SwitchListTile(
+                    SwitchListTile(
                         contentPadding: EdgeInsets.zero,
                         title: const Text('Disponível para venda',
                             style: TextStyle(color: AppColors.brown, fontSize: 14)),
                         value: _disponivel,
                         activeThumbColor: Colors.green,
                         onChanged: (v) => setState(() => _disponivel = v),
+                      ),
+                      SwitchListTile(
+                        contentPadding: EdgeInsets.zero,
+                        title: const Text('Mostrar em "Em Destaque"',
+                            style: TextStyle(color: AppColors.brown, fontSize: 14)),
+                        subtitle: const Text('Aparece na secção de destaque da loja',
+                            style: TextStyle(color: AppColors.grey, fontSize: 12)),
+                        value: _destaque,
+                        activeThumbColor: AppColors.pinkStrong,
+                        onChanged: (v) => setState(() => _destaque = v),
                       ),
                     ],
                   ),

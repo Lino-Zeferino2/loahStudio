@@ -1,11 +1,9 @@
 // ignore_for_file: library_private_types_in_public_api
 
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:loahstudio/constants/colors.dart';
 import 'package:loahstudio/constants/responsive.dart';
 import 'package:loahstudio/controller/home_controller.dart';
-import 'package:loahstudio/view/auth/auth_page.dart';
 import 'package:loahstudio/view/user_views/home/widgets/hero_section.dart';
 import 'package:loahstudio/view/user_views/home/widgets/servicos_destaque_section.dart';
 import 'package:loahstudio/view/user_views/home/widgets/produtos_destaque_section.dart';

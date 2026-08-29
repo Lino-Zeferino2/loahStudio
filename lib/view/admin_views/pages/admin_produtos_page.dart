@@ -225,14 +225,32 @@ class _AdminProdutosPageState extends State<AdminProdutosPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          SizedBox(
-            height: 130,
-            width: double.infinity,
-            child: produto.imagemUrl != null && produto.imagemUrl!.isNotEmpty
-                ? Image.network(produto.imagemUrl!, fit: BoxFit.cover, width: double.infinity,
-                    errorBuilder: (_, __, ___) => _buildImagemPlaceholder())
-                : _buildImagemPlaceholder(),
-          ),
+          Stack(
+  children: [
+    SizedBox(
+      height: 130,
+      width: double.infinity,
+      child: produto.imagemUrl != null && produto.imagemUrl!.isNotEmpty
+          ? Image.network(produto.imagemUrl!, fit: BoxFit.cover, width: double.infinity,
+              errorBuilder: (_, __, ___) => _buildImagemPlaceholder())
+          : _buildImagemPlaceholder(),
+    ),
+    if (produto.destaque)
+      Positioned(
+        top: 8,
+        left: 8,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+          decoration: BoxDecoration(color: AppColors.pinkStrong, borderRadius: BorderRadius.circular(20)),
+          child: const Row(mainAxisSize: MainAxisSize.min, children: [
+            Icon(Icons.star, color: Colors.white, size: 12),
+            SizedBox(width: 4),
+            Text('DESTAQUE', style: TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.bold)),
+          ]),
+        ),
+      ),
+  ],
+),
           Expanded(
             child: Padding(
               padding: const EdgeInsets.all(12),

@@ -1,3 +1,4 @@
+import 'dart:typed_data';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/foundation.dart';
@@ -75,7 +76,10 @@ class ProdutosController {
       return false;
     }
   }
-
+Stream<List<Produto>> streamProdutosDisponiveis() {
+  return _produtosRef.where('disponivel', isEqualTo: true).snapshots().map(
+      (snap) => snap.docs.map((d) => Produto.fromDoc(d)).toList());
+}
   Future<bool> toggleDisponibilidade(String id, bool disponivel) async {
     try {
       await _produtosRef.doc(id).update({'disponivel': disponivel});

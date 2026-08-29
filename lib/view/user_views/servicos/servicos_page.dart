@@ -15,6 +15,7 @@ import 'package:loahstudio/view/user_views/servicos/widgets/servico_card.dart';
 import 'package:loahstudio/view/user_views/servicos/widgets/calendario_selector.dart';
 import 'package:loahstudio/view/user_views/servicos/widgets/horarios_selector.dart';
 import 'package:loahstudio/view/user_views/servicos/widgets/dados_pessoais_section.dart';
+import 'package:loahstudio/view/user_views/widgets/build_auth_menu_item.dart';
 import 'package:loahstudio/view/user_views/widgets/footer_section.dart';
 import 'package:loahstudio/view/user_views/widgets/app_drawer.dart';
 
@@ -208,6 +209,7 @@ class _ServicosPageState extends State<ServicosPage> {
                       );
                     }),
                     SizedBox(width: isMobile ? 10.0 : 20.0),
+                    buildAuthMenuItem(),
                     ElevatedButton(
                       style: ElevatedButton.styleFrom(backgroundColor: AppColors.pinkStrong, padding: EdgeInsets.symmetric(horizontal: isMobile ? 14.0 : 20.0, vertical: isMobile ? 8.0 : 12.0), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20))),
                       onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const AgendamentoPage())),
