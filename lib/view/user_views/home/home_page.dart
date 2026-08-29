@@ -15,6 +15,7 @@ import 'package:loahstudio/view/user_views/home/widgets/pilares_section.dart';
 import 'package:loahstudio/view/user_views/home/widgets/avaliacoes_section.dart';
 import 'package:loahstudio/view/user_views/home/widgets/pronta_brilhar_section.dart';
 import 'package:loahstudio/view/user_views/widgets/app_drawer.dart';
+import 'package:loahstudio/view/user_views/widgets/build_auth_menu_item.dart';
 import 'package:loahstudio/view/user_views/widgets/footer_section.dart';
 import 'package:loahstudio/view/user_views/home/widgets/whatsapp_floating_button.dart';
 import 'package:loahstudio/view/user_views/servicos/servicos_page.dart';
@@ -66,27 +67,7 @@ class _HomePageState extends State<HomePage> {
       ],
     );
   }
-Widget _buildAuthMenuItem({bool isMobile = false}) {
-  return StreamBuilder<User?>(
-    stream: FirebaseAuth.instance.authStateChanges(),
-    builder: (context, snapshot) {
-      final isLoggedIn = snapshot.data != null;
-      return GestureDetector(
-        onTap: () async {
-          if (isLoggedIn) {
-            await FirebaseAuth.instance.signOut();
-          } else {
-            Navigator.push(context, MaterialPageRoute(builder: (_) => const AuthPage()));
-          }
-        },
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 12),
-          child: Text(isLoggedIn ? "Logout" : "Login", style: TextStyle(color: AppColors.brown, fontSize: 16, fontWeight: FontWeight.w500)),
-        ),
-      );
-    },
-  );
-}
+
   Widget _buildMobileScaffold() {
     return Scaffold(
       appBar: AppBar(
@@ -161,7 +142,7 @@ Widget _buildAuthMenuItem({bool isMobile = false}) {
                   );
                 }),
                 SizedBox(width: 20),
-               _buildAuthMenuItem(),
+                 buildAuthMenuItem(),
                 ElevatedButton(
                   style: ElevatedButton.styleFrom(backgroundColor: AppColors.pinkStrong, padding: EdgeInsets.symmetric(horizontal: 20, vertical: 12), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20))),
                   onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => ServicosPage())),
