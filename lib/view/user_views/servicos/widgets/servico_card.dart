@@ -86,18 +86,19 @@ class ServicoCard extends StatelessWidget {
               ),
               const SizedBox(height: 8),
               Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Expanded(
                     child: Text(
                       servico.nome,
-                      maxLines: 1,
+                      maxLines: 2,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF5A4A42)),
+                      style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF5A4A42), height: 1.2),
                     ),
                   ),
                   const SizedBox(width: 6),
-                  Text(precoTexto, style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: AppColors.pinkStrong)),
+                  Text(precoTexto, style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.pinkStrong)),
                 ],
               ),
               const SizedBox(height: 4),
