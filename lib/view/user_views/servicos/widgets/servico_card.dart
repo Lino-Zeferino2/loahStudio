@@ -6,7 +6,8 @@ class ServicoCard extends StatelessWidget {
   final Servico servico;
   final bool isSelected;
   final bool isMobile;
-  final VoidCallback onTap;
+  final VoidCallback onTap; // toque no card inteiro -> abre a tela de detalhes
+  final VoidCallback onSelecionar; // toque no botão -> seleciona direto na lista
 
   const ServicoCard({
     super.key,
@@ -14,6 +15,7 @@ class ServicoCard extends StatelessWidget {
     required this.isSelected,
     required this.isMobile,
     required this.onTap,
+    required this.onSelecionar,
   });
 
   String get _duracaoTexto {
@@ -65,7 +67,21 @@ class ServicoCard extends StatelessWidget {
               Expanded(
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(12),
-                  child: SizedBox(width: double.infinity, child: _imagem()),
+                  child: Stack(
+                    fit: StackFit.expand,
+                    children: [
+                      _imagem(),
+                      Positioned(
+                        bottom: 4,
+                        right: 4,
+                        child: Container(
+                          padding: const EdgeInsets.all(4),
+                          decoration: BoxDecoration(color: Colors.black.withValues(alpha: 0.45), shape: BoxShape.circle),
+                          child: const Icon(Icons.remove_red_eye_outlined, size: 14, color: Colors.white),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
               const SizedBox(height: 8),
@@ -109,7 +125,7 @@ class ServicoCard extends StatelessWidget {
                     padding: const EdgeInsets.symmetric(vertical: 8),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
                   ),
-                  onPressed: onTap,
+                  onPressed: onSelecionar,
                   child: Text(isSelected ? "Selecionado" : "Selecionar", style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
                 ),
               ),
@@ -171,7 +187,7 @@ class ServicoCard extends StatelessWidget {
                       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(25)),
                     ),
-                    onPressed: onTap,
+                    onPressed: onSelecionar,
                     child: Text(isSelected ? "Selecionado" : "Selecionar", style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
                   ),
                 ],

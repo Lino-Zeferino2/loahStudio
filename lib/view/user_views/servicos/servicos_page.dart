@@ -11,6 +11,7 @@ import 'package:loahstudio/model/site_config_model.dart';
 import 'package:loahstudio/view/user_views/home/home_page.dart';
 import 'package:loahstudio/view/user_views/agendamento/agendamento_page.dart';
 import 'package:loahstudio/view/user_views/produtos/produtos_page.dart';
+import 'package:loahstudio/view/user_views/servicos/servico_detalhes_page.dart';
 import 'package:loahstudio/view/user_views/servicos/widgets/servico_card.dart';
 import 'package:loahstudio/view/user_views/servicos/widgets/calendario_selector.dart';
 import 'package:loahstudio/view/user_views/servicos/widgets/horarios_selector.dart';
@@ -353,20 +354,24 @@ Widget _servicosList(bool isMobile) {
                       mainAxisExtent: 235,
                     ),
                     itemCount: exibidos.length,
-                    itemBuilder: (context, index) => ServicoCard(
-                      servico: exibidos[index],
-                      isSelected: selectedServico?.id == exibidos[index].id,
-                      isMobile: true,
-                      onTap: () => _selecionarServico(exibidos[index]),
-                    ),
+                    // no GridView (mobile)
+itemBuilder: (context, index) => ServicoCard(
+  servico: exibidos[index],
+  isSelected: selectedServico?.id == exibidos[index].id,
+  isMobile: true,
+  onTap: () => _abrirDetalhesServico(exibidos[index]),
+  onSelecionar: () => _selecionarServico(exibidos[index]),
+),
                   )
                 else
-                  Column(children: exibidos.map((s) => ServicoCard(
-                    servico: s,
-                    isSelected: selectedServico?.id == s.id,
-                    isMobile: false,
-                    onTap: () => _selecionarServico(s),
-                  )).toList()),
+            // na Column (desktop)
+Column(children: exibidos.map((s) => ServicoCard(
+  servico: s,
+  isSelected: selectedServico?.id == s.id,
+  isMobile: false,
+  onTap: () => _abrirDetalhesServico(s),
+  onSelecionar: () => _selecionarServico(s),
+)).toList()),
                 if (temMais) ...[
                   const SizedBox(height: 16),
                   Center(
@@ -419,7 +424,21 @@ Widget _botaoFiltroMobile(List<String> categorias) {
     ],
   );
 }
-
+void _abrirDetalhesServico(Servico servico) {
+  Navigator.push(
+    context,
+    MaterialPageRoute(
+      builder: (_) => ServicoDetalhesPage(
+        servico: servico,
+        isSelected: selectedServico?.id == servico.id,
+        onSelecionar: () {
+          Navigator.pop(context);
+          _selecionarServico(servico);
+        },
+      ),
+    ),
+  );
+}
 void _abrirFiltrosMobile(List<String> categorias) {
   showModalBottomSheet(
     context: context,
