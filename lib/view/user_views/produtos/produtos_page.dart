@@ -48,7 +48,9 @@ class _ProdutosPageState extends State<ProdutosPage> {
         _cart.add({
           'id': produto.id,
           'nome': produto.nome,
-          'preco': '€${produto.preco.toStringAsFixed(2).replaceAll('.', ',')}',
+          'marca': produto.marca,
+          'preco': produto.preco,          // valor numérico puro, sem formatação
+          'imagem': produto.imagemUrl ?? '',
         });
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text("${produto.nome} adicionado ao carrinho!"), backgroundColor: AppColors.pinkStrong, duration: const Duration(seconds: 1)),
