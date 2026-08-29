@@ -142,7 +142,7 @@ class _HomePageState extends State<HomePage> {
                   );
                 }),
                 SizedBox(width: 20),
-                 buildAuthMenuItem(),
+                buildAuthMenuItem(),
                 ElevatedButton(
                   style: ElevatedButton.styleFrom(backgroundColor: AppColors.pinkStrong, padding: EdgeInsets.symmetric(horizontal: 20, vertical: 12), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20))),
                   onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => ServicosPage())),

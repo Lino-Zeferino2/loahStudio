@@ -153,35 +153,42 @@ class DadosPessoaisSectionState extends State<DadosPessoaisSection> {
   }
 
   Widget _buildLogado() {
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(color: AppColors.pinkNude.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(12)),
-      child: Row(
-        children: [
-          CircleAvatar(
-            backgroundColor: AppColors.pinkStrong,
-            child: Text(
-              widget.nomeController.text.isNotEmpty ? widget.nomeController.text[0].toUpperCase() : '?',
-              style: const TextStyle(color: Colors.white),
+  return Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      Container(
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(color: AppColors.pinkNude.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(12)),
+        child: Row(
+          children: [
+            CircleAvatar(
+              backgroundColor: AppColors.pinkStrong,
+              child: Text(
+                widget.nomeController.text.isNotEmpty ? widget.nomeController.text[0].toUpperCase() : '?',
+                style: const TextStyle(color: Colors.white),
+              ),
             ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(_isProcessando ? 'A carregar...' : (widget.nomeController.text.isEmpty ? _user!.email ?? '' : widget.nomeController.text),
-                    style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF5A4A42))),
-                if (widget.emailController.text.isNotEmpty)
-                  Text(widget.emailController.text, style: const TextStyle(fontSize: 12, color: Color(0xFF7A6A62))),
-              ],
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(_isProcessando ? 'A carregar...' : (widget.nomeController.text.isEmpty ? _user!.email ?? '' : widget.nomeController.text),
+                      style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF5A4A42))),
+                  if (widget.emailController.text.isNotEmpty)
+                    Text(widget.emailController.text, style: const TextStyle(fontSize: 12, color: Color(0xFF7A6A62))),
+                ],
+              ),
             ),
-          ),
-          TextButton(onPressed: _sair, child: const Text('Sair', style: TextStyle(color: Colors.red))),
-        ],
+            TextButton(onPressed: _sair, child: const Text('Sair', style: TextStyle(color: Colors.red))),
+          ],
+        ),
       ),
-    );
-  }
+      const SizedBox(height: 16),
+      _campo(widget.observacaoController, 'Observação (opcional)', 'Alguma informação adicional?', TextInputType.multiline, maxLines: 3),
+    ],
+  );
+}
 
   Widget _buildNaoLogado() {
     return Column(
