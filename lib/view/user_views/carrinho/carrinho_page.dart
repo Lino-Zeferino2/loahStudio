@@ -1,8 +1,11 @@
 // ignore_for_file: library_private_types_in_public_api
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:loahstudio/controller/pedido_controller.dart';
 import 'package:loahstudio/model/carrinho_item_model.dart';
 import 'package:flutter/material.dart';
 import 'package:loahstudio/constants/colors.dart';
 import 'package:loahstudio/controller/carrinho_controller.dart';
+import 'package:loahstudio/view/auth/auth_page.dart';
 import 'package:loahstudio/view/user_views/carrinho/widgets/carrinho_empty.dart';
 import 'package:loahstudio/view/user_views/carrinho/widgets/confirmar_remocao_item.dart';
 import 'package:loahstudio/view/user_views/carrinho/widgets/mostrar_confirmacao_pedido.dart';
@@ -23,6 +26,7 @@ class CarrinhoPage extends StatefulWidget {
 
 class _CarrinhoPageState extends State<CarrinhoPage> {
   final CarrinhoController _controller = CarrinhoController();
+  final PedidoController _pedidoController = PedidoController();
 
   int selectedIndex = -1;
   int? hoverIndex;
@@ -59,12 +63,50 @@ class _CarrinhoPageState extends State<CarrinhoPage> {
   void _removerItem(int index) {
     setState(() => cartItems.removeAt(index));
   }
+Future<void> _abrirCheckout() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) {
+      final foiParaLogin = await Navigator.push<bool>(
+        context,
+        MaterialPageRoute(builder: (_) => const AuthPage()),
+      );
+      if (foiParaLogin != true || !mounted) return;
+      return; // utilizador toca em "Finalizar compra" outra vez após logar
+    }
 
-  void _abrirCheckout() {
     CheckoutDialog.show(
       context,
       total: totalValue,
-      onConfirmar: ({required String metodoPagamento, required String email}) {
+      onConfirmar: ({
+        required String metodoPagamento,
+        required String nome,
+        required String email,
+        required String telefone,
+        required String morada,
+        required String codigoPostal,
+        required String cidade,
+      }) async {
+
+        final pedidoId = await _pedidoController.criarPedido(
+          itens: cartItems,
+          clienteNome: nome,
+          clienteEmail: email,
+          clienteTelefone: telefone,
+          morada: morada,
+          codigoPostal: codigoPostal,
+          cidade: cidade,
+          metodoPagamento: metodoPagamento,
+        );
+
+        if (!mounted) return;
+
+        if (pedidoId == null) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Não foi possível registar o pedido. Tenta novamente.'), backgroundColor: Colors.red),
+          );
+          return;
+        }
+
         mostrarConfirmacaoPedido(
           context,
           email: email,
@@ -77,7 +119,6 @@ class _CarrinhoPageState extends State<CarrinhoPage> {
       },
     );
   }
-
   void _navegarMenu(int index) {
     if (index == selectedIndex || (index == 4 && selectedIndex == -1)) return;
     if (index == 0) {

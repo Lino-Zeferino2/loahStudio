@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
+import 'package:loahstudio/model/user_model.dart';
 
 typedef AuthCallback = void Function(bool success, String? errorMessage);
 
@@ -62,6 +63,39 @@ class AuthController {
     }
   }
 
+  // ---------------- DADOS DO UTILIZADOR ----------------
+  Future<UserModel?> getUserData(String uid) async {
+    try {
+      final doc = await _firestore.collection('clientes').doc(uid).get();
+      if (doc.exists && doc.data() != null) {
+        return UserModel.fromMap(doc.id, doc.data()!);
+      }
+      return null;
+    } catch (e) {
+      debugPrint('Erro ao obter dados do utilizador: $e');
+      return null;
+    }
+  }
+
+  Future<bool> updateUserProfile({
+    required String uid,
+    required String nome,
+    required String telefone,
+    String? morada,
+  }) async {
+    try {
+      await _firestore.collection('clientes').doc(uid).update({
+        'nome': nome.trim(),
+        'telefone': _normalizePhonePT(telefone),
+        'morada': (morada == null || morada.trim().isEmpty) ? FieldValue.delete() : morada.trim(),
+      });
+      return true;
+    } catch (e) {
+      debugPrint('Erro ao atualizar perfil: $e');
+      return false;
+    }
+  }
+
   // ---------------- LOGOUT ----------------
   Future<void> logoutUser({
     required AuthCallback onComplete,
@@ -86,26 +120,23 @@ class AuthController {
   }
 
   // ---------------- REGISTO ----------------
- void registerUser({
-  required String nome,
-  required String email,
-  required String password,
-  required String telefone,
-  required bool aceitouTermos, // novo
-  required AuthCallback onComplete,
-}) async {
-  _isLoading = true;
+  void registerUser({
+    required String nome,
+    required String email,
+    required String password,
+    required String telefone,
+    required bool aceitouTermos,
+    required AuthCallback onComplete,
+  }) async {
+    _isLoading = true;
 
-  // Validação no controller também — nunca confies só na UI.
-  // Se alguém chamar registerUser de outro sítio sem passar pelo
-  // checkbox, isto ainda bloqueia.
-  if (!aceitouTermos) {
-    _isLoading = false;
-    onComplete(false, 'É necessário aceitar os Termos e Condições e a Política de Privacidade.');
-    return;
-  }
+    if (!aceitouTermos) {
+      _isLoading = false;
+      onComplete(false, 'É necessário aceitar os Termos e Condições e a Política de Privacidade.');
+      return;
+    }
 
-  try {
+    try {
       debugPrint('A criar utilizador com email: ${email.trim()}');
       final userCredential = await _auth.createUserWithEmailAndPassword(
         email: email.trim(),
@@ -136,19 +167,19 @@ class AuthController {
       try {
         debugPrint('A guardar no Firestore...');
         await _firestore.collection('clientes').doc(uid).set({
-      'id': uid,
-      'nome': nome.trim(),
-      'email': email.trim().toLowerCase(),
-      'telefone': _normalizePhonePT(telefone),
-      'role': 'user',
-      'status': 'ativo',
-      'dataCadastro': Timestamp.now(),
-      'termosAceites': true,
-      'termosAceitesEm': Timestamp.now(),
-    }).timeout(
-      const Duration(seconds: 10),
-      onTimeout: () => throw TimeoutException('Firestore timeout'),
-    );
+          'id': uid,
+          'nome': nome.trim(),
+          'email': email.trim().toLowerCase(),
+          'telefone': _normalizePhonePT(telefone),
+          'role': 'user',
+          'status': 'ativo',
+          'dataCadastro': Timestamp.now(),
+          'termosAceites': true,
+          'termosAceitesEm': Timestamp.now(),
+        }).timeout(
+          const Duration(seconds: 10),
+          onTimeout: () => throw TimeoutException('Firestore timeout'),
+        );
         debugPrint('Documento guardado no Firestore com sucesso');
       } catch (e) {
         debugPrint('Firestore erro: $e');
@@ -197,9 +228,6 @@ class AuthController {
         return 'Utilizador não encontrado.';
       case 'wrong-password':
         return 'Palavra-passe incorreta.';
-      // Versões recentes do Firebase Auth (proteção contra enumeração de
-      // emails) devolvem este código genérico em vez de user-not-found /
-      // wrong-password para credenciais erradas no login.
       case 'invalid-credential':
       case 'INVALID_LOGIN_CREDENTIALS':
         return 'Email ou palavra-passe incorretos.';

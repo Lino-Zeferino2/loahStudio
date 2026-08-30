@@ -162,7 +162,7 @@ class _AuthPageState extends State<AuthPage> {
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        _isLogin ? 'Admin Login' : 'Criar Conta Admin',
+                        _isLogin ? 'Login' : 'Criar Conta',
                         style: TextStyle(color: AppColors.grey, fontSize: 16),
                       ),
                       const SizedBox(height: 32),

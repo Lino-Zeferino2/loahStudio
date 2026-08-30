@@ -1,16 +1,34 @@
 import 'package:flutter/material.dart';
 import 'package:loahstudio/constants/colors.dart';
+import 'package:loahstudio/controller/pedido_controller.dart';
+import 'package:loahstudio/model/pagamento_config_model.dart';
 
 class CheckoutDialog extends StatefulWidget {
   final double total;
-  final void Function({required String metodoPagamento, required String email}) onConfirmar;
+  final void Function({
+    required String metodoPagamento,
+    required String nome,
+    required String email,
+    required String telefone,
+    required String morada,
+    required String codigoPostal,
+    required String cidade,
+  }) onConfirmar;
 
   const CheckoutDialog({super.key, required this.total, required this.onConfirmar});
 
   static Future<void> show(
     BuildContext context, {
     required double total,
-    required void Function({required String metodoPagamento, required String email}) onConfirmar,
+    required void Function({
+      required String metodoPagamento,
+      required String nome,
+      required String email,
+      required String telefone,
+      required String morada,
+      required String codigoPostal,
+      required String cidade,
+    }) onConfirmar,
   }) {
     return showDialog(context: context, builder: (_) => CheckoutDialog(total: total, onConfirmar: onConfirmar));
   }
@@ -26,12 +44,15 @@ class _CheckoutDialogState extends State<CheckoutDialog> {
   final moradaController = TextEditingController();
   final cpController = TextEditingController();
   final cidadeController = TextEditingController();
-  final mbwayNumeroController = TextEditingController();
-  final cartaoNumeroController = TextEditingController();
-  final cartaoValidadeController = TextEditingController();
-  final cartaoCvvController = TextEditingController();
-  final cartaoNomeController = TextEditingController();
-  String pagamentoSelecionado = 'mbway';
+  String pagamentoSelecionado = 'transferencia';
+
+  late final Future<PagamentoConfig> _configFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _configFuture = PedidoController().fetchPagamentoConfig();
+  }
 
   @override
   void dispose() {
@@ -41,31 +62,37 @@ class _CheckoutDialogState extends State<CheckoutDialog> {
     moradaController.dispose();
     cpController.dispose();
     cidadeController.dispose();
-    mbwayNumeroController.dispose();
-    cartaoNumeroController.dispose();
-    cartaoValidadeController.dispose();
-    cartaoCvvController.dispose();
-    cartaoNomeController.dispose();
     super.dispose();
   }
 
   void _confirmar() {
-    if (nomeController.text.isEmpty || emailController.text.isEmpty || telefoneController.text.isEmpty || moradaController.text.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Por favor, preencha todos os campos necessários."), backgroundColor: Colors.red));
+    if (nomeController.text.trim().isEmpty ||
+        emailController.text.trim().isEmpty ||
+        telefoneController.text.trim().isEmpty ||
+        moradaController.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Por favor, preencha todos os campos necessários."), backgroundColor: Colors.red),
+      );
       return;
     }
-    if (pagamentoSelecionado == 'mbway' && mbwayNumeroController.text.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Por favor, insira o número MB Way."), backgroundColor: Colors.red));
-      return;
-    }
-    if (pagamentoSelecionado == 'cartao' &&
-        (cartaoNumeroController.text.isEmpty || cartaoValidadeController.text.isEmpty || cartaoCvvController.text.isEmpty)) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Por favor, preencha os dados do cartão."), backgroundColor: Colors.red));
-      return;
-    }
-    final email = emailController.text;
+
+    final nome = nomeController.text.trim();
+    final email = emailController.text.trim();
+    final telefone = telefoneController.text.trim();
+    final morada = moradaController.text.trim();
+    final cp = cpController.text.trim();
+    final cidade = cidadeController.text.trim();
+
     Navigator.pop(context);
-    widget.onConfirmar(metodoPagamento: pagamentoSelecionado, email: email);
+    widget.onConfirmar(
+      metodoPagamento: pagamentoSelecionado,
+      nome: nome,
+      email: email,
+      telefone: telefone,
+      morada: morada,
+      codigoPostal: cp,
+      cidade: cidade,
+    );
   }
 
   @override
@@ -97,7 +124,7 @@ class _CheckoutDialogState extends State<CheckoutDialog> {
                 ],
               ),
               SizedBox(height: isMobile ? 16 : 24),
-              Text("Dados de faturação", style: TextStyle(fontSize: subtitleSize, fontWeight: FontWeight.w600, color: const Color(0xFF5A4A42))),
+              Text("Dados de contacto", style: TextStyle(fontSize: subtitleSize, fontWeight: FontWeight.w600, color: const Color(0xFF5A4A42))),
               SizedBox(height: isMobile ? 10 : 16),
               _textField(nomeController, "Nome completo", Icons.person_outline, isMobile: isMobile),
               SizedBox(height: isMobile ? 8 : 12),
@@ -125,55 +152,33 @@ class _CheckoutDialogState extends State<CheckoutDialog> {
               SizedBox(height: isMobile ? 16 : 24),
               Text("Método de pagamento", style: TextStyle(fontSize: subtitleSize, fontWeight: FontWeight.w600, color: const Color(0xFF5A4A42))),
               SizedBox(height: isMobile ? 10 : 16),
+              _metodoPagamento("Transferência Bancária", "transferencia", Icons.account_balance, isMobile),
+              SizedBox(height: isMobile ? 8 : 12),
               _metodoPagamento("MB Way", "mbway", Icons.phone_android, isMobile),
-              SizedBox(height: isMobile ? 8 : 12),
-              _metodoPagamento("Multibanco", "multibanco", Icons.account_balance, isMobile),
-              SizedBox(height: isMobile ? 8 : 12),
-              _metodoPagamento("Cartão de Crédito", "cartao", Icons.credit_card, isMobile),
               SizedBox(height: isMobile ? 16 : 24),
-              if (pagamentoSelecionado == 'mbway') ...[
-                const Text("Número MB Way", style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF5A4A42))),
-                const SizedBox(height: 8),
-                _textField(mbwayNumeroController, "9xxxxxxxxx", Icons.phone_android, keyboardType: TextInputType.phone, isMobile: isMobile),
-              ],
-              if (pagamentoSelecionado == 'cartao') ...[
-                const Text("Dados do cartão", style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF5A4A42))),
-                const SizedBox(height: 8),
-                _textField(cartaoNomeController, "Nome no cartão", Icons.person_outline, isMobile: isMobile),
-                SizedBox(height: isMobile ? 8 : 12),
-                _textField(cartaoNumeroController, "Número do cartão", Icons.credit_card, keyboardType: TextInputType.number, isMobile: isMobile),
-                SizedBox(height: isMobile ? 8 : 12),
-                if (isMobile) ...[
-                  _textField(cartaoValidadeController, "MM/AA", Icons.calendar_today, isMobile: isMobile),
-                  const SizedBox(height: 8),
-                  _textField(cartaoCvvController, "CVV", Icons.lock_outline, isMobile: isMobile),
-                ] else ...[
-                  Row(
-                    children: [
-                      Expanded(child: _textField(cartaoValidadeController, "MM/AA", Icons.calendar_today, isMobile: isMobile)),
-                      const SizedBox(width: 12),
-                      Expanded(child: _textField(cartaoCvvController, "CVV", Icons.lock_outline, isMobile: isMobile)),
-                    ],
-                  ),
-                ],
-              ],
-              if (pagamentoSelecionado == 'multibanco')
-                Container(
-                  padding: EdgeInsets.all(isMobile ? 12 : 16),
-                  decoration: BoxDecoration(color: const Color(0xFFF7F4F2), borderRadius: BorderRadius.circular(12)),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text("Dados para Transferência", style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF5A4A42))),
-                      const SizedBox(height: 8),
-                      Text("Entidade: 12345", style: TextStyle(fontSize: isMobile ? 12 : 14, color: const Color(0xFF7A6A62))),
-                      Text("Referência: 999 999 999", style: TextStyle(fontSize: isMobile ? 12 : 14, color: const Color(0xFF7A6A62))),
-                      Text("IBAN: PT50 0000 0000 0000 0000 00", style: TextStyle(fontSize: isMobile ? 12 : 14, color: const Color(0xFF7A6A62))),
-                      const SizedBox(height: 8),
-                      Text("Após transferência, envie o comprovativo para o nosso email.", style: TextStyle(fontSize: isMobile ? 10 : 12, color: Colors.grey)),
-                    ],
-                  ),
-                ),
+              FutureBuilder<PagamentoConfig>(
+                future: _configFuture,
+                builder: (context, snapshot) {
+                  if (!snapshot.hasData) {
+                    return const Padding(
+                      padding: EdgeInsets.symmetric(vertical: 12),
+                      child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
+                    );
+                  }
+                  final config = snapshot.data!;
+                  if (!config.isConfigurado) {
+                    return Container(
+                      padding: EdgeInsets.all(isMobile ? 12 : 16),
+                      decoration: BoxDecoration(color: Colors.orange.shade50, borderRadius: BorderRadius.circular(12)),
+                      child: Text(
+                        "As instruções de pagamento ainda não foram configuradas. Contacta-nos diretamente para combinar o pagamento.",
+                        style: TextStyle(fontSize: isMobile ? 12 : 13, color: Colors.orange.shade900),
+                      ),
+                    );
+                  }
+                  return _instrucoesPagamento(config, isMobile);
+                },
+              ),
               SizedBox(height: isMobile ? 16 : 24),
               const Divider(),
               SizedBox(height: isMobile ? 12 : 16),
@@ -190,12 +195,49 @@ class _CheckoutDialogState extends State<CheckoutDialog> {
                 child: ElevatedButton(
                   style: ElevatedButton.styleFrom(backgroundColor: AppColors.pinkStrong, padding: EdgeInsets.symmetric(vertical: isMobile ? 14 : 16), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30))),
                   onPressed: _confirmar,
-                  child: Text("Confirmar compra", style: TextStyle(fontSize: isMobile ? 14 : 16, fontWeight: FontWeight.w600, color: Colors.white)),
+                  child: Text("Confirmar pedido", style: TextStyle(fontSize: isMobile ? 14 : 16, fontWeight: FontWeight.w600, color: Colors.white)),
                 ),
               ),
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _instrucoesPagamento(PagamentoConfig config, bool isMobile) {
+    final linhas = <Widget>[];
+
+    if (pagamentoSelecionado == 'transferencia') {
+      linhas.addAll([
+        Text("Transferência Bancária", style: TextStyle(fontWeight: FontWeight.w600, fontSize: isMobile ? 12 : 14, color: const Color(0xFF5A4A42))),
+        const SizedBox(height: 8),
+        if (config.titular.isNotEmpty) Text("Titular: ${config.titular}", style: TextStyle(fontSize: isMobile ? 12 : 14, color: const Color(0xFF7A6A62))),
+        Text("IBAN: ${config.iban}", style: TextStyle(fontSize: isMobile ? 12 : 14, color: const Color(0xFF7A6A62))),
+      ]);
+    } else {
+      linhas.addAll([
+        Text("MB Way", style: TextStyle(fontWeight: FontWeight.w600, fontSize: isMobile ? 12 : 14, color: const Color(0xFF5A4A42))),
+        const SizedBox(height: 8),
+        Text("Envia o valor pela app MB Way para o número: ${config.mbwayNumero}", style: TextStyle(fontSize: isMobile ? 12 : 14, color: const Color(0xFF7A6A62))),
+      ]);
+    }
+
+    return Container(
+      padding: EdgeInsets.all(isMobile ? 12 : 16),
+      decoration: BoxDecoration(color: const Color(0xFFF7F4F2), borderRadius: BorderRadius.circular(12)),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          ...linhas,
+          const SizedBox(height: 12),
+          Text(
+            "Depois de pagares, envia o comprovativo pelo WhatsApp"
+            "${config.whatsappNumero.isNotEmpty ? ' (${config.whatsappNumero})' : ''} "
+            "ou carrega-o na página \"As minhas Compras\" enquanto o pedido estiver pendente.",
+            style: TextStyle(fontSize: isMobile ? 11 : 12, color: const Color(0xFF7A6A62), height: 1.4),
+          ),
+        ],
       ),
     );
   }
@@ -245,11 +287,7 @@ class _CheckoutDialogState extends State<CheckoutDialog> {
             Icon(icone, size: iconSize, color: isSelected ? AppColors.pinkStrong : const Color(0xFF5A4A42)),
             SizedBox(width: isMobile ? 8 : 12),
             Flexible(
-              child: Text(
-                titulo,
-                style: TextStyle(fontSize: fontSize, fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal, color: isSelected ? AppColors.pinkStrong : const Color(0xFF5A4A42)),
-                overflow: TextOverflow.ellipsis,
-              ),
+              child: Text(titulo, style: TextStyle(fontSize: fontSize, fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal, color: isSelected ? AppColors.pinkStrong : const Color(0xFF5A4A42)), overflow: TextOverflow.ellipsis),
             ),
           ],
         ),

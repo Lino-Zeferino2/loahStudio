@@ -2,6 +2,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:loahstudio/constants/colors.dart';
 import 'package:loahstudio/view/auth/auth_page.dart';
+import 'package:loahstudio/view/user_views/perfil/perfil_page.dart';
 import 'package:loahstudio/view/user_views/servicos/servicos_page.dart';
 
 class AppDrawer extends StatelessWidget {
@@ -85,14 +86,13 @@ class AppDrawer extends StatelessWidget {
       builder: (context, snapshot) {
         final isLoggedIn = snapshot.data != null;
         return ListTile(
-          leading: Icon(isLoggedIn ? Icons.logout : Icons.login, color: AppColors.brown),
-          title: Text(isLoggedIn ? "Logout" : "Login", style: TextStyle(color: AppColors.brown, fontWeight: FontWeight.w500)),
-          onTap: () async {
+          leading: Icon(isLoggedIn ? Icons.person_outline : Icons.login, color: AppColors.brown),
+          title: Text(isLoggedIn ? "Perfil" : "Entrar", style: TextStyle(color: AppColors.brown, fontWeight: FontWeight.w500)),
+          onTap: () {
+            Navigator.pop(context);
             if (isLoggedIn) {
-              await FirebaseAuth.instance.signOut();
-              if (context.mounted) Navigator.pop(context);
+              Navigator.push(context, MaterialPageRoute(builder: (_) => const PerfilPage()));
             } else {
-              Navigator.pop(context);
               Navigator.push(context, MaterialPageRoute(builder: (_) => const AuthPage()));
             }
           },

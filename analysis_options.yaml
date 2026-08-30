@@ -9,7 +9,7 @@
 # packages, and plugins designed to encourage good coding practices.
 analyzer:
   errors:
-    library_private_types_in_public_api: ignore ignore ignore
+    library_private_types_in_public_api: 
     unused_element: ignore
 include: package:flutter_lints/flutter.yaml
 

@@ -21,31 +21,30 @@ Future<void> mostrarConfirmacaoPedido(
         children: [
           Icon(Icons.check_circle, color: Colors.green, size: iconSize),
           SizedBox(height: isMobile ? 16 : 20),
-          Text("Encomenda confirmada!", style: TextStyle(fontSize: titleSize, fontWeight: FontWeight.bold, color: const Color(0xFF5A4A42))),
+          Text("Pedido registado!", style: TextStyle(fontSize: titleSize, fontWeight: FontWeight.bold, color: const Color(0xFF5A4A42))),
           const SizedBox(height: 8),
           Text(
-            "Receberá uma confirmação no email:\n$email",
+            "Vais receber uma confirmação no email:\n$email",
             textAlign: TextAlign.center,
             style: TextStyle(fontSize: textSize, color: const Color(0xFF7A6A62)),
           ),
-          if (metodoPagamento == 'mbway') ...[
-            SizedBox(height: isMobile ? 12.0 : 20.0),
-            Container(
-              padding: EdgeInsets.all(isMobile ? 12.0 : 16.0),
-              decoration: BoxDecoration(color: const Color(0xFFF7F4F2), borderRadius: BorderRadius.circular(12)),
-              child: Column(
-                children: [
-                  Text("Pagamento via MB Way", style: TextStyle(fontWeight: FontWeight.w600, fontSize: textSize)),
-                  const SizedBox(height: 8),
-                  Text(
-                    "Enviará um pedido de pagamento\npara o seu número.",
-                    textAlign: TextAlign.center,
-                    style: TextStyle(fontSize: isMobile ? 12 : 14, color: const Color(0xFF7A6A62)),
-                  ),
-                ],
-              ),
+          SizedBox(height: isMobile ? 12.0 : 20.0),
+          Container(
+            padding: EdgeInsets.all(isMobile ? 12.0 : 16.0),
+            decoration: BoxDecoration(color: const Color(0xFFF7F4F2), borderRadius: BorderRadius.circular(12)),
+            child: Column(
+              children: [
+                Text("Falta um passo", style: TextStyle(fontWeight: FontWeight.w600, fontSize: textSize)),
+                const SizedBox(height: 8),
+                Text(
+                  "Depois de efetuares o pagamento, envia o comprovativo pelo WhatsApp "
+                  "ou carrega-o na página \"As minhas Compras\" — o teu pedido só avança depois disso.",
+                  textAlign: TextAlign.center,
+                  style: TextStyle(fontSize: isMobile ? 12 : 14, color: const Color(0xFF7A6A62)),
+                ),
+              ],
             ),
-          ],
+          ),
           SizedBox(height: isMobile ? 16 : 20),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
