@@ -86,16 +86,26 @@ class AuthController {
   }
 
   // ---------------- REGISTO ----------------
-  void registerUser({
-    required String nome,
-    required String email,
-    required String password,
-    required String telefone,
-    required AuthCallback onComplete,
-  }) async {
-    _isLoading = true;
+ void registerUser({
+  required String nome,
+  required String email,
+  required String password,
+  required String telefone,
+  required bool aceitouTermos, // novo
+  required AuthCallback onComplete,
+}) async {
+  _isLoading = true;
 
-    try {
+  // Validação no controller também — nunca confies só na UI.
+  // Se alguém chamar registerUser de outro sítio sem passar pelo
+  // checkbox, isto ainda bloqueia.
+  if (!aceitouTermos) {
+    _isLoading = false;
+    onComplete(false, 'É necessário aceitar os Termos e Condições e a Política de Privacidade.');
+    return;
+  }
+
+  try {
       debugPrint('A criar utilizador com email: ${email.trim()}');
       final userCredential = await _auth.createUserWithEmailAndPassword(
         email: email.trim(),
@@ -126,18 +136,19 @@ class AuthController {
       try {
         debugPrint('A guardar no Firestore...');
         await _firestore.collection('clientes').doc(uid).set({
-          'nome': nome.trim(),
-          'email': email.trim(),
-          'telefone': _normalizePhonePT(telefone),
-          'role': 'user',
-          'status': 'ativo',
-          'dataCadastro': Timestamp.now(),
-        }).timeout(
-          const Duration(seconds: 10),
-          onTimeout: () {
-            throw TimeoutException('Firestore timeout');
-          },
-        );
+      'id': uid,
+      'nome': nome.trim(),
+      'email': email.trim().toLowerCase(),
+      'telefone': _normalizePhonePT(telefone),
+      'role': 'user',
+      'status': 'ativo',
+      'dataCadastro': Timestamp.now(),
+      'termosAceites': true,
+      'termosAceitesEm': Timestamp.now(),
+    }).timeout(
+      const Duration(seconds: 10),
+      onTimeout: () => throw TimeoutException('Firestore timeout'),
+    );
         debugPrint('Documento guardado no Firestore com sucesso');
       } catch (e) {
         debugPrint('Firestore erro: $e');

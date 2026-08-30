@@ -1,10 +1,12 @@
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:loahstudio/constants/colors.dart';
 import 'package:loahstudio/constants/responsive.dart';
 import 'package:loahstudio/view/admin_views/admin_layout.dart';
 import 'package:loahstudio/controller/auth_controller.dart';
 import 'package:loahstudio/view/user_views/home/home_page.dart';
+
 class AuthPage extends StatefulWidget {
   const AuthPage({super.key});
 
@@ -18,6 +20,8 @@ class _AuthPageState extends State<AuthPage> {
   bool _obscureConfirmPassword = true;
   bool _isLoading = false;
   bool _isSubmitting = false; // Guard against double submissions
+  bool _aceitouTermos = false;
+
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
@@ -37,39 +41,23 @@ class _AuthPageState extends State<AuthPage> {
     super.dispose();
   }
 
-  void _onRegisterComplete(bool success, String? error) {
-    if (!mounted) return;
-
-    setState(() {
-      _isLoading = false;
-      _isSubmitting = false;
-    });
-
-    if (success) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Conta criada com sucesso!'),
-          backgroundColor: Colors.green,
-        ),
-      );
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(builder: (_) => const AdminLayout()),
-      );
-    } else if (error != null && error.isNotEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(error),
-          backgroundColor: Colors.red,
-        ),
-      );
-    }
-  }
-
- void _submit() {
+  void _submit() {
     if (_isSubmitting) return;
 
     final formState = _formKey.currentState;
     if (formState == null || !formState.validate()) return;
+
+    // O Checkbox não participa do Form/validate() como os TextFormField,
+    // por isso esta checagem tem de ficar separada — não é redundante.
+    if (!_isLogin && !_aceitouTermos) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Tens de aceitar os Termos e Condições e a Política de Privacidade.'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
 
     setState(() {
       _isLoading = true;
@@ -83,15 +71,49 @@ class _AuthPageState extends State<AuthPage> {
         onComplete: _onAuthComplete,
       );
     } else {
-    authController.registerUser(
-      nome: _nameController.text,
-      email: _emailController.text,
-      password: _passwordController.text,
-      telefone: _telefoneController.text,
-      onComplete: _onAuthComplete,
-    );
+      authController.registerUser(
+        nome: _nameController.text,
+        email: _emailController.text,
+        password: _passwordController.text,
+        telefone: _telefoneController.text,
+        aceitouTermos: _aceitouTermos,
+        onComplete: _onAuthComplete,
+      );
     }
   }
+
+  void _mostrarTermos() {
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text('Termos e Condições'),
+        content: const SingleChildScrollView(
+          child: Text('Conteúdo dos Termos e Condições ainda por definir.'),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Fechar')),
+        ],
+      ),
+    );
+  }
+
+  void _mostrarPolitica() {
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text('Política de Privacidade'),
+        content: const SingleChildScrollView(
+          child: Text('Conteúdo da Política de Privacidade ainda por definir.'),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Fechar')),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final bool isMobile = ResponsiveHelper.isMobile(context);
@@ -106,9 +128,7 @@ class _AuthPageState extends State<AuthPage> {
               child: Form(
                 key: _formKey,
                 child: Container(
-                  constraints: BoxConstraints(
-                    maxWidth: isMobile ? double.infinity : 450,
-                  ),
+                  constraints: BoxConstraints(maxWidth: isMobile ? double.infinity : 450),
                   padding: EdgeInsets.all(isMobile ? 24 : 40),
                   decoration: BoxDecoration(
                     color: AppColors.white,
@@ -128,13 +148,8 @@ class _AuthPageState extends State<AuthPage> {
                       Container(
                         width: 100,
                         height: 100,
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: Image.asset(
-                          'assets/images/logo.png',
-                          fit: BoxFit.contain,
-                        ),
+                        decoration: BoxDecoration(borderRadius: BorderRadius.circular(20)),
+                        child: Image.asset('assets/images/logo.png', fit: BoxFit.contain),
                       ),
                       const SizedBox(height: 16),
                       Text(
@@ -148,10 +163,7 @@ class _AuthPageState extends State<AuthPage> {
                       const SizedBox(height: 8),
                       Text(
                         _isLogin ? 'Admin Login' : 'Criar Conta Admin',
-                        style: TextStyle(
-                          color: AppColors.grey,
-                          fontSize: 16,
-                        ),
+                        style: TextStyle(color: AppColors.grey, fontSize: 16),
                       ),
                       const SizedBox(height: 32),
 
@@ -161,8 +173,7 @@ class _AuthPageState extends State<AuthPage> {
                           controller: _nameController,
                           decoration: InputDecoration(
                             labelText: 'Nome Completo',
-                            prefixIcon:
-                                const Icon(Icons.person, color: AppColors.grey),
+                            prefixIcon: const Icon(Icons.person, color: AppColors.grey),
                             filled: true,
                             fillColor: AppColors.lightCreamBg,
                             border: OutlineInputBorder(
@@ -171,57 +182,55 @@ class _AuthPageState extends State<AuthPage> {
                             ),
                           ),
                           validator: (value) {
-                            if (!_isLogin &&
-                                (value == null || value.trim().isEmpty)) {
+                            if (!_isLogin && (value == null || value.trim().isEmpty)) {
                               return 'Por favor, insira o seu nome';
                             }
                             return null;
                           },
                         ),
-                      const SizedBox(height: 16),
-                      TextFormField(
-                        controller: _telefoneController,
-                        keyboardType: TextInputType.phone,
-                        decoration: InputDecoration(
-                          labelText: 'Telemóvel',
-                          prefixIcon: const Icon(Icons.phone, color: AppColors.grey),
-                          filled: true,
-                          fillColor: AppColors.lightCreamBg,
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide.none,
+                        const SizedBox(height: 16),
+                        TextFormField(
+                          controller: _telefoneController,
+                          keyboardType: TextInputType.phone,
+                          decoration: InputDecoration(
+                            labelText: 'Telemóvel',
+                            prefixIcon: const Icon(Icons.phone, color: AppColors.grey),
+                            filled: true,
+                            fillColor: AppColors.lightCreamBg,
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide.none,
+                            ),
                           ),
+                          validator: (value) {
+                            if (_isLogin) return null;
+                            final trimmed = value?.trim() ?? '';
+                            if (trimmed.isEmpty) {
+                              return 'Por favor, insira o seu número de telemóvel';
+                            }
+                            final digitsOnly = trimmed.replaceAll(RegExp(r'[^0-9]'), '');
+                            final localNumber = digitsOnly.startsWith('351')
+                                ? digitsOnly.substring(3)
+                                : digitsOnly;
+                            if (localNumber.length != 9) {
+                              return 'Número de telemóvel inválido';
+                            }
+                            if (!RegExp(r'^[92368]').hasMatch(localNumber)) {
+                              return 'Número de telemóvel inválido';
+                            }
+                            return null;
+                          },
                         ),
-                       validator: (value) {
-                        if (_isLogin) return null;
-                        final trimmed = value?.trim() ?? '';
-                        if (trimmed.isEmpty) {
-                          return 'Por favor, insira o seu número de telemóvel';
-                        }
-                        final digitsOnly = trimmed.replaceAll(RegExp(r'[^0-9]'), '');
-                        // Aceita com ou sem prefixo 351 (com ou sem +)
-                        final localNumber = digitsOnly.startsWith('351')
-                            ? digitsOnly.substring(3)
-                            : digitsOnly;
-                        if (localNumber.length != 9) {
-                          return 'Número de telemóvel inválido';
-                        }
-                        if (!RegExp(r'^[92368]').hasMatch(localNumber)) {
-                          return 'Número de telemóvel inválido';
-                        }
-                        return null;
-                      },
-                      ),
-                      const SizedBox(height: 16),
-                    ],
+                        const SizedBox(height: 16),
+                      ],
+
                       // Campo Email
                       TextFormField(
                         controller: _emailController,
                         keyboardType: TextInputType.emailAddress,
                         decoration: InputDecoration(
                           labelText: 'Email',
-                          prefixIcon:
-                              const Icon(Icons.email, color: AppColors.grey),
+                          prefixIcon: const Icon(Icons.email, color: AppColors.grey),
                           filled: true,
                           fillColor: AppColors.lightCreamBg,
                           border: OutlineInputBorder(
@@ -233,8 +242,7 @@ class _AuthPageState extends State<AuthPage> {
                           if (value == null || value.trim().isEmpty) {
                             return 'Por favor, insira o seu email';
                           }
-                          if (!value.contains('@') ||
-                              !value.contains('.')) {
+                          if (!value.contains('@') || !value.contains('.')) {
                             return 'Por favor, insira um email válido';
                           }
                           return null;
@@ -248,20 +256,13 @@ class _AuthPageState extends State<AuthPage> {
                         obscureText: _obscurePassword,
                         decoration: InputDecoration(
                           labelText: 'Senha',
-                          prefixIcon:
-                              const Icon(Icons.lock, color: AppColors.grey),
+                          prefixIcon: const Icon(Icons.lock, color: AppColors.grey),
                           suffixIcon: IconButton(
                             icon: Icon(
-                              _obscurePassword
-                                  ? Icons.visibility
-                                  : Icons.visibility_off,
+                              _obscurePassword ? Icons.visibility : Icons.visibility_off,
                               color: AppColors.grey,
                             ),
-                            onPressed: () {
-                              setState(() {
-                                _obscurePassword = !_obscurePassword;
-                              });
-                            },
+                            onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
                           ),
                           filled: true,
                           fillColor: AppColors.lightCreamBg,
@@ -289,21 +290,14 @@ class _AuthPageState extends State<AuthPage> {
                           obscureText: _obscureConfirmPassword,
                           decoration: InputDecoration(
                             labelText: 'Confirmar Senha',
-                            prefixIcon: const Icon(Icons.lock_outline,
-                                color: AppColors.grey),
+                            prefixIcon: const Icon(Icons.lock_outline, color: AppColors.grey),
                             suffixIcon: IconButton(
                               icon: Icon(
-                                _obscureConfirmPassword
-                                    ? Icons.visibility
-                                    : Icons.visibility_off,
+                                _obscureConfirmPassword ? Icons.visibility : Icons.visibility_off,
                                 color: AppColors.grey,
                               ),
-                              onPressed: () {
-                                setState(() {
-                                  _obscureConfirmPassword =
-                                      !_obscureConfirmPassword;
-                                });
-                              },
+                              onPressed: () =>
+                                  setState(() => _obscureConfirmPassword = !_obscureConfirmPassword),
                             ),
                             filled: true,
                             fillColor: AppColors.lightCreamBg,
@@ -325,6 +319,54 @@ class _AuthPageState extends State<AuthPage> {
                           },
                         ),
                         const SizedBox(height: 16),
+
+                        // Aceitar Termos e Condições / Política de Privacidade
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            SizedBox(
+                              width: 24,
+                              height: 24,
+                              child: Checkbox(
+                                value: _aceitouTermos,
+                                activeColor: AppColors.pinkStrong,
+                                onChanged: (v) => setState(() => _aceitouTermos = v ?? false),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: GestureDetector(
+                                onTap: () => setState(() => _aceitouTermos = !_aceitouTermos),
+                                child: RichText(
+                                  text: TextSpan(
+                                    style: TextStyle(color: AppColors.grey, fontSize: 13),
+                                    children: [
+                                      const TextSpan(text: 'Li e aceito os '),
+                                      TextSpan(
+                                        text: 'Termos e Condições',
+                                        style: TextStyle(
+                                          color: AppColors.pinkStrong,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                        recognizer: TapGestureRecognizer()..onTap = _mostrarTermos,
+                                      ),
+                                      const TextSpan(text: ' e a '),
+                                      TextSpan(
+                                        text: 'Política de Privacidade',
+                                        style: TextStyle(
+                                          color: AppColors.pinkStrong,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                        recognizer: TapGestureRecognizer()..onTap = _mostrarPolitica,
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 16),
                       ],
 
                       // Esqueceu a senha (só login)
@@ -334,15 +376,10 @@ class _AuthPageState extends State<AuthPage> {
                           child: TextButton(
                             onPressed: () {
                               ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                    content:
-                                        Text('Função em desenvolvimento')),
+                                const SnackBar(content: Text('Função em desenvolvimento')),
                               );
                             },
-                            child: Text(
-                              'Esqueceu a senha?',
-                              style: TextStyle(color: AppColors.pinkStrong),
-                            ),
+                            child: Text('Esqueceu a senha?', style: TextStyle(color: AppColors.pinkStrong)),
                           ),
                         ),
                       const SizedBox(height: 8),
@@ -356,9 +393,7 @@ class _AuthPageState extends State<AuthPage> {
                           style: ElevatedButton.styleFrom(
                             backgroundColor: AppColors.pinkStrong,
                             foregroundColor: AppColors.white,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                           ),
                           child: _isLoading
                               ? const SizedBox(
@@ -366,16 +401,12 @@ class _AuthPageState extends State<AuthPage> {
                                   height: 20,
                                   child: CircularProgressIndicator(
                                     strokeWidth: 2,
-                                    valueColor: AlwaysStoppedAnimation<Color>(
-                                        Colors.white),
+                                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                                   ),
                                 )
                               : Text(
                                   _isLogin ? 'Entrar' : 'Registar',
-                                  style: const TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.bold,
-                                  ),
+                                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                                 ),
                         ),
                       ),
@@ -392,17 +423,10 @@ class _AuthPageState extends State<AuthPage> {
                           GestureDetector(
                             onTap: _isLoading
                                 ? null
-                                : () {
-                                    setState(() {
-                                      _isLogin = !_isLogin;
-                                    });
-                                  },
+                                : () => setState(() => _isLogin = !_isLogin),
                             child: Text(
                               _isLogin ? 'Registar' : 'Entrar',
-                              style: TextStyle(
-                                color: AppColors.pinkStrong,
-                                fontWeight: FontWeight.bold,
-                              ),
+                              style: TextStyle(color: AppColors.pinkStrong, fontWeight: FontWeight.bold),
                             ),
                           ),
                         ],
@@ -412,22 +436,17 @@ class _AuthPageState extends State<AuthPage> {
                       const SizedBox(height: 24),
                       IconButton(
                         onPressed: () {
-                         Navigator.of(context).pushAndRemoveUntil(
-                         MaterialPageRoute(builder: (_) => HomePage()),
+                          Navigator.of(context).pushAndRemoveUntil(
+                            MaterialPageRoute(builder: (_) => HomePage()),
                             (route) => false,
                           );
-                         },
+                        },
                         icon: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            Icon(Icons.arrow_back,
-                                color: AppColors.grey, size: 18),
+                            Icon(Icons.arrow_back, color: AppColors.grey, size: 18),
                             const SizedBox(width: 4),
-                            Text(
-                              'Voltar para o site',
-                              style: TextStyle(
-                                  color: AppColors.grey, fontSize: 12),
-                            ),
+                            Text('Voltar para o site', style: TextStyle(color: AppColors.grey, fontSize: 12)),
                           ],
                         ),
                       ),
@@ -443,9 +462,7 @@ class _AuthPageState extends State<AuthPage> {
             Positioned.fill(
               child: Container(
                 color: Colors.black.withValues(alpha: 0.3),
-                child: const Center(
-                  child: CircularProgressIndicator(),
-                ),
+                child: const Center(child: CircularProgressIndicator()),
               ),
             ),
         ],
@@ -454,43 +471,40 @@ class _AuthPageState extends State<AuthPage> {
   }
 
   void _onAuthComplete(bool success, String? error) async {
-  if (!mounted) return;
+    if (!mounted) return;
 
-  if (!success) {
+    if (!success) {
+      setState(() {
+        _isLoading = false;
+        _isSubmitting = false;
+      });
+      if (error != null && error.isNotEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(error), backgroundColor: Colors.red),
+        );
+      }
+      return;
+    }
+
+    final user = FirebaseAuth.instance.currentUser;
+    final role = user != null ? await authController.getUserRole(user.uid) : null;
+
+    if (!mounted) return;
+
     setState(() {
       _isLoading = false;
       _isSubmitting = false;
     });
-    if (error != null && error.isNotEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(error), backgroundColor: Colors.red),
-      );
-    }
-    return;
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(_isLogin ? 'Sessão iniciada!' : 'Conta criada com sucesso!'),
+        backgroundColor: Colors.green,
+      ),
+    );
+
+    Navigator.of(context).pushReplacement(
+      MaterialPageRoute(builder: (_) => role == 'admin' ? const AdminLayout() : HomePage()),
+    );
   }
-
-  final user = FirebaseAuth.instance.currentUser;
-  final role = user != null ? await authController.getUserRole(user.uid) : null;
-
-  if (!mounted) return;
-
-  setState(() {
-    _isLoading = false;
-    _isSubmitting = false;
-  });
-
-  ScaffoldMessenger.of(context).showSnackBar(
-    SnackBar(
-      content: Text(_isLogin ? 'Sessão iniciada!' : 'Conta criada com sucesso!'),
-      backgroundColor: Colors.green,
-    ),
-  );
-
-  Navigator.of(context).pushReplacement(
-    MaterialPageRoute(
-      builder: (_) => role == 'admin' ? const AdminLayout() : HomePage(),
-    ),
-  );
-}
-
 }

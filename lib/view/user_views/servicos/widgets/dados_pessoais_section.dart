@@ -121,20 +121,21 @@ class DadosPessoaisSectionState extends State<DadosPessoaisSection> {
     }
     setState(() { _isProcessando = true; _erro = null; });
     _authController.registerUser(
-      nome: widget.nomeController.text,
-      email: widget.emailController.text,
-      password: _criarSenhaController.text,
-      telefone: widget.telefoneController.text,
-      onComplete: (success, error) {
-        if (!mounted) return;
-        setState(() { _isProcessando = false; });
-        if (!success) {
-          setState(() => _erro = error);
-        } else {
-          setState(() {}); // isLoggedIn passa a true, rebuild mostra o resumo
-        }
-      },
-    );
+  nome: widget.nomeController.text,
+  email: widget.emailController.text,
+  password: _criarSenhaController.text,
+  telefone: widget.telefoneController.text,
+  aceitouTermos: widget.aceitouTermos,
+  onComplete: (success, error) {
+    if (!mounted) return;
+    setState(() { _isProcessando = false; });
+    if (!success) {
+      setState(() => _erro = error);
+    } else {
+      setState(() {}); // isLoggedIn passa a true, rebuild mostra o resumo
+    }
+  },
+);
   }
 
   Future<void> _sair() async {

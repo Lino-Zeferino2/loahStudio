@@ -1,7 +1,6 @@
 // ignore_for_file: library_private_types_in_public_api
 import 'package:loahstudio/model/carrinho_item_model.dart';
 import 'package:flutter/material.dart';
-import 'package:loahstudio/model/carrinho_item_model.dart';
 import 'package:loahstudio/constants/colors.dart';
 import 'package:loahstudio/controller/carrinho_controller.dart';
 import 'package:loahstudio/view/user_views/carrinho/widgets/carrinho_empty.dart';

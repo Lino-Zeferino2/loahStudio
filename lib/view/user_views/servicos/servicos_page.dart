@@ -1,5 +1,6 @@
 // ignore_for_file: library_private_types_in_public_api
 
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:loahstudio/constants/colors.dart';
 import 'package:loahstudio/constants/responsive.dart';
@@ -87,30 +88,29 @@ static const int _limiteInicial = 6;
     });
   }
 
-  Future<void> _atualizarHorarios() async {
-    if (selectedServico == null || selectedDate == null || _horario == null) {
-      setState(() => _horariosAgrupados = const HorariosAgrupados());
-      return;
-    }
-    setState(() => _isLoadingHorarios = true);
-
-    final existentes = await _controller.fetchAgendamentosPorData(selectedDate!);
-    final agrupados = _controller.gerarHorariosAgrupados(
-      horario: _horario!,
-      duracaoMinutos: selectedServico!.duracaoMinutos,
-      data: selectedDate!,
-      agendamentosExistentes: existentes,
-    );
-
-    if (!mounted) return;
-    setState(() {
-      _horariosAgrupados = agrupados;
-      _isLoadingHorarios = false;
-      final todos = [...agrupados.manha, ...agrupados.tarde, ...agrupados.noite];
-      if (selectedTime != null && !todos.contains(selectedTime)) selectedTime = null;
-    });
+ Future<void> _atualizarHorarios() async {
+  if (selectedServico == null || selectedDate == null || _horario == null) {
+    setState(() => _horariosAgrupados = const HorariosAgrupados());
+    return;
   }
+  setState(() => _isLoadingHorarios = true);
 
+  final ocupados = await _controller.fetchHorariosOcupadosPorData(selectedDate!);
+  final agrupados = _controller.gerarHorariosAgrupados(
+    horario: _horario!,
+    duracaoMinutos: selectedServico!.duracaoMinutos,
+    data: selectedDate!,
+    horariosOcupados: ocupados,
+  );
+
+  if (!mounted) return;
+  setState(() {
+    _horariosAgrupados = agrupados;
+    _isLoadingHorarios = false;
+    final todos = [...agrupados.manha, ...agrupados.tarde, ...agrupados.noite];
+    if (selectedTime != null && !todos.contains(selectedTime)) selectedTime = null;
+  });
+}
   void _selecionarServico(Servico servico) {
     setState(() { selectedServico = servico; selectedTime = null; });
     _atualizarHorarios();
@@ -146,8 +146,9 @@ static const int _limiteInicial = 6;
     final horaFim = AgendamentoController.formatHora(fimMin);
 
     final agendamento = Agendamento(
+      clienteId: FirebaseAuth.instance.currentUser?.uid,
       clienteNome: nameController.text.trim(),
-      clienteEmail: emailController.text.trim(),
+      clienteEmail: emailController.text.trim().toLowerCase(),
       clienteTelefone: telefoneController.text.trim(),
       observacao: observacaoController.text.trim().isEmpty ? null : observacaoController.text.trim(),
       servicoId: selectedServico!.id!,

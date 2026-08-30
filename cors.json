@@ -1,0 +1,8 @@
+[
+  {
+    "origin": ["http://localhost:65281", "http://localhost:*", "https://myloahstudio.web.app", "https://teudominio.com"],
+    "method": ["GET"],
+    "maxAgeSeconds": 3600,
+    "responseHeader": ["Content-Type", "Access-Control-Allow-Origin"]
+  }
+]
