@@ -4,6 +4,8 @@ import 'package:loahstudio/constants/colors.dart';
 import 'package:loahstudio/constants/responsive.dart';
 import 'package:loahstudio/controller/auth_controller.dart';
 import 'package:loahstudio/model/user_model.dart';
+import 'package:loahstudio/view/user_views/Compra/compra_page.dart' show ComprasPage;
+import 'package:loahstudio/view/user_views/agendamento/agendamento_page.dart';
 import 'package:loahstudio/view/user_views/home/home_page.dart';
 import 'package:loahstudio/view/user_views/perfil/editar_perfil_page.dart';
 
@@ -145,6 +147,8 @@ class _PerfilPageState extends State<PerfilPage> {
                           const SizedBox(height: 32),
                           _buildInfoCard(),
                           const SizedBox(height: 24),
+                          _buildAtividadeCard(context),
+                          const SizedBox(height: 24),
                           _buildOptionsCard(context),
                         ],
                       ),
@@ -198,6 +202,47 @@ class _PerfilPageState extends State<PerfilPage> {
     );
   }
 
+  // Cartão com os acessos à gestão de agendamentos e compras do cliente.
+  Widget _buildAtividadeCard(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.only(left: 4, bottom: 8),
+          child: Text(
+            'A minha atividade',
+            style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.grey),
+          ),
+        ),
+        Container(
+          width: double.infinity,
+          decoration: BoxDecoration(
+            color: AppColors.white,
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [
+              BoxShadow(color: AppColors.grey.withValues(alpha: 0.15), blurRadius: 12, offset: const Offset(0, 6)),
+            ],
+          ),
+          child: Column(
+            children: [
+              _optionTile(
+                icon: Icons.event_outlined,
+                label: 'Os meus Agendamentos',
+                onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const AgendamentoPage())),
+              ),
+              const Divider(height: 1),
+              _optionTile(
+                icon: Icons.shopping_bag_outlined,
+                label: 'As minhas Compras',
+                onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ComprasPage())),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
   Widget _buildOptionsCard(BuildContext context) {
     return Container(
       width: double.infinity,
@@ -226,7 +271,6 @@ class _PerfilPageState extends State<PerfilPage> {
             icon: Icons.support_agent_outlined,
             label: 'Suporte',
             onTap: () {
-              // TODO: ligar a um ecrã ou contacto de suporte real (email/WhatsApp).
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(content: Text('Função em desenvolvimento')),
               );

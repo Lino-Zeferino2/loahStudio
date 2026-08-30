@@ -33,7 +33,7 @@ class _HomePageState extends State<HomePage> {
   int selectedIndex = 0;
   int? hoverIndex;
 
-  final List<String> menuItems = ["Início", "Serviços", "Produtos", "Agendamento"];
+    final List<String> menuItems = ["Início", "Serviços", "Produtos"];
 
   @override
   void initState() {
@@ -181,13 +181,11 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  void _navigateTo(int index) {
+   void _navigateTo(int index) {
     if (index == 1) {
       Navigator.push(context, MaterialPageRoute(builder: (_) => ServicosPage()));
     } else if (index == 2) {
       Navigator.push(context, MaterialPageRoute(builder: (_) => ProdutosPage()));
-    } else if (index == 3) {
-      Navigator.push(context, MaterialPageRoute(builder: (_) => AgendamentoPage()));
     } else {
       setState(() => selectedIndex = index);
     }

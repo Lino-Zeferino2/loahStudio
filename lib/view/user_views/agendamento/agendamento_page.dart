@@ -25,7 +25,6 @@ class AgendamentoPage extends StatefulWidget {
 
 class _AgendamentoPageState extends State<AgendamentoPage> {
   final _controller = AgendamentoController();
-  int selectedIndex = 3;
   int? hoverIndex;
 
   late final Stream<User?> _authStream;
@@ -38,8 +37,11 @@ class _AgendamentoPageState extends State<AgendamentoPage> {
   final _searchController = TextEditingController();
   String _searchQuery = '';
 
-  final List<String> menuItems = ["Início", "Serviços", "Produtos", "Agendamento"];
- final HomeController homeContoller = HomeController();
+  // Este menu já não inclui "Agendamento" — a página passou a ser acedida
+  // a partir do Perfil, não da navegação principal do site.
+  final List<String> menuItems = ["Início", "Serviços", "Produtos"];
+  final HomeController homeContoller = HomeController();
+
   @override
   void initState() {
     super.initState();
@@ -62,25 +64,25 @@ class _AgendamentoPageState extends State<AgendamentoPage> {
     });
   }
 
- Future<void> _cancelar(Agendamento agendamento) async {
-  final confirmar = await _showCancelDialog(agendamento);
-  if (confirmar != true) return;
+  Future<void> _cancelar(Agendamento agendamento) async {
+    final confirmar = await _showCancelDialog(agendamento);
+    if (confirmar != true) return;
 
-  bool ok = false;
-  try {
-    ok = await _controller.cancelarAgendamento(agendamento.id!);
-  } catch (_) {
-    ok = false;
+    bool ok = false;
+    try {
+      ok = await _controller.cancelarAgendamento(agendamento.id!);
+    } catch (_) {
+      ok = false;
+    }
+
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(ok ? "Agendamento cancelado com sucesso!" : "Não foi possível cancelar. Tente novamente."),
+        backgroundColor: ok ? Colors.green : Colors.red,
+      ),
+    );
   }
-
-  if (!mounted) return; // continua sendo a defesa real contra este cenário
-  ScaffoldMessenger.of(context).showSnackBar(
-    SnackBar(
-      content: Text(ok ? "Agendamento cancelado com sucesso!" : "Não foi possível cancelar. Tente novamente."),
-      backgroundColor: ok ? Colors.green : Colors.red,
-    ),
-  );
-}
 
   Future<bool?> _showCancelDialog(Agendamento agendamento) {
     return showDialog<bool>(
@@ -156,7 +158,7 @@ class _AgendamentoPageState extends State<AgendamentoPage> {
                 ] else
                   _buildLoginPrompt(isMobile),
                 SizedBox(height: isMobile ? 50.0 : 100.0),
-                FooterSection(config: homeContoller.config,),
+                FooterSection(config: homeContoller.config),
               ],
             ),
           );
@@ -312,7 +314,7 @@ class _AgendamentoPageState extends State<AgendamentoPage> {
                     agendamento: a,
                     isMobile: isMobile,
                     onCancelar: () => _cancelar(a),
-                    imagemUrl: _servicosMap[a.servicoId]?.imagemUrl, // <- ver nota sobre o nome do campo
+                    imagemUrl: _servicosMap[a.servicoId]?.imagemUrl,
                   )),
             ],
           ),
@@ -323,7 +325,11 @@ class _AgendamentoPageState extends State<AgendamentoPage> {
 
   PreferredSizeWidget _buildAppBar(bool isMobile, double headerTitleSize) {
     return AppBar(
-      automaticallyImplyLeading: false,
+      // Esta página deixou de estar no menu principal — passa a abrir-se
+      // sempre por navegação (a partir do Perfil), por isso mostra a seta
+      // de voltar normal em vez de esconder o leading.
+      automaticallyImplyLeading: true,
+      iconTheme: IconThemeData(color: AppColors.brown),
       backgroundColor: Colors.transparent,
       elevation: 0,
       title: LayoutBuilder(
@@ -332,23 +338,19 @@ class _AgendamentoPageState extends State<AgendamentoPage> {
           return Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              GestureDetector(
-                onTap: () => Navigator.pop(context),
-                child: Text(
-                  "LOAH STÚDIO",
-                  style: TextStyle(
-                    color: AppColors.brown,
-                    fontWeight: FontWeight.w600,
-                    fontSize: headerTitleSize,
-                    letterSpacing: 3,
-                  ),
+              Text(
+                "Agendamentos",
+                style: TextStyle(
+                  color: AppColors.brown,
+                  fontWeight: FontWeight.w600,
+                  fontSize: headerTitleSize,
+                  letterSpacing: 1,
                 ),
               ),
               if (!isCompact)
                 Row(
                   children: [
                     ...List.generate(menuItems.length, (index) {
-                      final isSelected = selectedIndex == index;
                       final isHover = hoverIndex == index;
                       return MouseRegion(
                         onEnter: (_) => setState(() => hoverIndex = index),
@@ -359,17 +361,12 @@ class _AgendamentoPageState extends State<AgendamentoPage> {
                             duration: const Duration(milliseconds: 200),
                             margin: EdgeInsets.symmetric(horizontal: isMobile ? 8.0 : 12.0),
                             padding: const EdgeInsets.symmetric(vertical: 8.0),
-                            decoration: BoxDecoration(
-                              border: isSelected
-                                  ? Border(bottom: BorderSide(color: AppColors.pinkNude, width: 2))
-                                  : null,
-                            ),
                             child: Text(
                               menuItems[index],
                               style: TextStyle(
-                                color: isSelected || isHover ? AppColors.pinkNude : AppColors.brown,
+                                color: isHover ? AppColors.pinkNude : AppColors.brown,
                                 fontSize: isMobile ? 14.0 : 16.0,
-                                fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                                fontWeight: FontWeight.w500,
                               ),
                             ),
                           ),
@@ -398,13 +395,11 @@ class _AgendamentoPageState extends State<AgendamentoPage> {
 
   void _navegar(int index) {
     if (index == 0) {
-      Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (_) => HomePage()), (route) => route.isFirst);
+      Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (_) => HomePage()), (route) => false);
     } else if (index == 1) {
-      Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => ServicosPage()));
+      Navigator.push(context, MaterialPageRoute(builder: (_) => ServicosPage()));
     } else if (index == 2) {
       Navigator.push(context, MaterialPageRoute(builder: (_) => ProdutosPage()));
-    } else {
-      setState(() => selectedIndex = index);
     }
   }
 
@@ -431,23 +426,16 @@ class _AgendamentoPageState extends State<AgendamentoPage> {
           const Divider(),
           const SizedBox(height: 20),
           ...List.generate(menuItems.length, (index) {
-            final isSelected = selectedIndex == index;
             return ListTile(
               leading: Icon(
                 index == 0
                     ? Icons.home_outlined
                     : index == 1
                         ? Icons.spa_outlined
-                        : index == 2
-                            ? Icons.shopping_bag_outlined
-                            : Icons.calendar_today_outlined,
-                color: isSelected ? AppColors.pinkStrong : AppColors.brown,
+                        : Icons.shopping_bag_outlined,
+                color: AppColors.brown,
               ),
-              title: Text(menuItems[index],
-                  style: TextStyle(
-                    color: isSelected ? AppColors.pinkStrong : AppColors.brown,
-                    fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
-                  )),
+              title: Text(menuItems[index], style: TextStyle(color: AppColors.brown, fontWeight: FontWeight.w500)),
               onTap: () {
                 Navigator.pop(context);
                 _navegar(index);
@@ -502,15 +490,6 @@ class _AgendamentoPageState extends State<AgendamentoPage> {
           ),
         ],
       ),
-    );
-  }
-
-
-  Widget _socialIcon(IconData icon) {
-    return Container(
-      padding: const EdgeInsets.all(8),
-      decoration: BoxDecoration(color: const Color(0xFFE8E4E2), borderRadius: BorderRadius.circular(8)),
-      child: Icon(icon, color: const Color(0xFF5A4A42), size: 20),
     );
   }
 }
