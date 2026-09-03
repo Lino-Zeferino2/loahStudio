@@ -11,9 +11,22 @@ const CORES = {
 
 function formatarData(timestampOrDate) {
   const date = timestampOrDate.toDate ? timestampOrDate.toDate() : new Date(timestampOrDate);
+
+  // Extrai a data no fuso de Portugal, não no fuso do servidor (Cloud
+  // Functions corre em UTC por defeito, o que pode "recuar" um dia).
+  const isoLisboa = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Europe/Lisbon',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).format(date);
+  const [ano, mes, dia] = isoLisboa.split('-').map(Number);
+  const dataLisboa = new Date(Date.UTC(ano, mes - 1, dia));
+
   const dias = ['Domingo', 'Segunda-feira', 'Terça-feira', 'Quarta-feira', 'Quinta-feira', 'Sexta-feira', 'Sábado'];
   const meses = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
-  return `${dias[date.getDay()]}, ${date.getDate()} de ${meses[date.getMonth()]} de ${date.getFullYear()}`;
+
+  return `${dias[dataLisboa.getUTCDay()]}, ${dataLisboa.getUTCDate()} de ${meses[dataLisboa.getUTCMonth()]} de ${dataLisboa.getUTCFullYear()}`;
 }
 
 function formatarDuracao(minutos) {

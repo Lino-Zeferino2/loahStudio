@@ -1,7 +1,7 @@
 const { onDocumentCreated, onDocumentUpdated } = require('firebase-functions/v2/firestore');
 const { onCall, HttpsError } = require('firebase-functions/v2/https');
 const { logger } = require('firebase-functions');
-const { getFirestore } = require('firebase-admin/firestore');
+const { getFirestore, Timestamp, FieldValue } = require('firebase-admin/firestore');
 const { initializeApp } = require('firebase-admin/app');
 const { enviarEmail, gmailEmail, gmailAppPassword } = require('./mailer');
 const {
@@ -72,6 +72,89 @@ exports.onAgendamentoAtualizado = onDocumentUpdated(
   }
 );
 
+
+
+exports.criarAgendamento = onCall({ region: REGIAO }, async (request) => {
+  const uid = request.auth?.uid ?? null;
+  const {
+    clienteNome, clienteEmail, clienteTelefone, observacao,
+    servicoId, servicoNome, servicoPreco, servicoDuracaoMinutos,
+    data, horaInicio, horaFim,
+  } = request.data;
+
+  if (!clienteNome || !clienteEmail || !clienteTelefone || !servicoId ||
+      !data || !horaInicio || !horaFim) {
+    throw new HttpsError('invalid-argument', 'Faltam dados obrigatórios do agendamento.');
+  }
+
+  const db = getFirestore();
+  const dataObj = new Date(data); // o cliente envia um ISO string
+  const inicioDoDia = new Date(Date.UTC(dataObj.getUTCFullYear(), dataObj.getUTCMonth(), dataObj.getUTCDate()));
+  const fimDoDia = new Date(inicioDoDia.getTime() + 24 * 60 * 60 * 1000);
+
+  const parseHora = (h) => {
+    const [hh, mm] = h.split(':').map(Number);
+    return hh * 60 + mm;
+  };
+  const inicioNovoMin = parseHora(horaInicio);
+  const fimNovoMin = parseHora(horaFim);
+
+  const agendamentoRef = db.collection('agendamentos').doc();
+  const ocupadoRef = db.collection('horariosOcupados').doc();
+
+  try {
+    await db.runTransaction(async (tx) => {
+      // Lê os horários ocupados desse dia DENTRO da transação — se outro
+      // pedido escrever entretanto, a transação repete automaticamente.
+      const ocupadosSnap = await tx.get(
+        db.collection('horariosOcupados')
+          .where('data', '>=', Timestamp.fromDate(inicioDoDia))
+          .where('data', '<', Timestamp.fromDate(fimDoDia))
+      );
+
+      const conflita = ocupadosSnap.docs.some((doc) => {
+        const o = doc.data();
+        const oInicio = parseHora(o.horaInicio);
+        const oFim = parseHora(o.horaFim);
+        return inicioNovoMin < oFim && fimNovoMin > oInicio;
+      });
+
+      if (conflita) {
+        throw new HttpsError('already-exists', 'Este horário acabou de ser reservado por outra pessoa.');
+      }
+
+      tx.set(agendamentoRef, {
+        clienteId: uid,
+        clienteNome,
+        clienteEmail: clienteEmail.toLowerCase(),
+        clienteTelefone,
+        observacao: observacao || null,
+        servicoId,
+        servicoNome,
+        servicoPreco,
+        servicoDuracaoMinutos,
+        data: Timestamp.fromDate(inicioDoDia),
+        horaInicio,
+        horaFim,
+        status: 'pendente',
+        criadoEm: FieldValue.serverTimestamp(),
+      });
+
+      tx.set(ocupadoRef, {
+        agendamentoId: agendamentoRef.id,
+        data: Timestamp.fromDate(inicioDoDia),
+        horaInicio,
+        horaFim,
+      });
+    });
+
+    return { sucesso: true, agendamentoId: agendamentoRef.id };
+  } catch (e) {
+    if (e instanceof HttpsError) throw e;
+    logger.error('Erro ao criar agendamento:', e);
+    throw new HttpsError('internal', 'Não foi possível criar o agendamento. Tenta novamente.');
+  }
+});
 // 3. Callable — admin pede avaliação a um cliente
 // Verifica admin através da coleção 'clientes', campo 'role' === 'admin'
 exports.enviarPedidoAvaliacao = onCall(
