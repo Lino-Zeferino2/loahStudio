@@ -6,7 +6,6 @@ import 'package:loahstudio/controller/home_controller.dart';
 import 'package:loahstudio/controller/produtos_controller.dart';
 import 'package:loahstudio/model/produto_model.dart';
 import 'package:loahstudio/view/user_views/home/home_page.dart';
-import 'package:loahstudio/view/user_views/agendamento/agendamento_page.dart';
 import 'package:loahstudio/view/user_views/produtos/widgets/produtos_destaque_carousel.dart';
 import 'package:loahstudio/view/user_views/servicos/servicos_page.dart';
 import 'package:loahstudio/view/user_views/carrinho/carrinho_page.dart';
@@ -28,7 +27,7 @@ class _ProdutosPageState extends State<ProdutosPage> {
   final HomeController _HomeController = HomeController();
   int selectedIndex = 2;
   int? hoverIndex;
-  final List<String> menuItems = ["Início", "Serviços", "Produtos", "Agendamento", "Carrinho"];
+  final List<String> menuItems = ["Início", "Serviços", "Produtos", "Carrinho"];
 
   // Carrinho: cada item guarda id, nome e preço já formatado (compatível
   // com o formato que o CarrinhoPage já espera receber).
@@ -70,7 +69,12 @@ class _ProdutosPageState extends State<ProdutosPage> {
     ),
   );
 }
-
+@override
+  void initState() {
+    _HomeController.carregarDados();
+    // TODO: implement initState
+    super.initState();
+  }
   @override
   Widget build(BuildContext context) {
     final isMobile = MediaQuery.of(context).size.width < 600;
@@ -108,7 +112,7 @@ class _ProdutosPageState extends State<ProdutosPage> {
                         margin: const EdgeInsets.symmetric(horizontal: 12),
                         padding: const EdgeInsets.symmetric(vertical: 8),
                         decoration: BoxDecoration(border: isSelected ? Border(bottom: BorderSide(color: AppColors.pinkNude, width: 2)) : null),
-                        child: index == 4
+                        child: index == 3
                             ? Badge(label: Text("${_cart.length}"), isLabelVisible: _cart.isNotEmpty, child: Icon(Icons.shopping_bag_outlined, color: isSelected || isHover ? AppColors.pinkNude : AppColors.brown, size: 22))
                             : Text(menuItems[index], style: TextStyle(color: isSelected || isHover ? AppColors.pinkNude : AppColors.brown, fontSize: 16, fontWeight: isSelected ? FontWeight.bold : FontWeight.w500)),
                       ),
@@ -291,8 +295,6 @@ Widget _produtosDestaqueSection(List<Produto> produtosDestaque) {
     } else if (index == 1) {
       Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const ServicosPage()));
     } else if (index == 3) {
-      Navigator.push(context, MaterialPageRoute(builder: (_) => const AgendamentoPage()));
-    } else if (index == 4) {
       Navigator.push(context, MaterialPageRoute(builder: (_) => CarrinhoPage(existingCart: _cart)));
     }
   }
@@ -327,9 +329,9 @@ Widget _produtosDestaqueSection(List<Produto> produtosDestaque) {
           ...List.generate(menuItems.length, (index) {
             final isSelected = selectedIndex == index;
             return ListTile(
-              leading: index == 4
+              leading: index == 3
                   ? Badge(label: Text("${_cart.length}"), isLabelVisible: _cart.isNotEmpty, child: Icon(Icons.shopping_cart, color: isSelected ? AppColors.pinkStrong : AppColors.brown))
-                  : Icon(index == 0 ? Icons.home_outlined : index == 1 ? Icons.spa_outlined : index == 2 ? Icons.shopping_bag_outlined : Icons.calendar_today_outlined, color: isSelected ? AppColors.pinkStrong : AppColors.brown),
+                  : Icon(index == 0 ? Icons.home_outlined : index == 1 ? Icons.spa_outlined : Icons.shopping_bag_outlined, color: isSelected ? AppColors.pinkStrong : AppColors.brown),
               title: Text(menuItems[index], style: TextStyle(color: isSelected ? AppColors.pinkStrong : AppColors.brown, fontWeight: isSelected ? FontWeight.bold : FontWeight.w500)),
               onTap: () {
                 Navigator.pop(context);

@@ -1,1 +1,51 @@
-{"flutter":{"platforms":{"android":{"default":{"projectId":"myloahstudio","appId":"1:626704167393:android:8f0670ca85cf560b79e2a0","fileOutput":"android/app/google-services.json"}},"dart":{"lib/firebase_options.dart":{"projectId":"myloahstudio","configurations":{"android":"1:626704167393:android:8f0670ca85cf560b79e2a0","ios":"1:626704167393:ios:ce20bd457abd9c1b79e2a0","web":"1:626704167393:web:999437f30da14d7d79e2a0"}}}}},"hosting":{"public":"public","ignore":["firebase.json","**/.*","**/node_modules/**"],"rewrites":[{"source":"**","destination":"/index.html"}]}}
+{
+  "flutter": {
+    "platforms": {
+      "android": {
+        "default": {
+          "projectId": "myloahstudio",
+          "appId": "1:626704167393:android:8f0670ca85cf560b79e2a0",
+          "fileOutput": "android/app/google-services.json"
+        }
+      },
+      "dart": {
+        "lib/firebase_options.dart": {
+          "projectId": "myloahstudio",
+          "configurations": {
+            "android": "1:626704167393:android:8f0670ca85cf560b79e2a0",
+            "ios": "1:626704167393:ios:ce20bd457abd9c1b79e2a0",
+            "web": "1:626704167393:web:999437f30da14d7d79e2a0"
+          }
+        }
+      }
+    }
+  },
+  "hosting": {
+    "public": "public",
+    "ignore": [
+      "firebase.json",
+      "**/.*",
+      "**/node_modules/**"
+    ],
+    "rewrites": [
+      {
+        "source": "**",
+        "destination": "/index.html"
+      }
+    ]
+  },
+  "functions": [
+    {
+      "source": "functions",
+      "codebase": "default",
+      "disallowLegacyRuntimeConfig": true,
+      "ignore": [
+        "node_modules",
+        ".git",
+        "firebase-debug.log",
+        "firebase-debug.*.log",
+        "*.local"
+      ]
+    }
+  ]
+}

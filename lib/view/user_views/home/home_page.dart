@@ -17,7 +17,6 @@ import 'package:loahstudio/view/user_views/widgets/build_auth_menu_item.dart';
 import 'package:loahstudio/view/user_views/widgets/footer_section.dart';
 import 'package:loahstudio/view/user_views/home/widgets/whatsapp_floating_button.dart';
 import 'package:loahstudio/view/user_views/servicos/servicos_page.dart';
-import 'package:loahstudio/view/user_views/agendamento/agendamento_page.dart';
 import 'package:loahstudio/view/user_views/produtos/produtos_page.dart';
 
 class HomePage extends StatefulWidget {

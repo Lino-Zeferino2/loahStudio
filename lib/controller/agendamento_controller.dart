@@ -1,14 +1,22 @@
 // ignore_for_file: library_private_types_in_public_api
 
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:cloud_functions/cloud_functions.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:loahstudio/model/agendamento_model.dart';
 import 'package:loahstudio/model/servico_model.dart';
 import 'package:loahstudio/model/site_config_model.dart';
 
+/// Resultado da tentativa de criar um agendamento — permite à UI
+/// distinguir "conflito de horário" (o utilizador deve escolher outro)
+/// de "erro genérico" (rede, servidor, etc).
+enum AgendamentoResultado { sucesso, conflito, erro }
+
 class AgendamentoController {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+
+  static const String _regiao = 'europe-west1';
 
   CollectionReference get _servicosRef => _firestore.collection('servicos');
   CollectionReference get _agendamentosRef => _firestore.collection('agendamentos');
@@ -34,6 +42,7 @@ class AgendamentoController {
       return const HorarioFuncionamento();
     }
   }
+
   /// Busca todos os serviços (incluindo os já desativados), para mostrar
   /// nome/imagem corretos mesmo em agendamentos antigos cujo serviço já
   /// não esteja mais disponível hoje. Fetch único, não stream — a lista
@@ -47,10 +56,13 @@ class AgendamentoController {
       return {};
     }
   }
-  /// Substitui o antigo fetchAgendamentosPorData para o cálculo de
-  /// conflitos: lê da coleção pública (sem PII) em vez de 'agendamentos',
-  /// que agora é privada por cliente.
-  Future<List<_HorarioOcupado>> fetchHorariosOcupadosPorData(DateTime data) async {
+
+  /// Lê da coleção pública (sem PII) 'horariosOcupados' — usado apenas
+  /// para mostrar ao cliente quais horários já estão ocupados na tela.
+  /// A verificação real de conflito (que decide se o agendamento é
+  /// criado) acontece do lado do servidor, na Cloud Function
+  /// 'criarAgendamento', dentro de uma transação — nunca aqui.
+  Future<List<HorarioOcupado>> fetchHorariosOcupadosPorData(DateTime data) async {
     try {
       final inicio = DateTime(data.year, data.month, data.day);
       final fim = inicio.add(const Duration(days: 1));
@@ -60,7 +72,7 @@ class AgendamentoController {
           .get();
       return snap.docs.map((d) {
         final m = d.data() as Map<String, dynamic>;
-        return _HorarioOcupado(horaInicio: m['horaInicio'] as String, horaFim: m['horaFim'] as String);
+        return HorarioOcupado(horaInicio: m['horaInicio'] as String, horaFim: m['horaFim'] as String);
       }).toList();
     } catch (e) {
       debugPrint('Erro ao carregar horários ocupados: $e');
@@ -113,35 +125,38 @@ class AgendamentoController {
     }
   }
 
-  /// Cria o agendamento e o respetivo espelho público, atomicamente —
-  /// os dois documentos só existem juntos ou não existem, nunca um sem o outro.
-  Future<bool> criarAgendamento(Agendamento agendamento) async {
+  /// Cria o agendamento chamando a Cloud Function 'criarAgendamento',
+  /// que faz a verificação de conflito e a escrita dentro de uma
+  /// transação Firestore no servidor — isto elimina a janela de corrida
+  /// que existia ao fazer leitura+escrita em dois passos a partir do
+  /// cliente. O envio do email de "recebido" acontece automaticamente
+  /// via trigger 'onAgendamentoCriado', não precisa de ser chamado aqui.
+  Future<AgendamentoResultado> criarAgendamento(Agendamento agendamento) async {
     try {
-      final ocupados = await fetchHorariosOcupadosPorData(agendamento.data);
-      final inicioNovo = parseHora(agendamento.horaInicio);
-      final fimNovo = parseHora(agendamento.horaFim);
-      final conflita = ocupados.any((o) {
-        final oInicio = parseHora(o.horaInicio);
-        final oFim = parseHora(o.horaFim);
-        return inicioNovo < oFim && fimNovo > oInicio;
-      });
-      if (conflita) return false;
+      final callable = FirebaseFunctions.instanceFor(region: _regiao).httpsCallable('criarAgendamento');
 
-      final agendamentoRef = _agendamentosRef.doc();
-      final ocupadoRef = _horariosOcupadosRef.doc();
-      final batch = _firestore.batch();
-      batch.set(agendamentoRef, agendamento.toMap());
-      batch.set(ocupadoRef, {
-        'agendamentoId': agendamentoRef.id,
-        'data': Timestamp.fromDate(DateTime(agendamento.data.year, agendamento.data.month, agendamento.data.day)),
+      await callable.call({
+        'clienteNome': agendamento.clienteNome,
+        'clienteEmail': agendamento.clienteEmail,
+        'clienteTelefone': agendamento.clienteTelefone,
+        'observacao': agendamento.observacao,
+        'servicoId': agendamento.servicoId,
+        'servicoNome': agendamento.servicoNome,
+        'servicoPreco': agendamento.servicoPreco,
+        'servicoDuracaoMinutos': agendamento.servicoDuracaoMinutos,
+        'data': agendamento.data.toIso8601String(),
         'horaInicio': agendamento.horaInicio,
         'horaFim': agendamento.horaFim,
       });
-      await batch.commit();
-      return true;
+
+      return AgendamentoResultado.sucesso;
+    } on FirebaseFunctionsException catch (e) {
+      debugPrint('Erro ao criar agendamento: ${e.code} — ${e.message}');
+      if (e.code == 'already-exists') return AgendamentoResultado.conflito;
+      return AgendamentoResultado.erro;
     } catch (e) {
       debugPrint('Erro ao criar agendamento: $e');
-      return false;
+      return AgendamentoResultado.erro;
     }
   }
 
@@ -160,7 +175,7 @@ class AgendamentoController {
     required HorarioFuncionamento horario,
     required int duracaoMinutos,
     required DateTime data,
-    required List<_HorarioOcupado> horariosOcupados,
+    required List<HorarioOcupado> horariosOcupados,
   }) {
     final diaSemana = diasSemana[data.weekday - 1];
     if (!horario.diasFuncionamento.contains(diaSemana) || duracaoMinutos <= 0) {
@@ -201,10 +216,10 @@ class AgendamentoController {
   }
 }
 
-class _HorarioOcupado {
+class HorarioOcupado {
   final String horaInicio;
   final String horaFim;
-  _HorarioOcupado({required this.horaInicio, required this.horaFim});
+  HorarioOcupado({required this.horaInicio, required this.horaFim});
 }
 
 class HorariosAgrupados {

@@ -1,7 +1,10 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:loahstudio/constants/colors.dart';
+import 'package:loahstudio/controller/auth_controller.dart';
 import 'package:loahstudio/controller/pedido_controller.dart';
 import 'package:loahstudio/model/pagamento_config_model.dart';
+import 'package:loahstudio/model/user_model.dart';
 
 class CheckoutDialog extends StatefulWidget {
   final double total;
@@ -47,11 +50,60 @@ class _CheckoutDialogState extends State<CheckoutDialog> {
   String pagamentoSelecionado = 'transferencia';
 
   late final Future<PagamentoConfig> _configFuture;
+  final AuthController _authController = AuthController();
+
+  UserModel? _perfil;
+  bool _carregandoPerfil = true;
+  // true = campos de contacto vêm do perfil (bloqueados); false = manual.
+  bool _usarDadosProprios = true;
 
   @override
   void initState() {
     super.initState();
     _configFuture = PedidoController().fetchPagamentoConfig();
+    _carregarPerfil();
+  }
+
+  Future<void> _carregarPerfil() async {
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid == null) {
+      // Não deve acontecer — o CarrinhoPage só chama o checkout com utilizador
+      // autenticado — mas mantemos o formulário manual como rede de segurança.
+      setState(() => _carregandoPerfil = false);
+      return;
+    }
+
+    final user = await _authController.getUserData(uid);
+    if (!mounted) return;
+
+    setState(() {
+      _perfil = user;
+      _carregandoPerfil = false;
+      // Só ativa o preenchimento automático se houver pelo menos nome e
+      // telefone guardados — senão não há nada útil para pré-preencher.
+      _usarDadosProprios = user != null && user.nome.isNotEmpty && user.telefone.isNotEmpty;
+      if (_usarDadosProprios) _preencherComPerfil();
+    });
+  }
+
+  void _preencherComPerfil() {
+    if (_perfil == null) return;
+    nomeController.text = _perfil!.nome;
+    emailController.text = _perfil!.email;
+    telefoneController.text = _perfil!.telefone;
+  }
+
+  void _alternarModoPreenchimento(bool usarProprios) {
+    setState(() {
+      _usarDadosProprios = usarProprios;
+      if (usarProprios) {
+        _preencherComPerfil();
+      } else {
+        nomeController.clear();
+        emailController.clear();
+        telefoneController.clear();
+      }
+    });
   }
 
   @override
@@ -126,11 +178,24 @@ class _CheckoutDialogState extends State<CheckoutDialog> {
               SizedBox(height: isMobile ? 16 : 24),
               Text("Dados de contacto", style: TextStyle(fontSize: subtitleSize, fontWeight: FontWeight.w600, color: const Color(0xFF5A4A42))),
               SizedBox(height: isMobile ? 10 : 16),
-              _textField(nomeController, "Nome completo", Icons.person_outline, isMobile: isMobile),
-              SizedBox(height: isMobile ? 8 : 12),
-              _textField(emailController, "Email", Icons.email_outlined, keyboardType: TextInputType.emailAddress, isMobile: isMobile),
-              SizedBox(height: isMobile ? 8 : 12),
-              _textField(telefoneController, "Telemóvel", Icons.phone_outlined, keyboardType: TextInputType.phone, isMobile: isMobile),
+
+              if (_carregandoPerfil)
+                const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 12),
+                  child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
+                )
+              else ...[
+                if (_perfil != null && _perfil!.nome.isNotEmpty && _perfil!.telefone.isNotEmpty) ...[
+                  _buildToggleModoPreenchimento(isMobile),
+                  SizedBox(height: isMobile ? 12 : 16),
+                ],
+                _textField(nomeController, "Nome completo", Icons.person_outline, isMobile: isMobile, enabled: !_usarDadosProprios),
+                SizedBox(height: isMobile ? 8 : 12),
+                _textField(emailController, "Email", Icons.email_outlined, keyboardType: TextInputType.emailAddress, isMobile: isMobile, enabled: !_usarDadosProprios),
+                SizedBox(height: isMobile ? 8 : 12),
+                _textField(telefoneController, "Telemóvel", Icons.phone_outlined, keyboardType: TextInputType.phone, isMobile: isMobile, enabled: !_usarDadosProprios),
+              ],
+
               SizedBox(height: isMobile ? 16 : 24),
               Text("Morada de entrega", style: TextStyle(fontSize: subtitleSize, fontWeight: FontWeight.w600, color: const Color(0xFF5A4A42))),
               SizedBox(height: isMobile ? 10 : 16),
@@ -205,6 +270,49 @@ class _CheckoutDialogState extends State<CheckoutDialog> {
     );
   }
 
+  // Toggle "Usar os meus dados" vs "Preencher manualmente" — só aparece
+  // quando existe perfil suficiente para pré-preencher.
+  Widget _buildToggleModoPreenchimento(bool isMobile) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF7F4F2),
+        borderRadius: BorderRadius.circular(30),
+      ),
+      child: Row(
+        children: [
+          Expanded(child: _modoChip("Usar os meus dados", true, isMobile)),
+          Expanded(child: _modoChip("Preencher manualmente", false, isMobile)),
+        ],
+      ),
+    );
+  }
+
+  Widget _modoChip(String texto, bool valor, bool isMobile) {
+    final selecionado = _usarDadosProprios == valor;
+    return GestureDetector(
+      onTap: () => _alternarModoPreenchimento(valor),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 150),
+        padding: EdgeInsets.symmetric(vertical: isMobile ? 8 : 10),
+        decoration: BoxDecoration(
+          color: selecionado ? AppColors.pinkStrong : Colors.transparent,
+          borderRadius: BorderRadius.circular(26),
+        ),
+        alignment: Alignment.center,
+        child: Text(
+          texto,
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            fontSize: isMobile ? 11 : 12,
+            fontWeight: FontWeight.w600,
+            color: selecionado ? Colors.white : const Color(0xFF5A4A42),
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _instrucoesPagamento(PagamentoConfig config, bool isMobile) {
     final linhas = <Widget>[];
 
@@ -242,19 +350,30 @@ class _CheckoutDialogState extends State<CheckoutDialog> {
     );
   }
 
-  Widget _textField(TextEditingController controller, String label, IconData icon, {TextInputType? keyboardType, bool isMobile = false}) {
+  Widget _textField(
+    TextEditingController controller,
+    String label,
+    IconData icon, {
+    TextInputType? keyboardType,
+    bool isMobile = false,
+    bool enabled = true,
+  }) {
     return TextField(
       controller: controller,
       keyboardType: keyboardType,
+      enabled: enabled,
       style: TextStyle(fontSize: isMobile ? 14 : 16),
       decoration: InputDecoration(
         labelText: label,
         labelStyle: TextStyle(fontSize: isMobile ? 12 : 14),
         prefixIcon: Icon(icon, size: isMobile ? 18 : 20),
+        filled: !enabled,
+        fillColor: Colors.grey.shade100,
         contentPadding: EdgeInsets.symmetric(horizontal: isMobile ? 12 : 16, vertical: isMobile ? 12 : 16),
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey.shade300)),
         enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey.shade300)),
         focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: AppColors.pinkStrong)),
+        disabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey.shade200)),
       ),
     );
   }
