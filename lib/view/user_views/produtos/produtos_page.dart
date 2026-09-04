@@ -14,6 +14,7 @@ import 'package:loahstudio/view/user_views/produtos/widgets/produto_card_grid.da
 import 'package:loahstudio/view/user_views/widgets/build_auth_menu_item.dart';
 import 'package:loahstudio/view/user_views/widgets/footer_section.dart';
 import 'package:loahstudio/view/user_views/produtos/produto_detalhe_page.dart';
+
 class ProdutosPage extends StatefulWidget {
   const ProdutosPage({super.key});
 
@@ -57,30 +58,53 @@ class _ProdutosPageState extends State<ProdutosPage> {
       }
     });
   }
+
   void _abrirDetalhes(Produto produto) {
-  Navigator.push(
-    context,
-    MaterialPageRoute(
-      builder: (_) => ProdutoDetalhePage(
-        produto: produto,
-        isInCart: _isInCart(produto.id),
-        onToggleCart: () => _toggleCart(produto),
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => ProdutoDetalhePage(
+          produto: produto,
+          isInCart: _isInCart(produto.id),
+          onToggleCart: () => _toggleCart(produto),
+        ),
       ),
-    ),
-  );
-}
-@override
+    );
+  }
+
+  void _irParaCarrinho() {
+    Navigator.push(context, MaterialPageRoute(builder: (_) => CarrinhoPage(existingCart: _cart)));
+  }
+
+  @override
   void initState() {
     _HomeController.carregarDados();
     // TODO: implement initState
     super.initState();
   }
+
   @override
   Widget build(BuildContext context) {
     final isMobile = MediaQuery.of(context).size.width < 600;
 
     return Scaffold(
       endDrawer: isMobile ? _buildMobileDrawer() : null,
+      // FAB fixo com o número de itens — fica visível mesmo enquanto se
+      // faz scroll pela lista de produtos, ao contrário do ícone do
+      // header que pode ficar fora de vista.
+      floatingActionButton: _cart.isEmpty
+          ? null
+          : FloatingActionButton.extended(
+              onPressed: _irParaCarrinho,
+              backgroundColor: AppColors.pinkStrong,
+              icon: Badge(
+                label: Text("${_cart.length}"),
+                backgroundColor: Colors.white,
+                textColor: AppColors.pinkStrong,
+                child: const Icon(Icons.shopping_cart, color: Colors.white),
+              ),
+              label: const Text("Ver Carrinho", style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
+            ),
       appBar: AppBar(
         automaticallyImplyLeading: false,
         backgroundColor: Colors.transparent,
@@ -94,7 +118,7 @@ class _ProdutosPageState extends State<ProdutosPage> {
             ),
             if (isMobile)
               GestureDetector(
-                onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => CarrinhoPage(existingCart: _cart))),
+                onTap: _irParaCarrinho,
                 child: Badge(label: Text("${_cart.length}"), isLabelVisible: _cart.isNotEmpty, child: Icon(Icons.shopping_cart, color: AppColors.brown, size: 24)),
               )
             else
@@ -151,7 +175,9 @@ class _ProdutosPageState extends State<ProdutosPage> {
                 if (produtosDestaque.isNotEmpty) _produtosDestaqueSection(produtosDestaque),
                 if (produtosDestaque.isNotEmpty) const SizedBox(height: 60),
                 _todosProdutosSection(produtos),
-                const SizedBox(height: 100),
+                // Espaço extra para o FAB não tapar o último produto ou o
+                // rodapé quando o carrinho tem itens.
+                SizedBox(height: _cart.isEmpty ? 100 : 160),
                 FooterSection(config: _HomeController.config),
               ]),
             );
@@ -177,61 +203,62 @@ class _ProdutosPageState extends State<ProdutosPage> {
     );
   }
 
-Widget _produtosDestaqueSection(List<Produto> produtosDestaque) {
-  final isMobile = MediaQuery.of(context).size.width < 600;
-  final hPad = isMobile ? 12.0 : 60.0;
-  final titSize = isMobile ? 16.0 : 24.0;
+  Widget _produtosDestaqueSection(List<Produto> produtosDestaque) {
+    final isMobile = MediaQuery.of(context).size.width < 600;
+    final hPad = isMobile ? 12.0 : 60.0;
+    final titSize = isMobile ? 16.0 : 24.0;
 
-  return Container(
-    padding: EdgeInsets.symmetric(horizontal: hPad),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(children: [
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-            decoration: BoxDecoration(color: AppColors.pinkStrong, borderRadius: BorderRadius.circular(12)),
-            child: const Text("NOVO", style: TextStyle(fontSize: 9, color: Colors.white, fontWeight: FontWeight.bold, letterSpacing: 1)),
-          ),
-          const SizedBox(width: 8),
-          Text("Em Destaque", style: TextStyle(fontSize: titSize, fontWeight: FontWeight.bold, color: const Color(0xFF5A4A42))),
-        ]),
-        SizedBox(height: isMobile ? 12 : 24),
-        if (isMobile)
-          ProdutosDestaqueCarousel(
-            produtos: produtosDestaque,
-            isInCart: _isInCart,
-            onToggleCart: _toggleCart,
-            onOpenDetalhes: _abrirDetalhes,
-          )
-        else
-          SizedBox(
-            height: 380,
-            child: ListView.builder(
-              scrollDirection: Axis.horizontal,
-              itemCount: produtosDestaque.length,
-              itemBuilder: (context, index) {
-                final produto = produtosDestaque[index];
-                return Padding(
-                  padding: const EdgeInsets.only(right: 24),
-                  child: SizedBox(
-                    width: 300,
-                    child: ProdutoCardDestaque(
-                      produto: produto,
-                      isInCart: _isInCart(produto.id),
-                      isMobile: false,
-                      onToggleCart: () => _toggleCart(produto),
-                      onOpenDetalhes: () => _abrirDetalhes(produto),
-                    ),
-                  ),
-                );
-              },
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: hPad),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(children: [
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+              decoration: BoxDecoration(color: AppColors.pinkStrong, borderRadius: BorderRadius.circular(12)),
+              child: const Text("NOVO", style: TextStyle(fontSize: 9, color: Colors.white, fontWeight: FontWeight.bold, letterSpacing: 1)),
             ),
-          ),
-      ],
-    ),
-  );
-}
+            const SizedBox(width: 8),
+            Text("Em Destaque", style: TextStyle(fontSize: titSize, fontWeight: FontWeight.bold, color: const Color(0xFF5A4A42))),
+          ]),
+          SizedBox(height: isMobile ? 12 : 24),
+          if (isMobile)
+            ProdutosDestaqueCarousel(
+              produtos: produtosDestaque,
+              isInCart: _isInCart,
+              onToggleCart: _toggleCart,
+              onOpenDetalhes: _abrirDetalhes,
+            )
+          else
+            SizedBox(
+              height: 380,
+              child: ListView.builder(
+                scrollDirection: Axis.horizontal,
+                itemCount: produtosDestaque.length,
+                itemBuilder: (context, index) {
+                  final produto = produtosDestaque[index];
+                  return Padding(
+                    padding: const EdgeInsets.only(right: 24),
+                    child: SizedBox(
+                      width: 300,
+                      child: ProdutoCardDestaque(
+                        produto: produto,
+                        isInCart: _isInCart(produto.id),
+                        isMobile: false,
+                        onToggleCart: () => _toggleCart(produto),
+                        onOpenDetalhes: () => _abrirDetalhes(produto),
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
   Widget _todosProdutosSection(List<Produto> produtos) {
     final isMobile = MediaQuery.of(context).size.width < 600;
     final hPad = isMobile ? 12.0 : 60.0;
@@ -264,13 +291,13 @@ Widget _produtosDestaqueSection(List<Produto> produtosDestaque) {
               itemBuilder: (context, index) {
                 final produto = produtos[index];
                 return ProdutoCardGrid(
-  produto: produto,
-  isInCart: _isInCart(produto.id),
-  isCompact: true, // ou false no desktop
-  onToggleCart: () => _toggleCart(produto),
-  onOpenDetalhes: () => _abrirDetalhes(produto),
-  width: MediaQuery.of(context).size.width / 2 - 20, // só no mobile
-);
+                  produto: produto,
+                  isInCart: _isInCart(produto.id),
+                  isCompact: true, // ou false no desktop
+                  onToggleCart: () => _toggleCart(produto),
+                  onOpenDetalhes: () => _abrirDetalhes(produto),
+                  width: MediaQuery.of(context).size.width / 2 - 20, // só no mobile
+                );
               },
             )
           else
@@ -281,7 +308,8 @@ Widget _produtosDestaqueSection(List<Produto> produtosDestaque) {
                 produto: produto,
                 isInCart: _isInCart(produto.id),
                 isCompact: false,
-                onToggleCart: () => _toggleCart(produto),  onOpenDetalhes: () => _abrirDetalhes(produto),
+                onToggleCart: () => _toggleCart(produto),
+                onOpenDetalhes: () => _abrirDetalhes(produto),
               )).toList(),
             ),
         ],
@@ -295,7 +323,7 @@ Widget _produtosDestaqueSection(List<Produto> produtosDestaque) {
     } else if (index == 1) {
       Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const ServicosPage()));
     } else if (index == 3) {
-      Navigator.push(context, MaterialPageRoute(builder: (_) => CarrinhoPage(existingCart: _cart)));
+      _irParaCarrinho();
     }
   }
 
@@ -358,5 +386,4 @@ Widget _produtosDestaqueSection(List<Produto> produtosDestaque) {
       ),
     );
   }
-
 }
