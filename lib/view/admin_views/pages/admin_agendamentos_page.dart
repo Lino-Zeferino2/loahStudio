@@ -56,62 +56,105 @@ class _AdminAgendamentosPageState extends State<AdminAgendamentosPage> {
           return Center(child: Text('Erro ao carregar agendamentos: ${snapshot.error}'));
         }
         if (!snapshot.hasData) {
-          return const Center(child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [Icon(Icons.event_busy, size: 64, color: AppColors.grey), SizedBox(height: 16), Text('Carregando agendamentos...', style: TextStyle(color: AppColors.grey, fontSize: 16))]));
+          return const Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.event_busy, size: 64, color: AppColors.grey),
+                SizedBox(height: 16),
+                Text('Carregando agendamentos...', style: TextStyle(color: AppColors.grey, fontSize: 16)),
+              ],
+            ),
+          );
         }
 
+        final total = snapshot.data!.length;
         final filteredAgendamentos = _filterAgendamentos(snapshot.data!);
 
-        if (filteredAgendamentos.isEmpty) {
-          return Column(children: [_buildAppBar(isMobile), Expanded(child: _buildEmptyState())]);
-        }
-
-        return Column(children: [_buildAppBar(isMobile), Expanded(child: ListView.builder(padding: EdgeInsets.all(isMobile ? 12 : 16), itemCount: filteredAgendamentos.length, itemBuilder: (context, index) => _buildAgendamentoCard(filteredAgendamentos[index], isMobile)))]);
+        return Column(
+          children: [
+            _buildAppBar(isMobile, total: total, filtrado: filteredAgendamentos.length),
+            Expanded(
+              child: filteredAgendamentos.isEmpty
+                  ? _buildEmptyState()
+                  : ListView.builder(
+                      padding: EdgeInsets.all(isMobile ? 12 : 16),
+                      itemCount: filteredAgendamentos.length,
+                      itemBuilder: (context, index) => _buildAgendamentoCard(filteredAgendamentos[index], isMobile),
+                    ),
+            ),
+          ],
+        );
       },
     );
   }
 
-  Widget _buildAppBar(bool isMobile) {
+  Widget _buildAppBar(bool isMobile, {required int total, required int filtrado}) {
     return Container(
       padding: EdgeInsets.all(isMobile ? 12 : 16),
       decoration: BoxDecoration(color: AppColors.white, boxShadow: [BoxShadow(color: AppColors.grey.withValues(alpha: 0.1), blurRadius: 4, offset: const Offset(0, 2))]),
-      child: Column(children: [
-        TextField(
-          controller: _searchController,
-          onChanged: (value) => setState(() => _searchQuery = value),
-          decoration: InputDecoration(
-            hintText: 'Pesquisar cliente, serviço...',
-            prefixIcon: const Icon(Icons.search, color: AppColors.grey),
-            suffixIcon: _searchQuery.isNotEmpty
-                ? IconButton(
-                    icon: const Icon(Icons.clear, color: AppColors.grey),
-                    onPressed: () {
-                      _searchController.clear();
-                      setState(() => _searchQuery = '');
-                    },
-                  )
-                : null,
-            filled: true,
-            fillColor: AppColors.lightCreamBg,
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
-            contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: isMobile ? 12 : 14),
+      child: Column(
+        children: [
+          Align(
+            alignment: Alignment.centerLeft,
+            child: Text(
+              filtrado == total
+                  ? '$total agendamento${total == 1 ? '' : 's'}'
+                  : 'A mostrar $filtrado de $total agendamentos',
+              style: TextStyle(color: AppColors.grey, fontSize: 13, fontWeight: FontWeight.w500),
+            ),
           ),
-        ),
-        SizedBox(height: isMobile ? 12 : 16),
-        isMobile ? _buildFiltroDropdown() : Wrap(spacing: 8, runSpacing: 8, children: [
-          _buildFilterChip('todos', 'Todos'),
-          _buildFilterChip('pendente', 'Pendente'),
-          _buildFilterChip('confirmado', 'Confirmado'),
-          _buildFilterChip('concluido', 'Concluído'),
-          _buildFilterChip('cancelado', 'Cancelado'),
-        ]),
-        SizedBox(height: isMobile ? 12 : 16),
-        Row(children: [
-          Expanded(child: _buildDatePicker(label: 'Data Início', date: _selectedStartDate, onSelect: (date) => setState(() => _selectedStartDate = date), isMobile: isMobile)),
-          SizedBox(width: isMobile ? 8 : 16),
-          Expanded(child: _buildDatePicker(label: 'Data Fim', date: _selectedEndDate, onSelect: (date) => setState(() => _selectedEndDate = date), isMobile: isMobile)),
-          if (_selectedStartDate != null || _selectedEndDate != null) ...[const SizedBox(width: 8), IconButton(onPressed: () => setState(() { _selectedStartDate = null; _selectedEndDate = null; }), icon: const Icon(Icons.clear, color: Colors.redAccent), tooltip: 'Limpar datas')],
-        ]),
-      ]),
+          SizedBox(height: isMobile ? 10 : 12),
+          TextField(
+            controller: _searchController,
+            onChanged: (value) => setState(() => _searchQuery = value),
+            decoration: InputDecoration(
+              hintText: 'Pesquisar cliente, serviço...',
+              prefixIcon: const Icon(Icons.search, color: AppColors.grey),
+              suffixIcon: _searchQuery.isNotEmpty
+                  ? IconButton(
+                      icon: const Icon(Icons.clear, color: AppColors.grey),
+                      onPressed: () {
+                        _searchController.clear();
+                        setState(() => _searchQuery = '');
+                      },
+                    )
+                  : null,
+              filled: true,
+              fillColor: AppColors.lightCreamBg,
+              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+              contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: isMobile ? 12 : 14),
+            ),
+          ),
+          SizedBox(height: isMobile ? 12 : 16),
+          isMobile
+              ? _buildFiltroDropdown()
+              : Wrap(spacing: 8, runSpacing: 8, children: [
+                  _buildFilterChip('todos', 'Todos'),
+                  _buildFilterChip('pendente', 'Pendente'),
+                  _buildFilterChip('confirmado', 'Confirmado'),
+                  _buildFilterChip('concluido', 'Concluído'),
+                  _buildFilterChip('cancelado', 'Cancelado'),
+                ]),
+          SizedBox(height: isMobile ? 12 : 16),
+          Row(children: [
+            Expanded(child: _buildDatePicker(label: 'Data Início', date: _selectedStartDate, onSelect: (date) => setState(() => _selectedStartDate = date), isMobile: isMobile)),
+            SizedBox(width: isMobile ? 8 : 16),
+            Expanded(child: _buildDatePicker(label: 'Data Fim', date: _selectedEndDate, onSelect: (date) => setState(() => _selectedEndDate = date), isMobile: isMobile)),
+            if (_selectedStartDate != null || _selectedEndDate != null) ...[
+              const SizedBox(width: 8),
+              IconButton(
+                onPressed: () => setState(() {
+                  _selectedStartDate = null;
+                  _selectedEndDate = null;
+                }),
+                icon: const Icon(Icons.clear, color: Colors.redAccent),
+                tooltip: 'Limpar datas',
+              ),
+            ],
+          ]),
+        ],
+      ),
     );
   }
 
@@ -132,7 +175,9 @@ class _AdminAgendamentosPageState extends State<AdminAgendamentosPage> {
           DropdownMenuItem(value: 'concluido', child: Text('Concluído')),
           DropdownMenuItem(value: 'cancelado', child: Text('Cancelado')),
         ],
-        onChanged: (value) { if (value != null) setState(() => _selectedFilter = value); },
+        onChanged: (value) {
+          if (value != null) setState(() => _selectedFilter = value);
+        },
       ),
     );
   }
@@ -141,11 +186,20 @@ class _AdminAgendamentosPageState extends State<AdminAgendamentosPage> {
     final bool isSelected = _selectedFilter == value;
     Color chipColor;
     switch (value) {
-      case 'pendente': chipColor = Colors.orange; break;
-      case 'confirmado': chipColor = Colors.green; break;
-      case 'concluido': chipColor = Colors.blue; break;
-      case 'cancelado': chipColor = Colors.red; break;
-      default: chipColor = AppColors.pinkStrong;
+      case 'pendente':
+        chipColor = Colors.orange;
+        break;
+      case 'confirmado':
+        chipColor = Colors.green;
+        break;
+      case 'concluido':
+        chipColor = Colors.blue;
+        break;
+      case 'cancelado':
+        chipColor = Colors.red;
+        break;
+      default:
+        chipColor = AppColors.pinkStrong;
     }
     return GestureDetector(
       onTap: () => setState(() => _selectedFilter = value),
@@ -166,23 +220,45 @@ class _AdminAgendamentosPageState extends State<AdminAgendamentosPage> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
         decoration: BoxDecoration(color: AppColors.lightCreamBg, borderRadius: BorderRadius.circular(8), border: Border.all(color: AppColors.grey.withValues(alpha: 0.3))),
-        child: Row(children: [const Icon(Icons.calendar_today, color: AppColors.grey, size: 18), const SizedBox(width: 8), Expanded(child: Text(date != null ? '${date.day}/${date.month}/${date.year}' : label, style: TextStyle(color: date != null ? AppColors.brown : AppColors.grey, fontSize: 13)))]),
+        child: Row(children: [
+          const Icon(Icons.calendar_today, color: AppColors.grey, size: 18),
+          const SizedBox(width: 8),
+          Expanded(child: Text(date != null ? '${date.day}/${date.month}/${date.year}' : label, style: TextStyle(color: date != null ? AppColors.brown : AppColors.grey, fontSize: 13))),
+        ]),
       ),
     );
   }
 
-  Widget _buildEmptyState() => Center(child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [Icon(Icons.event_busy, size: 64, color: AppColors.grey.withValues(alpha: 0.5)), const SizedBox(height: 16), const Text('Nenhum agendamento encontrado', style: TextStyle(color: AppColors.grey, fontSize: 16))]));
+  Widget _buildEmptyState() => Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.event_busy, size: 64, color: AppColors.grey.withValues(alpha: 0.5)),
+            const SizedBox(height: 16),
+            const Text('Nenhum agendamento encontrado', style: TextStyle(color: AppColors.grey, fontSize: 16)),
+          ],
+        ),
+      );
 
   Widget _buildAgendamentoCard(Agendamento agendamento, bool isMobile) {
     final DateTime data = agendamento.data;
     final String status = agendamento.status;
     Color statusColor;
     switch (status) {
-      case 'pendente': statusColor = Colors.orange; break;
-      case 'confirmado': statusColor = Colors.green; break;
-      case 'concluido': statusColor = Colors.blue; break;
-      case 'cancelado': statusColor = Colors.red; break;
-      default: statusColor = AppColors.grey;
+      case 'pendente':
+        statusColor = Colors.orange;
+        break;
+      case 'confirmado':
+        statusColor = Colors.green;
+        break;
+      case 'concluido':
+        statusColor = Colors.blue;
+        break;
+      case 'cancelado':
+        statusColor = Colors.red;
+        break;
+      default:
+        statusColor = AppColors.grey;
     }
 
     final String inicial = agendamento.clienteNome.isNotEmpty ? agendamento.clienteNome[0].toUpperCase() : '?';
@@ -195,42 +271,134 @@ class _AdminAgendamentosPageState extends State<AdminAgendamentosPage> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(children: [
-            Container(width: isMobile ? 40 : 48, height: isMobile ? 40 : 48, decoration: BoxDecoration(color: AppColors.pinkNude.withValues(alpha: 0.3), shape: BoxShape.circle), child: Center(child: Text(inicial, style: const TextStyle(color: AppColors.pinkStrong, fontSize: 18, fontWeight: FontWeight.bold)))),
+            Container(
+              width: isMobile ? 40 : 48,
+              height: isMobile ? 40 : 48,
+              decoration: BoxDecoration(color: AppColors.pinkNude.withValues(alpha: 0.3), shape: BoxShape.circle),
+              child: Center(child: Text(inicial, style: const TextStyle(color: AppColors.pinkStrong, fontSize: 18, fontWeight: FontWeight.bold))),
+            ),
             const SizedBox(width: 12),
-            Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text(agendamento.clienteNome, style: const TextStyle(color: AppColors.brown, fontSize: 16, fontWeight: FontWeight.bold)), Text(agendamento.clienteEmail, style: const TextStyle(color: AppColors.grey, fontSize: 13)), Text(agendamento.clienteTelefone, style: const TextStyle(color: AppColors.grey, fontSize: 13))])),
-            Container(padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4), decoration: BoxDecoration(color: statusColor.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(12)), child: Text(status.toUpperCase(), style: TextStyle(color: statusColor, fontSize: 11, fontWeight: FontWeight.bold))),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(agendamento.clienteNome, style: const TextStyle(color: AppColors.brown, fontSize: 16, fontWeight: FontWeight.bold)),
+                  Text(agendamento.clienteEmail, style: const TextStyle(color: AppColors.grey, fontSize: 13)),
+                  Text(agendamento.clienteTelefone, style: const TextStyle(color: AppColors.grey, fontSize: 13)),
+                ],
+              ),
+            ),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+              decoration: BoxDecoration(color: statusColor.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(12)),
+              child: Text(status.toUpperCase(), style: TextStyle(color: statusColor, fontSize: 11, fontWeight: FontWeight.bold)),
+            ),
           ]),
           const SizedBox(height: 12),
           const Divider(height: 1),
           const SizedBox(height: 12),
           isMobile
-              ? Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Row(children: [const Icon(Icons.content_cut, color: AppColors.pinkStrong, size: 16), const SizedBox(width: 6), Expanded(child: Text(agendamento.servicoNome, style: const TextStyle(color: AppColors.brown, fontSize: 13), overflow: TextOverflow.ellipsis))]),
-                  const SizedBox(height: 8),
-                  Wrap(
-                    spacing: 12,
-                    runSpacing: 4,
-                    crossAxisAlignment: WrapCrossAlignment.center,
-                    children: [
-                      Row(mainAxisSize: MainAxisSize.min, children: [const Icon(Icons.calendar_today, color: AppColors.grey, size: 16), const SizedBox(width: 6), Text('${data.day}/${data.month}', style: const TextStyle(color: AppColors.brown, fontSize: 13))]),
-                      Row(mainAxisSize: MainAxisSize.min, children: [const Icon(Icons.access_time, color: AppColors.grey, size: 16), const SizedBox(width: 6), Text('${agendamento.horaInicio} - ${agendamento.horaFim} (${_formatDuracao(agendamento.servicoDuracaoMinutos)})', style: const TextStyle(color: AppColors.brown, fontSize: 13))]),
-                    ],
+              ? Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(children: [
+                      const Icon(Icons.content_cut, color: AppColors.pinkStrong, size: 16),
+                      const SizedBox(width: 6),
+                      Expanded(child: Text(agendamento.servicoNome, style: const TextStyle(color: AppColors.brown, fontSize: 13), overflow: TextOverflow.ellipsis)),
+                    ]),
+                    const SizedBox(height: 8),
+                    Wrap(
+                      spacing: 12,
+                      runSpacing: 4,
+                      crossAxisAlignment: WrapCrossAlignment.center,
+                      children: [
+                        Row(mainAxisSize: MainAxisSize.min, children: [
+                          const Icon(Icons.calendar_today, color: AppColors.grey, size: 16),
+                          const SizedBox(width: 6),
+                          Text('${data.day}/${data.month}', style: const TextStyle(color: AppColors.brown, fontSize: 13)),
+                        ]),
+                        Row(mainAxisSize: MainAxisSize.min, children: [
+                          const Icon(Icons.access_time, color: AppColors.grey, size: 16),
+                          const SizedBox(width: 6),
+                          Text('${agendamento.horaInicio} - ${agendamento.horaFim} (${_formatDuracao(agendamento.servicoDuracaoMinutos)})', style: const TextStyle(color: AppColors.brown, fontSize: 13)),
+                        ]),
+                      ],
+                    ),
+                  ],
+                )
+              : Row(children: [
+                  Expanded(
+                    child: Row(children: [
+                      const Icon(Icons.content_cut, color: AppColors.pinkStrong, size: 18),
+                      const SizedBox(width: 6),
+                      Expanded(child: Text(agendamento.servicoNome, style: const TextStyle(color: AppColors.brown, fontSize: 14), overflow: TextOverflow.ellipsis)),
+                    ]),
                   ),
-                ])
-              : Row(children: [Expanded(child: Row(children: [const Icon(Icons.content_cut, color: AppColors.pinkStrong, size: 18), const SizedBox(width: 6), Expanded(child: Text(agendamento.servicoNome, style: const TextStyle(color: AppColors.brown, fontSize: 14), overflow: TextOverflow.ellipsis))])), Expanded(child: Row(children: [const Icon(Icons.calendar_today, color: AppColors.grey, size: 18), const SizedBox(width: 6), Text('${data.day}/${data.month}/${data.year}', style: const TextStyle(color: AppColors.brown, fontSize: 14))])), Expanded(child: Row(children: [const Icon(Icons.access_time, color: AppColors.grey, size: 18), const SizedBox(width: 6), Text(agendamento.horaInicio, style: const TextStyle(color: AppColors.brown, fontSize: 14))]))]),
+                  Expanded(
+                    child: Row(children: [
+                      const Icon(Icons.calendar_today, color: AppColors.grey, size: 18),
+                      const SizedBox(width: 6),
+                      Text('${data.day}/${data.month}/${data.year}', style: const TextStyle(color: AppColors.brown, fontSize: 14)),
+                    ]),
+                  ),
+                  Expanded(
+                    child: Row(children: [
+                      const Icon(Icons.access_time, color: AppColors.grey, size: 18),
+                      const SizedBox(width: 6),
+                      Text(agendamento.horaInicio, style: const TextStyle(color: AppColors.brown, fontSize: 14)),
+                    ]),
+                  ),
+                ]),
           const SizedBox(height: 12),
           if (status != 'concluido' && status != 'cancelado')
             Wrap(alignment: WrapAlignment.end, spacing: 8, runSpacing: 8, children: [
-              if (status == 'pendente') ElevatedButton.icon(onPressed: () => _showConfirmDialog(agendamento, 'confirmado'), icon: const Icon(Icons.check, size: 18), label: const Text('Confirmar'), style: ElevatedButton.styleFrom(backgroundColor: Colors.green, foregroundColor: AppColors.white)),
-              if (status == 'confirmado') ElevatedButton.icon(onPressed: () => _showConfirmDialog(agendamento, 'concluido'), icon: const Icon(Icons.check_circle, size: 18), label: const Text('Concluir'), style: ElevatedButton.styleFrom(backgroundColor: Colors.blue, foregroundColor: AppColors.white)),
-              ElevatedButton.icon(onPressed: () => _showConfirmDialog(agendamento, 'cancelar'), icon: const Icon(Icons.close, size: 18), label: const Text('Cancelar'), style: ElevatedButton.styleFrom(backgroundColor: Colors.red, foregroundColor: AppColors.white)),
-              TextButton.icon(onPressed: () => _navegarParaReagendar(agendamento), icon: const Icon(Icons.edit_calendar, size: 18), label: const Text('Editar'), style: TextButton.styleFrom(foregroundColor: AppColors.pinkStrong)),
-              TextButton.icon(onPressed: () => _showDeleteDialog(agendamento), icon: const Icon(Icons.delete, size: 18), label: const Text('Eliminar'), style: TextButton.styleFrom(foregroundColor: Colors.redAccent)),
+              if (status == 'pendente')
+                ElevatedButton.icon(
+                  onPressed: () => _showConfirmDialog(agendamento, 'confirmado'),
+                  icon: const Icon(Icons.check, size: 18),
+                  label: const Text('Confirmar'),
+                  style: ElevatedButton.styleFrom(backgroundColor: Colors.green, foregroundColor: AppColors.white),
+                ),
+              if (status == 'confirmado')
+                ElevatedButton.icon(
+                  onPressed: () => _showConfirmDialog(agendamento, 'concluido'),
+                  icon: const Icon(Icons.check_circle, size: 18),
+                  label: const Text('Concluir'),
+                  style: ElevatedButton.styleFrom(backgroundColor: Colors.blue, foregroundColor: AppColors.white),
+                ),
+              ElevatedButton.icon(
+                onPressed: () => _showConfirmDialog(agendamento, 'cancelar'),
+                icon: const Icon(Icons.close, size: 18),
+                label: const Text('Cancelar'),
+                style: ElevatedButton.styleFrom(backgroundColor: Colors.red, foregroundColor: AppColors.white),
+              ),
+              TextButton.icon(
+                onPressed: () => _navegarParaReagendar(agendamento),
+                icon: const Icon(Icons.edit_calendar, size: 18),
+                label: const Text('Editar'),
+                style: TextButton.styleFrom(foregroundColor: AppColors.pinkStrong),
+              ),
+              TextButton.icon(
+                onPressed: () => _showDeleteDialog(agendamento),
+                icon: const Icon(Icons.delete, size: 18),
+                label: const Text('Eliminar'),
+                style: TextButton.styleFrom(foregroundColor: Colors.redAccent),
+              ),
             ])
           else
             Wrap(alignment: WrapAlignment.end, spacing: 8, runSpacing: 8, children: [
-              TextButton.icon(onPressed: () => _navegarParaReagendar(agendamento), icon: const Icon(Icons.edit_calendar, size: 18), label: const Text('Editar'), style: TextButton.styleFrom(foregroundColor: AppColors.pinkStrong)),
-              TextButton.icon(onPressed: () => _showDeleteDialog(agendamento), icon: const Icon(Icons.delete, size: 18), label: const Text('Eliminar'), style: TextButton.styleFrom(foregroundColor: Colors.redAccent)),
+              TextButton.icon(
+                onPressed: () => _navegarParaReagendar(agendamento),
+                icon: const Icon(Icons.edit_calendar, size: 18),
+                label: const Text('Editar'),
+                style: TextButton.styleFrom(foregroundColor: AppColors.pinkStrong),
+              ),
+              TextButton.icon(
+                onPressed: () => _showDeleteDialog(agendamento),
+                icon: const Icon(Icons.delete, size: 18),
+                label: const Text('Eliminar'),
+                style: TextButton.styleFrom(foregroundColor: Colors.redAccent),
+              ),
             ]),
         ],
       ),
@@ -256,14 +424,16 @@ class _AdminAgendamentosPageState extends State<AdminAgendamentosPage> {
   void _showDeleteDialog(Agendamento agendamento) {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (dialogContext) => AlertDialog(
         title: const Text('Eliminar Agendamento'),
         content: Text('Tem certeza que deseja eliminar definitivamente o agendamento de ${agendamento.clienteNome}? Esta ação não pode ser desfeita.'),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancelar')),
+          TextButton(onPressed: () => Navigator.pop(dialogContext), child: const Text('Cancelar')),
           TextButton(
             onPressed: () async {
-              Navigator.pop(context);
+              // dialogContext fecha o diálogo; "context" (da State) é o único
+              // usado depois do await, porque o diálogo já foi desmontado.
+              Navigator.pop(dialogContext);
               final sucesso = await _agendamentoController.eliminarAgendamento(agendamento.id!);
               if (!mounted) return;
               ScaffoldMessenger.of(context).showSnackBar(SnackBar(
@@ -282,16 +452,55 @@ class _AdminAgendamentosPageState extends State<AdminAgendamentosPage> {
     String title, content, buttonText;
     IconData icon;
     Color buttonColor;
-    if (action == 'confirmado') { title = 'Confirmar Agendamento'; content = 'Deseja confirmar o agendamento de ${agendamento.clienteNome}?'; buttonText = 'Confirmar'; icon = Icons.check; buttonColor = Colors.green; }
-    else if (action == 'concluido') { title = 'Concluir Agendamento'; content = 'Deseja marcar como concluído o agendamento de ${agendamento.clienteNome}?'; buttonText = 'Concluir'; icon = Icons.check_circle; buttonColor = Colors.blue; }
-    else { title = 'Cancelar Agendamento'; content = 'Deseja cancelar o agendamento de ${agendamento.clienteNome}?'; buttonText = 'Cancelar'; icon = Icons.close; buttonColor = Colors.red; }
-    showDialog(context: context, builder: (context) => AlertDialog(title: Row(children: [Icon(icon, color: buttonColor), const SizedBox(width: 8), Text(title)]), content: Text(content), actions: [TextButton(onPressed: () => Navigator.pop(context), child: const Text('Não')), ElevatedButton(onPressed: () { Navigator.pop(context); _updateStatus(agendamento, action == 'confirmado' ? 'confirmado' : action == 'concluido' ? 'concluido' : 'cancelado'); }, style: ElevatedButton.styleFrom(backgroundColor: buttonColor, foregroundColor: AppColors.white), child: Text(buttonText))]));
+    if (action == 'confirmado') {
+      title = 'Confirmar Agendamento';
+      content = 'Deseja confirmar o agendamento de ${agendamento.clienteNome}?';
+      buttonText = 'Confirmar';
+      icon = Icons.check;
+      buttonColor = Colors.green;
+    } else if (action == 'concluido') {
+      title = 'Concluir Agendamento';
+      content = 'Deseja marcar como concluído o agendamento de ${agendamento.clienteNome}?';
+      buttonText = 'Concluir';
+      icon = Icons.check_circle;
+      buttonColor = Colors.blue;
+    } else {
+      title = 'Cancelar Agendamento';
+      content = 'Deseja cancelar o agendamento de ${agendamento.clienteNome}?';
+      buttonText = 'Cancelar';
+      icon = Icons.close;
+      buttonColor = Colors.red;
+    }
+    showDialog(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Row(children: [Icon(icon, color: buttonColor), const SizedBox(width: 8), Text(title)]),
+        content: Text(content),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(dialogContext), child: const Text('Não')),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(dialogContext);
+              _updateStatus(agendamento, action == 'confirmado' ? 'confirmado' : action == 'concluido' ? 'concluido' : 'cancelado');
+            },
+            style: ElevatedButton.styleFrom(backgroundColor: buttonColor, foregroundColor: AppColors.white),
+            child: Text(buttonText),
+          ),
+        ],
+      ),
+    );
   }
 
-  void _updateStatus(Agendamento agendamento, String newStatus) {
+  Future<void> _updateStatus(Agendamento agendamento, String newStatus) async {
     if (agendamento.id == null) return;
-    _agendamentoController.atualizarStatusAgendamento(agendamento.id!, newStatus);
-    String message = newStatus == 'confirmado' ? 'Agendamento confirmado!' : newStatus == 'concluido' ? 'Agendamento concluído!' : 'Agendamento cancelado!';
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+    final sucesso = await _agendamentoController.atualizarStatusAgendamento(agendamento.id!, newStatus);
+    if (!mounted) return;
+    final message = sucesso
+        ? (newStatus == 'confirmado' ? 'Agendamento confirmado!' : newStatus == 'concluido' ? 'Agendamento concluído!' : 'Agendamento cancelado!')
+        : 'Não foi possível atualizar o agendamento. Tente novamente.';
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      content: Text(message),
+      backgroundColor: sucesso ? null : Colors.redAccent,
+    ));
   }
 }
