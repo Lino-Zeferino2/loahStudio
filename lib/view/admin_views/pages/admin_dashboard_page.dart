@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:loahstudio/constants/colors.dart';
 import 'package:loahstudio/constants/responsive.dart';
+import 'package:loahstudio/controller/dashboard_controller.dart';
+import 'package:loahstudio/model/dashboard_stats_model.dart';
 
 class AdminDashboardPage extends StatefulWidget {
   const AdminDashboardPage({super.key});
@@ -11,85 +13,104 @@ class AdminDashboardPage extends StatefulWidget {
 }
 
 class _AdminDashboardPageState extends State<AdminDashboardPage> {
+  final DashboardController _controller = DashboardController();
+  late Future<DashboardStats> _statsFuture;
+
   String _selectedFilter = 'semana';
 
-  final List<double> _rendimentoSemana = [150, 280, 190, 320, 250, 400, 350];
-  final List<double> _rendimentoMes = [1200, 1800, 1400, 2100, 1900, 2500, 2200, 2800, 2400, 3100, 2700, 3200];
-  final List<double> _rendimentoTudo = [15000, 18000, 22000, 19000, 25000, 28000, 32000, 35000, 31000, 38000, 42000, 45000];
+  @override
+  void initState() {
+    super.initState();
+    _statsFuture = _controller.fetchDashboardStats();
+  }
 
-  final List<Map<String, dynamic>> _servicos = [
-    {'nome': 'Maquil. Noiva', 'quantidade': 45, 'valor': 11250},
-    {'nome': 'Maquil. Festa', 'quantidade': 38, 'valor': 5700},
-    {'nome': 'Maquil. Editorial', 'quantidade': 25, 'valor': 5000},
-    {'nome': 'Maquil. Natural', 'quantidade': 32, 'valor': 2560},
-    {'nome': 'Sombra Olhos', 'quantidade': 18, 'valor': 1080},
-    {'nome': 'Gloss Look', 'quantidade': 22, 'valor': 880},
-  ];
+  Future<void> _recarregar() async {
+    final novoFuture = _controller.fetchDashboardStats();
+    setState(() => _statsFuture = novoFuture);
+    await novoFuture;
+  }
 
-  final List<Map<String, dynamic>> _produtos = [
-    {'nome': 'Batom Rouge', 'quantidade': 85, 'valor': 3825},
-    {'nome': 'Gloss Brilho', 'quantidade': 62, 'valor': 2170},
-    {'nome': 'Paleta Sombra', 'quantidade': 45, 'valor': 5400},
-    {'nome': 'Delineador', 'quantidade': 28, 'valor': 1176},
-    {'nome': 'Primer Facial', 'quantidade': 55, 'valor': 4125},
-  ];
+  String _formatarMoeda(double valor) => '€${valor.toStringAsFixed(2).replaceAll('.', ',')}';
 
   @override
   Widget build(BuildContext context) {
     final bool isMobile = ResponsiveHelper.isMobile(context);
 
-    return SingleChildScrollView(
-      padding: EdgeInsets.all(isMobile ? 16 : 24),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _buildStatsCards(context),
-          const SizedBox(height: 24),
-          _buildRendimentoChart(context),
-          const SizedBox(height: 24),
-          isMobile
-              ? Column(
-                  children: [
-                    _buildServicosChart(context),
-                    const SizedBox(height: 24),
-                    _buildProdutosChart(context),
-                  ],
-                )
-              : Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Expanded(child: _buildServicosChart(context)),
-                    const SizedBox(width: 24),
-                    Expanded(child: _buildProdutosChart(context)),
-                  ],
-                ),
-        ],
-      ),
+    return FutureBuilder<DashboardStats>(
+      future: _statsFuture,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        }
+
+        final stats = snapshot.data ?? DashboardStats.vazio();
+
+        return RefreshIndicator(
+          onRefresh: _recarregar,
+          child: SingleChildScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            padding: EdgeInsets.all(isMobile ? 16 : 24),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _buildStatsCards(context, stats),
+                const SizedBox(height: 24),
+                _buildRendimentoChart(context, stats),
+                const SizedBox(height: 24),
+                isMobile
+                    ? Column(
+                        children: [
+                          _buildServicosChart(context, stats.topServicos),
+                          const SizedBox(height: 24),
+                          _buildProdutosChart(context, stats.topProdutos),
+                        ],
+                      )
+                    : Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(child: _buildServicosChart(context, stats.topServicos)),
+                          const SizedBox(width: 24),
+                          Expanded(child: _buildProdutosChart(context, stats.topProdutos)),
+                        ],
+                      ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 
-  Widget _buildStatsCards(BuildContext context) {
+  Widget _buildStatsCards(BuildContext context, DashboardStats stats) {
     final bool isMobile = ResponsiveHelper.isMobile(context);
 
-    return isMobile
-        ? Column(
-            children: [
-              _buildStatCard('Total Vendas', 'R\$ 8.750', Icons.shopping_cart, Colors.green),
-              const SizedBox(height: 12),
-              _buildStatCard('Clientes', '156', Icons.people, Colors.blue),
-              const SizedBox(height: 12),
-              _buildStatCard('Agendamentos', '89', Icons.calendar_month, Colors.purple),
-            ],
-          )
-        : Row(
-            children: [
-              Expanded(child: _buildStatCard('Total Vendas', 'R\$ 8.750', Icons.shopping_cart, Colors.green)),
-              const SizedBox(width: 16),
-              Expanded(child: _buildStatCard('Clientes', '156', Icons.people, Colors.blue)),
-              const SizedBox(width: 16),
-              Expanded(child: _buildStatCard('Agendamentos', '89', Icons.calendar_month, Colors.purple)),
-            ],
-          );
+    final cards = [
+      _buildStatCard('Vendas de Serviços', _formatarMoeda(stats.totalVendasServicos), Icons.content_cut, AppColors.pinkStrong),
+      _buildStatCard('Vendas de Encomendas', _formatarMoeda(stats.totalVendasEncomendas), Icons.shopping_cart, Colors.green),
+      _buildStatCard('Clientes', '${stats.totalClientes}', Icons.people, Colors.blue),
+      _buildStatCard('Agendamentos', '${stats.totalAgendamentos}', Icons.calendar_month, Colors.purple),
+    ];
+
+    if (isMobile) {
+      return Column(
+        children: [
+          for (int i = 0; i < cards.length; i++) ...[
+            if (i > 0) const SizedBox(height: 12),
+            cards[i],
+          ],
+        ],
+      );
+    }
+
+    return GridView.count(
+      crossAxisCount: 4,
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      crossAxisSpacing: 16,
+      mainAxisSpacing: 16,
+      childAspectRatio: 2.1,
+      children: cards,
+    );
   }
 
   Widget _buildStatCard(String title, String value, IconData icon, Color color) {
@@ -121,20 +142,11 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  title,
-                  style: const TextStyle(
-                    color: AppColors.grey,
-                    fontSize: 13,
-                  ),
-                ),
+                Text(title, style: const TextStyle(color: AppColors.grey, fontSize: 13), overflow: TextOverflow.ellipsis),
                 Text(
                   value,
-                  style: const TextStyle(
-                    color: AppColors.brown,
-                    fontSize: 22,
-                    fontWeight: FontWeight.bold,
-                  ),
+                  style: const TextStyle(color: AppColors.brown, fontSize: 20, fontWeight: FontWeight.bold),
+                  overflow: TextOverflow.ellipsis,
                 ),
               ],
             ),
@@ -144,8 +156,18 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
     );
   }
 
-  Widget _buildRendimentoChart(BuildContext context) {
+  Widget _buildRendimentoChart(BuildContext context, DashboardStats stats) {
     final bool isMobile = ResponsiveHelper.isMobile(context);
+    final pontos = _pontosParaFiltro(stats);
+
+    final maxValor = pontos.isEmpty ? 0.0 : pontos.map((p) => p.valor).reduce((a, b) => a > b ? a : b);
+    final maxY = maxValor <= 0 ? 100.0 : (maxValor * 1.2);
+    final horizontalInterval = maxY / 4;
+    final bottomInterval = pontos.length <= 7
+        ? 1.0
+        : pontos.length <= 15
+            ? 2.0
+            : (pontos.length / 6).ceilToDouble();
 
     return Container(
       width: double.infinity,
@@ -154,28 +176,15 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
         color: AppColors.white,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
-          BoxShadow(
-            color: AppColors.grey.withValues(alpha: 0.1),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
+          BoxShadow(color: AppColors.grey.withValues(alpha: 0.1), blurRadius: 8, offset: const Offset(0, 2)),
         ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                'Rendimento Diário',
-                style: TextStyle(
-                  color: AppColors.brown,
-                  fontSize: isMobile ? 16 : 20,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ],
+          Text(
+            'Rendimento',
+            style: TextStyle(color: AppColors.brown, fontSize: isMobile ? 16 : 20, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 12),
           Wrap(
@@ -188,149 +197,96 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
             ],
           ),
           const SizedBox(height: 24),
-          SizedBox(
-            height: isMobile ? 200 : 250,
-            child: LineChart(
-              LineChartData(
-                gridData: FlGridData(
-                  show: true,
-                  drawVerticalLine: false,
-                  horizontalInterval: _getHorizontalInterval(),
-                  getDrawingHorizontalLine: (value) {
-                    return FlLine(
-                      color: AppColors.grey.withValues(alpha: 0.1),
-                      strokeWidth: 1,
-                    );
-                  },
-                ),
-                titlesData: FlTitlesData(
-                  show: true,
-                  rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                  topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                  bottomTitles: AxisTitles(
-                    sideTitles: SideTitles(
-                      showTitles: true,
-                      reservedSize: 30,
-                      interval: _getBottomInterval(),
-                      getTitlesWidget: (value, meta) {
-                        String text = '';
-                        switch (_selectedFilter) {
-                          case 'semana':
-                            final dias = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'];
-                            if (value.toInt() < dias.length) text = dias[value.toInt()];
-                            break;
-                          case 'mes':
-                            text = '${value.toInt() + 1}';
-                            break;
-                          case 'tudo':
-                            final meses = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
-                            if (value.toInt() < meses.length) text = meses[value.toInt()];
-                            break;
-                        }
-                        return SideTitleWidget(
-                          axisSide: meta.axisSide,
-                          child: Text(text, style: const TextStyle(color: AppColors.grey, fontSize: 10)),
-                        );
-                      },
+          if (pontos.isEmpty)
+            SizedBox(
+              height: isMobile ? 200 : 250,
+              child: const Center(child: Text('Sem dados para este período', style: TextStyle(color: AppColors.grey))),
+            )
+          else
+            SizedBox(
+              height: isMobile ? 200 : 250,
+              child: LineChart(
+                LineChartData(
+                  gridData: FlGridData(
+                    show: true,
+                    drawVerticalLine: false,
+                    horizontalInterval: horizontalInterval,
+                    getDrawingHorizontalLine: (value) => FlLine(color: AppColors.grey.withValues(alpha: 0.1), strokeWidth: 1),
+                  ),
+                  titlesData: FlTitlesData(
+                    show: true,
+                    rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                    topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                    bottomTitles: AxisTitles(
+                      sideTitles: SideTitles(
+                        showTitles: true,
+                        reservedSize: 30,
+                        interval: bottomInterval,
+                        getTitlesWidget: (value, meta) {
+                          final index = value.toInt();
+                          if (index < 0 || index >= pontos.length) return const SizedBox();
+                          return SideTitleWidget(
+                            axisSide: meta.axisSide,
+                            child: Text(pontos[index].label, style: const TextStyle(color: AppColors.grey, fontSize: 10)),
+                          );
+                        },
+                      ),
+                    ),
+                    leftTitles: AxisTitles(
+                      sideTitles: SideTitles(
+                        showTitles: true,
+                        reservedSize: isMobile ? 44 : 54,
+                        interval: horizontalInterval,
+                        getTitlesWidget: (value, meta) {
+                          if (value == 0) return const SizedBox();
+                          return Text(_formatarMoeda(value), style: const TextStyle(color: AppColors.grey, fontSize: 10));
+                        },
+                      ),
                     ),
                   ),
-                  leftTitles: AxisTitles(
-                    sideTitles: SideTitles(
-                      showTitles: true,
-                      reservedSize: isMobile ? 40 : 50,
-                      interval: _getHorizontalInterval(),
-                      getTitlesWidget: (value, meta) {
-                        if (value == 0) return const SizedBox();
-                        return Text(
-                          _selectedFilter == 'tudo' ? 'R\$${(value / 1000).toStringAsFixed(0)}k' : 'R\$${value.toInt()}',
-                          style: const TextStyle(color: AppColors.grey, fontSize: 10),
-                        );
-                      },
-                    ),
-                  ),
-                ),
-                borderData: FlBorderData(show: false),
-                minX: 0,
-                maxX: _getMaxX(),
-                minY: 0,
-                maxY: _getMaxY(),
-                lineBarsData: [
-                  LineChartBarData(
-                    spots: _getSpots(),
-                    isCurved: true,
-                    color: AppColors.pinkStrong,
-                    barWidth: 3,
-                    isStrokeCapRound: true,
-                    dotData: FlDotData(
-                      show: true,
-                      getDotPainter: (spot, percent, barData, index) {
-                        return FlDotCirclePainter(
+                  borderData: FlBorderData(show: false),
+                  minX: 0,
+                  maxX: (pontos.length - 1).toDouble(),
+                  minY: 0,
+                  maxY: maxY,
+                  lineBarsData: [
+                    LineChartBarData(
+                      spots: List.generate(pontos.length, (i) => FlSpot(i.toDouble(), pontos[i].valor)),
+                      isCurved: true,
+                      color: AppColors.pinkStrong,
+                      barWidth: 3,
+                      isStrokeCapRound: true,
+                      dotData: FlDotData(
+                        show: true,
+                        getDotPainter: (spot, percent, barData, index) => FlDotCirclePainter(
                           radius: 4,
                           color: AppColors.white,
                           strokeWidth: 2,
                           strokeColor: AppColors.pinkStrong,
-                        );
-                      },
+                        ),
+                      ),
+                      belowBarData: BarAreaData(show: true, color: AppColors.pinkStrong.withValues(alpha: 0.1)),
                     ),
-                    belowBarData: BarAreaData(
-                      show: true,
-                      color: AppColors.pinkStrong.withValues(alpha: 0.1),
-                    ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
-          ),
         ],
       ),
     );
   }
 
-  double _getHorizontalInterval() {
+  List<RendimentoPonto> _pontosParaFiltro(DashboardStats stats) {
     switch (_selectedFilter) {
-      case 'semana': return 100;
-      case 'mes': return 500;
-      case 'tudo': return 10000;
-      default: return 100;
+      case 'semana':
+        return stats.rendimentoSemana;
+      case 'mes':
+        return stats.rendimentoMes;
+      case 'tudo':
+        return stats.rendimentoTudo;
+      default:
+        return stats.rendimentoSemana;
     }
-  }
-
-  double _getBottomInterval() {
-    switch (_selectedFilter) {
-      case 'semana': return 1;
-      case 'mes': return 2;
-      case 'tudo': return 2;
-      default: return 1;
-    }
-  }
-
-  double _getMaxX() {
-    switch (_selectedFilter) {
-      case 'semana': return 6;
-      case 'mes': return 11;
-      case 'tudo': return 11;
-      default: return 6;
-    }
-  }
-
-  double _getMaxY() {
-    switch (_selectedFilter) {
-      case 'semana': return 450;
-      case 'mes': return 3500;
-      case 'tudo': return 50000;
-      default: return 450;
-    }
-  }
-
-  List<FlSpot> _getSpots() {
-    List<double> data;
-    switch (_selectedFilter) {
-      case 'semana': data = _rendimentoSemana; break;
-      case 'mes': data = _rendimentoMes; break;
-      case 'tudo': data = _rendimentoTudo; break;
-      default: data = _rendimentoSemana;
-    }
-    return List.generate(data.length, (index) => FlSpot(index.toDouble(), data[index]));
   }
 
   Widget _buildFilterButton(String filter, String label) {
@@ -344,131 +300,44 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
         decoration: BoxDecoration(
           color: isSelected ? AppColors.pinkStrong : AppColors.lightCreamBg,
           borderRadius: BorderRadius.circular(20),
-          border: Border.all(
-            color: isSelected ? AppColors.pinkStrong : AppColors.grey.withValues(alpha: 0.3),
-          ),
+          border: Border.all(color: isSelected ? AppColors.pinkStrong : AppColors.grey.withValues(alpha: 0.3)),
         ),
         child: Text(
           label,
-          style: TextStyle(
-            color: isSelected ? AppColors.white : AppColors.brown,
-            fontSize: isMobile ? 11 : 13,
-            fontWeight: FontWeight.w500,
-          ),
+          style: TextStyle(color: isSelected ? AppColors.white : AppColors.brown, fontSize: isMobile ? 11 : 13, fontWeight: FontWeight.w500),
         ),
       ),
     );
   }
 
-  Widget _buildServicosChart(BuildContext context) {
-    final sortedServicos = List<Map<String, dynamic>>.from(_servicos)..sort((a, b) => b['quantidade'].compareTo(a['quantidade']));
-    final topServicos = sortedServicos.take(5).toList();
-
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: AppColors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(color: AppColors.grey.withValues(alpha: 0.1), blurRadius: 8, offset: const Offset(0, 2)),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Serviços mais Prestados',
-            style: TextStyle(color: AppColors.brown, fontSize: ResponsiveHelper.isMobile(context) ? 18 : 20, fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 24),
-          SizedBox(
-            height: 200,
-            child: BarChart(
-              BarChartData(
-                alignment: BarChartAlignment.spaceAround,
-                maxY: topServicos[0]['quantidade'].toDouble() * 1.2,
-                barTouchData: BarTouchData(
-                  touchTooltipData: BarTouchTooltipData(
-                    getTooltipItem: (group, groupIndex, rod, rodIndex) {
-                      return BarTooltipItem('${topServicos[groupIndex]['nome']}\n${rod.toY.toInt()} vendas', const TextStyle(color: AppColors.white, fontWeight: FontWeight.bold));
-                    },
-                  ),
-                ),
-                titlesData: FlTitlesData(
-                  show: true,
-                  rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                  topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                  bottomTitles: AxisTitles(
-                    sideTitles: SideTitles(
-                      showTitles: true,
-                      reservedSize: 50,
-                    getTitlesWidget: (value, meta) {
-  if (value % 1 != 0) return const SizedBox();
-
-  final index = value.toInt();
-
-  if (index >= topServicos.length) return const SizedBox();
-
-  final nome = topServicos[index]['nome'] as String;
-
-  return SideTitleWidget(
-    axisSide: meta.axisSide,
-    space: 8,
-    child: SizedBox(
-      width: 60,
-      child: Text(
-        nome,
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
-        style: const TextStyle(color: AppColors.grey, fontSize: 10),
-      ),
-    ),
-  );
-}
-                    ),
-                  ),
-                  leftTitles: AxisTitles(sideTitles: SideTitles(showTitles: true, reservedSize: 30, getTitlesWidget: (value, meta) => Text(value.toInt().toString(), style: const TextStyle(color: AppColors.grey, fontSize: 10)))),
-                ),
-                gridData: const FlGridData(show: false),
-                borderData: FlBorderData(show: false),
-                barGroups: List.generate(topServicos.length, (index) {
-                  return BarChartGroupData(
-                    x: index,
-                    barRods: [
-                      BarChartRodData(
-                        toY: topServicos[index]['quantidade'].toDouble(),
-                        color: AppColors.pinkStrong,
-                        width: 20,
-                        borderRadius: const BorderRadius.only(topLeft: Radius.circular(6), topRight: Radius.circular(6)),
-                      ),
-                    ],
-                  );
-                }),
-              ),
-            ),
-          ),
-          const SizedBox(height: 16),
-          ...topServicos.map((servico) => Padding(
-            padding: const EdgeInsets.symmetric(vertical: 4),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Expanded(child: Text(servico['nome'] as String, style: const TextStyle(color: AppColors.brown, fontSize: 14))),
-                Text('${servico['quantidade']}x', style: const TextStyle(color: AppColors.grey, fontSize: 14, fontWeight: FontWeight.w500)),
-                const SizedBox(width: 8),
-                Text('R\$ ${(servico['valor'] as int).toStringAsFixed(2).replaceAll('.', ',')}', style: const TextStyle(color: Colors.green, fontSize: 14, fontWeight: FontWeight.bold)),
-              ],
-            ),
-          )),
-        ],
-      ),
+  Widget _buildServicosChart(BuildContext context, List<ServicoRanking> topServicos) {
+    return _buildRankingChart(
+      context: context,
+      titulo: 'Serviços mais Prestados',
+      itens: topServicos.map((s) => _RankingItem(nome: s.nome, quantidade: s.quantidade, valor: s.valor)).toList(),
+      corBarra: AppColors.pinkStrong,
+      unidade: 'agend.',
     );
   }
 
-  Widget _buildProdutosChart(BuildContext context) {
-    final sortedProdutos = List<Map<String, dynamic>>.from(_produtos)..sort((a, b) => b['quantidade'].compareTo(a['quantidade']));
-    final topProdutos = sortedProdutos.take(5).toList();
+  Widget _buildProdutosChart(BuildContext context, List<ProdutoRanking> topProdutos) {
+    return _buildRankingChart(
+      context: context,
+      titulo: 'Produtos mais Vendidos',
+      itens: topProdutos.map((p) => _RankingItem(nome: p.nome, quantidade: p.quantidade, valor: p.valor)).toList(),
+      corBarra: Colors.orange,
+      unidade: 'un.',
+    );
+  }
+
+  Widget _buildRankingChart({
+    required BuildContext context,
+    required String titulo,
+    required List<_RankingItem> itens,
+    required Color corBarra,
+    required String unidade,
+  }) {
+    final bool isMobile = ResponsiveHelper.isMobile(context);
 
     return Container(
       width: double.infinity,
@@ -483,77 +352,107 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            'Produtos mais Vendidos',
-            style: TextStyle(color: AppColors.brown, fontSize: ResponsiveHelper.isMobile(context) ? 18 : 20, fontWeight: FontWeight.bold),
-          ),
+          Text(titulo, style: TextStyle(color: AppColors.brown, fontSize: isMobile ? 18 : 20, fontWeight: FontWeight.bold)),
           const SizedBox(height: 24),
-          SizedBox(
-            height: 200,
-            child: BarChart(
-              BarChartData(
-                alignment: BarChartAlignment.spaceAround,
-                maxY: topProdutos[0]['quantidade'].toDouble() * 1.2,
-                barTouchData: BarTouchData(
-                  touchTooltipData: BarTouchTooltipData(
-                    getTooltipItem: (group, groupIndex, rod, rodIndex) {
-                      return BarTooltipItem('${topProdutos[groupIndex]['nome']}\n${rod.toY.toInt()} vendas', const TextStyle(color: AppColors.white, fontWeight: FontWeight.bold));
-                    },
-                  ),
-                ),
-                titlesData: FlTitlesData(
-                  show: true,
-                  rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                  topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                  bottomTitles: AxisTitles(
-                    sideTitles: SideTitles(
-                      showTitles: true,
-                      reservedSize: 50,
-                      getTitlesWidget: (value, meta) {
-                        final index = value.toInt();
-                        if (index < topProdutos.length) {
-                          final nome = topProdutos[index]['nome'] as String;
-                          return SideTitleWidget(axisSide: meta.axisSide, child: Text(nome.length > 10 ? '${nome.substring(0, 10)}...' : nome, style: const TextStyle(color: AppColors.grey, fontSize: 10)));
-                        }
-                        return const SizedBox();
+          if (itens.isEmpty)
+            const SizedBox(
+              height: 120,
+              child: Center(child: Text('Ainda sem dados suficientes', style: TextStyle(color: AppColors.grey))),
+            )
+          else ...[
+            SizedBox(
+              height: 200,
+              child: BarChart(
+                BarChartData(
+                  alignment: BarChartAlignment.spaceAround,
+                  maxY: itens.first.quantidade.toDouble() * 1.2,
+                  barTouchData: BarTouchData(
+                    touchTooltipData: BarTouchTooltipData(
+                      getTooltipItem: (group, groupIndex, rod, rodIndex) {
+                        return BarTooltipItem(
+                          '${itens[groupIndex].nome}\n${rod.toY.toInt()} $unidade',
+                          const TextStyle(color: AppColors.white, fontWeight: FontWeight.bold),
+                        );
                       },
                     ),
                   ),
-                  leftTitles: AxisTitles(sideTitles: SideTitles(showTitles: true, reservedSize: 30, getTitlesWidget: (value, meta) => Text(value.toInt().toString(), style: const TextStyle(color: AppColors.grey, fontSize: 10)))),
-                ),
-                gridData: const FlGridData(show: false),
-                borderData: FlBorderData(show: false),
-                barGroups: List.generate(topProdutos.length, (index) {
-                  return BarChartGroupData(
-                    x: index,
-                    barRods: [
-                      BarChartRodData(
-                        toY: topProdutos[index]['quantidade'].toDouble(),
-                        color: Colors.orange,
-                        width: 20,
-                        borderRadius: const BorderRadius.only(topLeft: Radius.circular(6), topRight: Radius.circular(6)),
+                  titlesData: FlTitlesData(
+                    show: true,
+                    rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                    topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                    bottomTitles: AxisTitles(
+                      sideTitles: SideTitles(
+                        showTitles: true,
+                        reservedSize: 50,
+                        getTitlesWidget: (value, meta) {
+                          final index = value.toInt();
+                          if (value % 1 != 0 || index >= itens.length) return const SizedBox();
+                          final nome = itens[index].nome;
+                          return SideTitleWidget(
+                            axisSide: meta.axisSide,
+                            space: 8,
+                            child: SizedBox(
+                              width: 60,
+                              child: Text(
+                                nome,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(color: AppColors.grey, fontSize: 10),
+                              ),
+                            ),
+                          );
+                        },
                       ),
-                    ],
-                  );
-                }),
+                    ),
+                    leftTitles: AxisTitles(
+                      sideTitles: SideTitles(
+                        showTitles: true,
+                        reservedSize: 30,
+                        getTitlesWidget: (value, meta) => Text(value.toInt().toString(), style: const TextStyle(color: AppColors.grey, fontSize: 10)),
+                      ),
+                    ),
+                  ),
+                  gridData: const FlGridData(show: false),
+                  borderData: FlBorderData(show: false),
+                  barGroups: List.generate(itens.length, (index) {
+                    return BarChartGroupData(
+                      x: index,
+                      barRods: [
+                        BarChartRodData(
+                          toY: itens[index].quantidade.toDouble(),
+                          color: corBarra,
+                          width: 20,
+                          borderRadius: const BorderRadius.only(topLeft: Radius.circular(6), topRight: Radius.circular(6)),
+                        ),
+                      ],
+                    );
+                  }),
+                ),
               ),
             ),
-          ),
-          const SizedBox(height: 16),
-          ...topProdutos.map((produto) => Padding(
-            padding: const EdgeInsets.symmetric(vertical: 4),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Expanded(child: Text(produto['nome'] as String, style: const TextStyle(color: AppColors.brown, fontSize: 14))),
-                Text('${produto['quantidade']}x', style: const TextStyle(color: AppColors.grey, fontSize: 14, fontWeight: FontWeight.w500)),
-                const SizedBox(width: 8),
-                Text('R\$ ${(produto['valor'] as int).toStringAsFixed(2).replaceAll('.', ',')}', style: const TextStyle(color: Colors.green, fontSize: 14, fontWeight: FontWeight.bold)),
-              ],
-            ),
-          )),
+            const SizedBox(height: 16),
+            ...itens.map((item) => Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 4),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Expanded(child: Text(item.nome, style: const TextStyle(color: AppColors.brown, fontSize: 14), overflow: TextOverflow.ellipsis)),
+                      Text('${item.quantidade}x', style: const TextStyle(color: AppColors.grey, fontSize: 14, fontWeight: FontWeight.w500)),
+                      const SizedBox(width: 8),
+                      Text(_formatarMoeda(item.valor), style: const TextStyle(color: Colors.green, fontSize: 14, fontWeight: FontWeight.bold)),
+                    ],
+                  ),
+                )),
+          ],
         ],
       ),
     );
   }
+}
+
+class _RankingItem {
+  final String nome;
+  final int quantidade;
+  final double valor;
+  const _RankingItem({required this.nome, required this.quantidade, required this.valor});
 }

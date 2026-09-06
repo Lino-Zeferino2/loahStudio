@@ -103,6 +103,8 @@ class Pedido {
     this.atualizadoEm,
   });
 
+
+
   static const List<String> statusCancelavel = ['pendente', 'confirmado', 'preparando'];
   static const List<String> statusFinalizado = ['entregue', 'cancelado'];
 
