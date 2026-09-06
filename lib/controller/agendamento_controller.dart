@@ -108,6 +108,90 @@ class AgendamentoController {
         .map((snap) => snap.docs.map((d) => Agendamento.fromDoc(d)).toList());
   }
 
+  /// Stream para admin - todos os agendamentos
+  Stream<List<Agendamento>> streamTodosAgendamentos() {
+    return _agendamentosRef
+        .orderBy('data', descending: true)
+        .snapshots()
+        .map((snap) => snap.docs.map((d) => Agendamento.fromDoc(d)).toList());
+  }
+
+  /// Atualiza o status de um agendamento
+  Future<bool> atualizarStatusAgendamento(String agendamentoId, String novoStatus) async {
+    try {
+      await _agendamentosRef.doc(agendamentoId).update({'status': novoStatus});
+      return true;
+    } catch (e) {
+      debugPrint('Erro ao atualizar status do agendamento: $e');
+      return false;
+    }
+  }
+
+  Future<bool> atualizarAgendamento(String agendamentoId, {String? novoStatus, DateTime? novaData, String? novaHoraInicio, String? novaHoraFim, String? servicoId, String? servicoNome, int? duracaoMinutos}) async {
+    try {
+      final batch = _firestore.batch();
+      final ref = _agendamentosRef.doc(agendamentoId);
+      final updates = <String, dynamic>{};
+      if (novoStatus != null) updates['status'] = novoStatus;
+      if (novaData != null) updates['data'] = Timestamp.fromDate(DateTime(novaData.year, novaData.month, novaData.day));
+      if (novaHoraInicio != null) updates['horaInicio'] = novaHoraInicio;
+      if (novaHoraFim != null) updates['horaFim'] = novaHoraFim;
+      if (servicoId != null) updates['servicoId'] = servicoId;
+      if (servicoNome != null) updates['servicoNome'] = servicoNome;
+      if (duracaoMinutos != null) updates['servicoDuracaoMinutos'] = duracaoMinutos;
+      updates['atualizadoEm'] = FieldValue.serverTimestamp();
+
+      batch.update(ref, updates);
+      await batch.commit();
+      return true;
+    } catch (e) {
+      debugPrint('Erro ao atualizar agendamento: $e');
+      return false;
+    }
+  }
+
+  /// Edita um agendamento: atualiza dados, libera o horário antigo e (se necessário) cria novo.
+  /// Se a data/hora mudou, liberta o horário antigo do espelho público.
+  /// Se o status mudou para 'cancelado', também liberta.
+  Future<bool> editarAgendamento(String agendamentoId, {String? novoStatus, DateTime? novaData, String? novaHoraInicio, String? novaHoraFim}) async {
+    try {
+      // Se mudou data/hora, remover o horário antigo e criar novo no espelho
+      final ocupadoAntigo = await _horariosOcupadosRef.where('agendamentoId', isEqualTo: agendamentoId).limit(1).get();
+      if (ocupadoAntigo.docs.isNotEmpty) {
+        await ocupadoAntigo.docs.first.reference.delete();
+      }
+      // Atualizar o agendamento
+      final updates = <String, dynamic>{};
+      if (novoStatus != null) updates['status'] = novoStatus;
+      if (novaData != null) updates['data'] = Timestamp.fromDate(DateTime(novaData.year, novaData.month, novaData.day));
+      if (novaHoraInicio != null) updates['horaInicio'] = novaHoraInicio;
+      if (novaHoraFim != null) updates['horaFim'] = novaHoraFim;
+      updates['atualizadoEm'] = FieldValue.serverTimestamp();
+
+      await _agendamentosRef.doc(agendamentoId).update(updates);
+      // Se a data/hora mudou, adicionar novo registo no espelho público
+      if (novaData != null || novaHoraInicio != null || novaHoraFim != null) {
+        final agDoc = await _agendamentosRef.doc(agendamentoId).get();
+        final data = agDoc.data() as Map<String, dynamic>? ?? {};
+        final newData = (data['data'] as Timestamp?)?.toDate() ?? novaData;
+        final newInicio = data['horaInicio'] as String? ?? novaHoraInicio ?? '';
+        final newFim = data['horaFim'] as String? ?? novaHoraFim ?? '';
+        if (newData != null && newInicio.isNotEmpty && newFim.isNotEmpty) {
+          await _horariosOcupadosRef.add({
+            'data': Timestamp.fromDate(DateTime(newData.year, newData.month, newData.day)),
+            'horaInicio': newInicio,
+            'horaFim': newFim,
+            'agendamentoId': agendamentoId,
+          });
+        }
+      }
+      return true;
+    } catch (e) {
+      debugPrint('Erro ao editar agendamento: $e');
+      return false;
+    }
+  }
+
   Future<bool> cancelarAgendamento(String agendamentoId) async {
     try {
       final batch = _firestore.batch();

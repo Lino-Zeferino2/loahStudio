@@ -34,6 +34,28 @@ class PedidoController {
         .map((snap) => snap.docs.map((d) => Pedido.fromDoc(d)).toList());
   }
 
+  /// Stream para admin - todos os pedidos
+  Stream<List<Pedido>> streamTodosPedidos() {
+    return _pedidosRef
+        .orderBy('criadoEm', descending: true)
+        .snapshots()
+        .map((snap) => snap.docs.map((d) => Pedido.fromDoc(d)).toList());
+  }
+
+  /// Atualiza o status de um pedido
+  Future<bool> atualizarStatusPedido(String pedidoId, String novoStatus) async {
+    try {
+      await _pedidosRef.doc(pedidoId).update({
+        'status': novoStatus,
+        'atualizadoEm': FieldValue.serverTimestamp(),
+      });
+      return true;
+    } catch (e) {
+      debugPrint('Erro ao atualizar status do pedido: $e');
+      return false;
+    }
+  }
+
   /// Cria o pedido com status 'pendente' — aguardando o cliente enviar o
   /// comprovativo (ou já ter enviado por WhatsApp) e o admin confirmar
   /// manualmente. Devolve o id do pedido criado, ou null em caso de falha.

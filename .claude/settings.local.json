@@ -3,5 +3,10 @@
     "ANTHROPIC_BASE_URL": "http://localhost:20128",
     "ANTHROPIC_AUTH_TOKEN": "sk-b9cb1791f498e879-e9a2b6-86eb94c7",
     "ANTHROPIC_MODEL": "combo/modelos-gratuitos"
+  },
+  "permissions": {
+    "allow": [
+      "Bash(flutter analyze *)"
+    ]
   }
 }

@@ -14,6 +14,7 @@ import 'package:loahstudio/view/user_views/servicos/servicos_page.dart';
 import 'package:loahstudio/view/user_views/produtos/produtos_page.dart';
 import 'package:loahstudio/view/user_views/agendamento/widgets/agendamento_card.dart';
 import 'package:loahstudio/view/user_views/agendamento/widgets/agendamento_empty_state.dart';
+import 'package:loahstudio/view/user_views/agendamento/widgets/editar_agendamento_dialog.dart';
 import 'package:loahstudio/view/user_views/widgets/footer_section.dart';
 
 class AgendamentoPage extends StatefulWidget {
@@ -82,6 +83,19 @@ class _AgendamentoPageState extends State<AgendamentoPage> {
         backgroundColor: ok ? Colors.green : Colors.red,
       ),
     );
+  }
+
+  Future<void> _editar(Agendamento agendamento) async {
+    final resultado = await showDialog<bool>(
+      context: context,
+      builder: (context) => EditarAgendamentoDialog(
+        agendamento: agendamento,
+        servicosMap: _servicosMap,
+      ),
+    );
+    if (resultado == true && mounted) {
+      // O stream já recarrega os dados; nada mais a fazer aqui
+    }
   }
 
   Future<bool?> _showCancelDialog(Agendamento agendamento) {
@@ -314,6 +328,7 @@ class _AgendamentoPageState extends State<AgendamentoPage> {
                     agendamento: a,
                     isMobile: isMobile,
                     onCancelar: () => _cancelar(a),
+                    onEditar: () => _editar(a),
                     imagemUrl: _servicosMap[a.servicoId]?.imagemUrl,
                   )),
             ],
