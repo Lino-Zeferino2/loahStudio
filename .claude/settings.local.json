@@ -1,10 +1,7 @@
 {
-  "permissions": {
-    "allow": [
-      "Bash(flutter analyze)",
-      "Bash(flutter analyze lib/view/user_views/produtos/produtos_page.dart)",
-      "Bash(flutter pub get)",
-      "Bash(flutter analyze lib/view/admin_views/pages/admin_produtos_page.dart)"
-    ]
+  "env": {
+    "ANTHROPIC_BASE_URL": "http://localhost:20128",
+    "ANTHROPIC_AUTH_TOKEN": "sk-b9cb1791f498e879-e9a2b6-86eb94c7",
+    "ANTHROPIC_MODEL": "combo/modelos-gratuitos"
   }
 }
