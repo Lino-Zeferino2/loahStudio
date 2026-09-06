@@ -1,10 +1,12 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:loahstudio/constants/colors.dart';
 import 'package:loahstudio/controller/auth_controller.dart';
 import 'package:loahstudio/controller/pedido_controller.dart';
 import 'package:loahstudio/model/pagamento_config_model.dart';
 import 'package:loahstudio/model/user_model.dart';
+import 'package:loahstudio/utils/endereco_validators.dart';
 
 class CheckoutDialog extends StatefulWidget {
   final double total;
@@ -41,6 +43,8 @@ class CheckoutDialog extends StatefulWidget {
 }
 
 class _CheckoutDialogState extends State<CheckoutDialog> {
+  final _formKey = GlobalKey<FormState>();
+
   final nomeController = TextEditingController();
   final emailController = TextEditingController();
   final telefoneController = TextEditingController();
@@ -118,10 +122,21 @@ class _CheckoutDialogState extends State<CheckoutDialog> {
   }
 
   void _confirmar() {
+    final formValido = _formKey.currentState?.validate() ?? false;
+
+    if (!formValido) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Corrige os campos assinalados a vermelho antes de continuar."),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
     if (nomeController.text.trim().isEmpty ||
         emailController.text.trim().isEmpty ||
-        telefoneController.text.trim().isEmpty ||
-        moradaController.text.trim().isEmpty) {
+        telefoneController.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("Por favor, preencha todos os campos necessários."), backgroundColor: Colors.red),
       );
@@ -164,106 +179,111 @@ class _CheckoutDialogState extends State<CheckoutDialog> {
         constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.85),
         padding: EdgeInsets.all(horizontalPad),
         child: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text("Finalizar compra", style: TextStyle(fontSize: titleSize, fontWeight: FontWeight.bold, color: const Color(0xFF5A4A42))),
-                  IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(context)),
-                ],
-              ),
-              SizedBox(height: isMobile ? 16 : 24),
-              Text("Dados de contacto", style: TextStyle(fontSize: subtitleSize, fontWeight: FontWeight.w600, color: const Color(0xFF5A4A42))),
-              SizedBox(height: isMobile ? 10 : 16),
-
-              if (_carregandoPerfil)
-                const Padding(
-                  padding: EdgeInsets.symmetric(vertical: 12),
-                  child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
-                )
-              else ...[
-                if (_perfil != null && _perfil!.nome.isNotEmpty && _perfil!.telefone.isNotEmpty) ...[
-                  _buildToggleModoPreenchimento(isMobile),
-                  SizedBox(height: isMobile ? 12 : 16),
-                ],
-                _textField(nomeController, "Nome completo", Icons.person_outline, isMobile: isMobile, enabled: !_usarDadosProprios),
-                SizedBox(height: isMobile ? 8 : 12),
-                _textField(emailController, "Email", Icons.email_outlined, keyboardType: TextInputType.emailAddress, isMobile: isMobile, enabled: !_usarDadosProprios),
-                SizedBox(height: isMobile ? 8 : 12),
-                _textField(telefoneController, "Telemóvel", Icons.phone_outlined, keyboardType: TextInputType.phone, isMobile: isMobile, enabled: !_usarDadosProprios),
-              ],
-
-              SizedBox(height: isMobile ? 16 : 24),
-              Text("Morada de entrega", style: TextStyle(fontSize: subtitleSize, fontWeight: FontWeight.w600, color: const Color(0xFF5A4A42))),
-              SizedBox(height: isMobile ? 10 : 16),
-              _textField(moradaController, "Morada", Icons.location_on_outlined, isMobile: isMobile),
-              SizedBox(height: isMobile ? 8 : 12),
-              if (isMobile) ...[
-                _textField(cpController, "Código Postal", Icons.markunread_outlined, isMobile: isMobile),
-                const SizedBox(height: 8),
-                _textField(cidadeController, "Cidade", Icons.location_city_outlined, isMobile: isMobile),
-              ] else ...[
+          child: Form(
+            key: _formKey,
+            autovalidateMode: AutovalidateMode.onUserInteraction,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
                 Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Expanded(child: _textField(cpController, "Código Postal", Icons.markunread_outlined, isMobile: isMobile)),
-                    const SizedBox(width: 12),
-                    Expanded(child: _textField(cidadeController, "Cidade", Icons.location_city_outlined, isMobile: isMobile)),
+                    Text("Finalizar compra", style: TextStyle(fontSize: titleSize, fontWeight: FontWeight.bold, color: const Color(0xFF5A4A42))),
+                    IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(context)),
                   ],
                 ),
-              ],
-              SizedBox(height: isMobile ? 16 : 24),
-              Text("Método de pagamento", style: TextStyle(fontSize: subtitleSize, fontWeight: FontWeight.w600, color: const Color(0xFF5A4A42))),
-              SizedBox(height: isMobile ? 10 : 16),
-              _metodoPagamento("Transferência Bancária", "transferencia", Icons.account_balance, isMobile),
-              SizedBox(height: isMobile ? 8 : 12),
-              _metodoPagamento("MB Way", "mbway", Icons.phone_android, isMobile),
-              SizedBox(height: isMobile ? 16 : 24),
-              FutureBuilder<PagamentoConfig>(
-                future: _configFuture,
-                builder: (context, snapshot) {
-                  if (!snapshot.hasData) {
-                    return const Padding(
-                      padding: EdgeInsets.symmetric(vertical: 12),
-                      child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
-                    );
-                  }
-                  final config = snapshot.data!;
-                  if (!config.isConfigurado) {
-                    return Container(
-                      padding: EdgeInsets.all(isMobile ? 12 : 16),
-                      decoration: BoxDecoration(color: Colors.orange.shade50, borderRadius: BorderRadius.circular(12)),
-                      child: Text(
-                        "As instruções de pagamento ainda não foram configuradas. Contacta-nos diretamente para combinar o pagamento.",
-                        style: TextStyle(fontSize: isMobile ? 12 : 13, color: Colors.orange.shade900),
-                      ),
-                    );
-                  }
-                  return _instrucoesPagamento(config, isMobile);
-                },
-              ),
-              SizedBox(height: isMobile ? 16 : 24),
-              const Divider(),
-              SizedBox(height: isMobile ? 12 : 16),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text("Total a pagar", style: TextStyle(fontSize: isMobile ? 16 : 18, fontWeight: FontWeight.bold, color: const Color(0xFF5A4A42))),
-                  Text("€${widget.total.toStringAsFixed(2)}", style: TextStyle(fontSize: isMobile ? 20 : 24, fontWeight: FontWeight.bold, color: AppColors.pinkStrong)),
+                SizedBox(height: isMobile ? 16 : 24),
+                Text("Dados de contacto", style: TextStyle(fontSize: subtitleSize, fontWeight: FontWeight.w600, color: const Color(0xFF5A4A42))),
+                SizedBox(height: isMobile ? 10 : 16),
+
+                if (_carregandoPerfil)
+                  const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 12),
+                    child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
+                  )
+                else ...[
+                  if (_perfil != null && _perfil!.nome.isNotEmpty && _perfil!.telefone.isNotEmpty) ...[
+                    _buildToggleModoPreenchimento(isMobile),
+                    SizedBox(height: isMobile ? 12 : 16),
+                  ],
+                  _textField(nomeController, "Nome completo", Icons.person_outline, isMobile: isMobile, enabled: !_usarDadosProprios),
+                  SizedBox(height: isMobile ? 8 : 12),
+                  _textField(emailController, "Email", Icons.email_outlined, keyboardType: TextInputType.emailAddress, isMobile: isMobile, enabled: !_usarDadosProprios),
+                  SizedBox(height: isMobile ? 8 : 12),
+                  _textField(telefoneController, "Telemóvel", Icons.phone_outlined, keyboardType: TextInputType.phone, isMobile: isMobile, enabled: !_usarDadosProprios),
                 ],
-              ),
-              SizedBox(height: isMobile ? 16 : 24),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  style: ElevatedButton.styleFrom(backgroundColor: AppColors.pinkStrong, padding: EdgeInsets.symmetric(vertical: isMobile ? 14 : 16), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30))),
-                  onPressed: _confirmar,
-                  child: Text("Confirmar pedido", style: TextStyle(fontSize: isMobile ? 14 : 16, fontWeight: FontWeight.w600, color: Colors.white)),
+
+                SizedBox(height: isMobile ? 16 : 24),
+                Text("Morada de entrega", style: TextStyle(fontSize: subtitleSize, fontWeight: FontWeight.w600, color: const Color(0xFF5A4A42))),
+                SizedBox(height: isMobile ? 10 : 16),
+                _moradaFormField(isMobile: isMobile),
+                SizedBox(height: isMobile ? 8 : 12),
+                if (isMobile) ...[
+                  _codigoPostalFormField(isMobile: isMobile),
+                  const SizedBox(height: 8),
+                  _cidadeFormField(isMobile: isMobile),
+                ] else ...[
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(child: _codigoPostalFormField(isMobile: isMobile)),
+                      const SizedBox(width: 12),
+                      Expanded(child: _cidadeFormField(isMobile: isMobile)),
+                    ],
+                  ),
+                ],
+                SizedBox(height: isMobile ? 16 : 24),
+                Text("Método de pagamento", style: TextStyle(fontSize: subtitleSize, fontWeight: FontWeight.w600, color: const Color(0xFF5A4A42))),
+                SizedBox(height: isMobile ? 10 : 16),
+                _metodoPagamento("Transferência Bancária", "transferencia", Icons.account_balance, isMobile),
+                SizedBox(height: isMobile ? 8 : 12),
+                _metodoPagamento("MB Way", "mbway", Icons.phone_android, isMobile),
+                SizedBox(height: isMobile ? 16 : 24),
+                FutureBuilder<PagamentoConfig>(
+                  future: _configFuture,
+                  builder: (context, snapshot) {
+                    if (!snapshot.hasData) {
+                      return const Padding(
+                        padding: EdgeInsets.symmetric(vertical: 12),
+                        child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
+                      );
+                    }
+                    final config = snapshot.data!;
+                    if (!config.isConfigurado) {
+                      return Container(
+                        padding: EdgeInsets.all(isMobile ? 12 : 16),
+                        decoration: BoxDecoration(color: Colors.orange.shade50, borderRadius: BorderRadius.circular(12)),
+                        child: Text(
+                          "As instruções de pagamento ainda não foram configuradas. Contacta-nos diretamente para combinar o pagamento.",
+                          style: TextStyle(fontSize: isMobile ? 12 : 13, color: Colors.orange.shade900),
+                        ),
+                      );
+                    }
+                    return _instrucoesPagamento(config, isMobile);
+                  },
                 ),
-              ),
-            ],
+                SizedBox(height: isMobile ? 16 : 24),
+                const Divider(),
+                SizedBox(height: isMobile ? 12 : 16),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text("Total a pagar", style: TextStyle(fontSize: isMobile ? 16 : 18, fontWeight: FontWeight.bold, color: const Color(0xFF5A4A42))),
+                    Text("€${widget.total.toStringAsFixed(2)}", style: TextStyle(fontSize: isMobile ? 20 : 24, fontWeight: FontWeight.bold, color: AppColors.pinkStrong)),
+                  ],
+                ),
+                SizedBox(height: isMobile ? 16 : 24),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(backgroundColor: AppColors.pinkStrong, padding: EdgeInsets.symmetric(vertical: isMobile ? 14 : 16), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30))),
+                    onPressed: _confirmar,
+                    child: Text("Confirmar pedido", style: TextStyle(fontSize: isMobile ? 14 : 16, fontWeight: FontWeight.w600, color: Colors.white)),
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -350,6 +370,8 @@ class _CheckoutDialogState extends State<CheckoutDialog> {
     );
   }
 
+  // Campo genérico usado para nome/email/telefone (sem validação obrigatória
+  // de morada — mantém-se como TextField simples).
   Widget _textField(
     TextEditingController controller,
     String label,
@@ -375,6 +397,74 @@ class _CheckoutDialogState extends State<CheckoutDialog> {
         focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: AppColors.pinkStrong)),
         disabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey.shade200)),
       ),
+    );
+  }
+
+  // Base partilhada para os campos de morada com validação em tempo real.
+  Widget _addressFormField({
+    required TextEditingController controller,
+    required String label,
+    required IconData icon,
+    required String? Function(String?) validator,
+    List<TextInputFormatter>? inputFormatters,
+    TextInputType? keyboardType,
+    bool isMobile = false,
+  }) {
+    return TextFormField(
+      controller: controller,
+      keyboardType: keyboardType,
+      inputFormatters: inputFormatters,
+      validator: validator,
+      style: TextStyle(fontSize: isMobile ? 14 : 16),
+      decoration: InputDecoration(
+        labelText: label,
+        labelStyle: TextStyle(fontSize: isMobile ? 12 : 14),
+        prefixIcon: Icon(icon, size: isMobile ? 18 : 20),
+        errorMaxLines: 2,
+        errorStyle: TextStyle(fontSize: isMobile ? 11 : 12, color: Colors.red.shade700),
+        contentPadding: EdgeInsets.symmetric(horizontal: isMobile ? 12 : 16, vertical: isMobile ? 12 : 16),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey.shade300)),
+        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey.shade300)),
+        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: AppColors.pinkStrong)),
+        errorBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.red.shade400)),
+        focusedErrorBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.red.shade700, width: 2)),
+      ),
+    );
+  }
+
+  Widget _moradaFormField({required bool isMobile}) {
+    return _addressFormField(
+      controller: moradaController,
+      label: "Morada (rua, número)",
+      icon: Icons.location_on_outlined,
+      validator: EnderecoValidators.validarMorada,
+      isMobile: isMobile,
+    );
+  }
+
+  Widget _codigoPostalFormField({required bool isMobile}) {
+    return _addressFormField(
+      controller: cpController,
+      label: "Código Postal (0000-000)",
+      icon: Icons.markunread_outlined,
+      keyboardType: TextInputType.number,
+      inputFormatters: [
+        FilteringTextInputFormatter.allow(RegExp(r'[0-9\-]')),
+        LengthLimitingTextInputFormatter(8),
+        CodigoPostalFormatter(),
+      ],
+      validator: EnderecoValidators.validarCodigoPostal,
+      isMobile: isMobile,
+    );
+  }
+
+  Widget _cidadeFormField({required bool isMobile}) {
+    return _addressFormField(
+      controller: cidadeController,
+      label: "Cidade",
+      icon: Icons.location_city_outlined,
+      validator: EnderecoValidators.validarCidade,
+      isMobile: isMobile,
     );
   }
 

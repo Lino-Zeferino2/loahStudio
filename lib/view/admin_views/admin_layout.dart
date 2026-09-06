@@ -3,6 +3,7 @@ import 'package:loahstudio/constants/colors.dart';
 import 'package:loahstudio/constants/responsive.dart';
 import 'package:loahstudio/controller/auth_controller.dart';
 import 'package:loahstudio/view/admin_views/pages/admin_agendamentos_page.dart';
+import 'package:loahstudio/view/admin_views/pages/admin_avaliacoes_page.dart';
 import 'package:loahstudio/view/admin_views/pages/admin_clientes_page.dart';
 import 'package:loahstudio/view/admin_views/pages/admin_compras_page.dart';
 import 'package:loahstudio/view/admin_views/pages/admin_configuracoes_page.dart';
@@ -23,15 +24,16 @@ class _AdminLayoutState extends State<AdminLayout> {
   int _selectedIndex = 0;
   bool _isExtended = true;
 
-  final List<AdminMenuItem> _menuItems = [
-    AdminMenuItem(icon: Icons.dashboard, label: 'Dashboard', index: 0),
-    AdminMenuItem(icon: Icons.calendar_month, label: 'Agendamentos', index: 1),
-    AdminMenuItem(icon: Icons.shopping_cart, label: 'Compras', index: 2),
-    AdminMenuItem(icon: Icons.inventory, label: 'Produtos', index: 3),
-    AdminMenuItem(icon: Icons.content_cut, label: 'Serviços', index: 4),
-    AdminMenuItem(icon: Icons.people, label: 'Clientes', index: 5),
-    AdminMenuItem(icon: Icons.settings, label: 'Configurações', index: 6),
-  ];
+ final List<AdminMenuItem> _menuItems = [
+  AdminMenuItem(icon: Icons.dashboard, label: 'Dashboard', index: 0),
+  AdminMenuItem(icon: Icons.calendar_month, label: 'Agendamentos', index: 1),
+  AdminMenuItem(icon: Icons.shopping_cart, label: 'Compras', index: 2),
+  AdminMenuItem(icon: Icons.inventory, label: 'Produtos', index: 3),
+  AdminMenuItem(icon: Icons.content_cut, label: 'Serviços', index: 4),
+  AdminMenuItem(icon: Icons.people, label: 'Clientes', index: 5),
+  AdminMenuItem(icon: Icons.reviews, label: 'Avaliações', index: 6),
+  AdminMenuItem(icon: Icons.settings, label: 'Configurações', index: 7),
+];
 
   @override
   Widget build(BuildContext context) {
@@ -340,26 +342,28 @@ class _AdminLayoutState extends State<AdminLayout> {
     );
   }
 
-  Widget _buildContent() {
-    switch (_selectedIndex) {
-      case 0:
-        return const AdminDashboardPage();
-      case 1:
-        return const AdminAgendamentosPage();
-      case 2:
-        return const AdminComprasPage();
-      case 3:
-        return const AdminProdutosPage();
-      case 4:
-        return const AdminServicosPage();
-      case 5:
-        return const AdminClientesPage();
-      case 6:
-        return const AdminConfiguracoesPage();
-      default:
-        return const AdminDashboardPage();
-    }
+Widget _buildContent() {
+  switch (_selectedIndex) {
+    case 0:
+      return const AdminDashboardPage();
+    case 1:
+      return const AdminAgendamentosPage();
+    case 2:
+      return const AdminComprasPage();
+    case 3:
+      return const AdminProdutosPage();
+    case 4:
+      return const AdminServicosPage();
+    case 5:
+      return const AdminClientesPage();
+    case 6:
+      return const AdminAvaliacoesPage();
+    case 7:
+      return const AdminConfiguracoesPage();
+    default:
+      return const AdminDashboardPage();
   }
+}
 
  void _showLogoutDialog() {
   showDialog(

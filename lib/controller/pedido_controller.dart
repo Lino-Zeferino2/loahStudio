@@ -42,12 +42,18 @@ class PedidoController {
         .map((snap) => snap.docs.map((d) => Pedido.fromDoc(d)).toList());
   }
 
-  /// Atualiza o status de um pedido
+  /// Atualiza o status de um pedido e regista no histórico. As mudanças
+  /// para 'confirmado' e 'entregue' disparam automaticamente o email
+  /// correspondente via Cloud Function 'onPedidoAtualizado' — não é
+  /// preciso (nem deve) enviar email a partir daqui.
   Future<bool> atualizarStatusPedido(String pedidoId, String novoStatus) async {
     try {
       await _pedidosRef.doc(pedidoId).update({
         'status': novoStatus,
         'atualizadoEm': FieldValue.serverTimestamp(),
+        'historico': FieldValue.arrayUnion([
+          HistoricoStatus(status: novoStatus, data: DateTime.now()).toMap(),
+        ]),
       });
       return true;
     } catch (e) {
@@ -124,9 +130,9 @@ class PedidoController {
     }
   }
 
-  /// Envia o comprovativo de pagamento — só funciona enquanto o pedido
-  /// ainda está pendente (a Rule do Firestore reforça isto do lado do
-  /// servidor também).
+  /// Envia o comprovativo de pagamento a partir do CLIENTE — o path no
+  /// Storage usa o uid de quem está logado, porque é o próprio dono do
+  /// pedido. A Rule do Firestore/Storage reforça isto do lado do servidor.
   Future<bool> enviarComprovativo(String pedidoId, Uint8List bytes) async {
     final uid = currentUserId;
     if (uid == null) return false;
@@ -142,6 +148,33 @@ class PedidoController {
       return true;
     } catch (e) {
       debugPrint('Erro ao enviar comprovativo: $e');
+      return false;
+    }
+  }
+
+  /// Envia o comprovativo a partir do ADMIN, em nome do cliente. Precisa do
+  /// clienteId explícito porque o uid de quem está autenticado aqui é o do
+  /// admin, não o do dono do pedido — o path no Storage tem de continuar a
+  /// bater com 'comprovativos/{clienteId}/...' para ficar consistente com
+  /// o que o próprio cliente teria enviado.
+  ///
+  /// IMPORTANTE: as Storage Rules atuais provavelmente só permitem que
+  /// 'comprovativos/{uid}/...' seja escrito por esse mesmo uid — isto vai
+  /// falhar com permission-denied até adicionares uma regra que permita
+  /// também escrita por utilizadores com role == 'admin'.
+  Future<bool> enviarComprovativoAdmin(String pedidoId, String clienteId, Uint8List bytes) async {
+    try {
+      final ref = _storage.ref().child('comprovativos/$clienteId/$pedidoId.jpg');
+      await ref.putData(bytes, SettableMetadata(contentType: 'image/jpeg'));
+      final url = await ref.getDownloadURL();
+
+      await _pedidosRef.doc(pedidoId).update({
+        'comprovativoUrl': url,
+        'comprovativoEnviadoEm': FieldValue.serverTimestamp(),
+      });
+      return true;
+    } catch (e) {
+      debugPrint('Erro ao enviar comprovativo (admin): $e');
       return false;
     }
   }

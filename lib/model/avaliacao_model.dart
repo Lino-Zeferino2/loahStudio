@@ -13,7 +13,7 @@ class Avaliacao {
     required this.nomeCliente,
     required this.mensagem,
     required this.nota,
-    this.aprovado = true,
+    this.aprovado = false, // era 'true' — agora nasce bloqueada por padrão
     this.criadoEm,
   });
 

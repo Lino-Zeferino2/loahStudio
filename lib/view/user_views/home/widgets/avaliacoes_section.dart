@@ -1,7 +1,9 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:loahstudio/constants/colors.dart';
 import 'package:loahstudio/constants/responsive.dart';
 import 'package:loahstudio/model/avaliacao_model.dart';
+import 'package:loahstudio/view/auth/auth_page.dart';
 
 class AvaliacoesSection extends StatelessWidget {
   final List<Avaliacao> avaliacoes;
@@ -106,7 +108,9 @@ class AvaliacoesSection extends StatelessWidget {
     );
 
     if (resultado == true && context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Obrigado pela sua avaliação!'), backgroundColor: AppColors.pinkStrong));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Obrigado! A tua avaliação foi recebida e ficará visível assim que for aprovada.'), backgroundColor: AppColors.pinkStrong),
+      );
     }
   }
 
@@ -135,16 +139,46 @@ class AvaliacoesSection extends StatelessWidget {
               child: ListView.builder(scrollDirection: Axis.horizontal, itemCount: avaliacoes.length, itemBuilder: (context, index) => _avaliacaoCard(avaliacoes[index], isMobile)),
             ),
           SizedBox(height: isMobile ? 20 : 24),
-          Center(
-            child: ElevatedButton.icon(
-              style: ElevatedButton.styleFrom(backgroundColor: AppColors.pinkStrong, padding: EdgeInsets.symmetric(horizontal: isMobile ? 24 : 30, vertical: isMobile ? 14 : 16), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)), elevation: 4),
-              onPressed: () => _abrirFormulario(context),
-              icon: Icon(Icons.rate_review_outlined, color: Colors.white, size: isMobile ? 16 : 18),
-              label: Text('Deixar a minha avaliação', style: TextStyle(fontSize: isMobile ? 14 : 16, color: Colors.white)),
-            ),
-          ),
+          Center(child: _buildBotaoAvaliar(context, isMobile)),
         ],
       ),
+    );
+  }
+
+  /// Ouve o estado de auth em tempo real: se o utilizador fizer login numa
+  /// aba, ou já estava logado ao carregar a página, o botão reage sem
+  /// precisar de refresh manual.
+  Widget _buildBotaoAvaliar(BuildContext context, bool isMobile) {
+    return StreamBuilder<User?>(
+      stream: FirebaseAuth.instance.authStateChanges(),
+      builder: (context, snapshot) {
+        final logado = snapshot.data != null;
+
+        if (!logado) {
+          return Column(
+            children: [
+              ElevatedButton.icon(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.grey.withValues(alpha: 0.3),
+                  padding: EdgeInsets.symmetric(horizontal: isMobile ? 24 : 30, vertical: isMobile ? 14 : 16),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+                  elevation: 0,
+                ),
+                onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const AuthPage())),
+                icon: Icon(Icons.lock_outline, color: AppColors.grey, size: isMobile ? 16 : 18),
+                label: Text('Inicia sessão para avaliar', style: TextStyle(fontSize: isMobile ? 14 : 16, color: AppColors.grey)),
+              ),
+            ],
+          );
+        }
+
+        return ElevatedButton.icon(
+          style: ElevatedButton.styleFrom(backgroundColor: AppColors.pinkStrong, padding: EdgeInsets.symmetric(horizontal: isMobile ? 24 : 30, vertical: isMobile ? 14 : 16), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)), elevation: 4),
+          onPressed: () => _abrirFormulario(context),
+          icon: Icon(Icons.rate_review_outlined, color: Colors.white, size: isMobile ? 16 : 18),
+          label: Text('Deixar a minha avaliação', style: TextStyle(fontSize: isMobile ? 14 : 16, color: Colors.white)),
+        );
+      },
     );
   }
 

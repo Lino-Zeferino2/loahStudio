@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:loahstudio/model/avaliacao_model.dart';
 import 'package:loahstudio/model/produto_model.dart';
@@ -87,12 +88,17 @@ class HomeController extends ChangeNotifier {
       avaliacoes = [];
     }
   }
-
-  Future<bool> enviarAvaliacao({
+Future<bool> enviarAvaliacao({
     required String nome,
     required String mensagem,
     required int nota,
   }) async {
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid == null) {
+      errorMessage = 'É necessário iniciar sessão para deixar uma avaliação.';
+      return false;
+    }
+
     isSubmittingAvaliacao = true;
     notifyListeners();
     try {
@@ -100,11 +106,14 @@ class HomeController extends ChangeNotifier {
         nomeCliente: nome,
         mensagem: mensagem,
         nota: nota,
-        aprovado: true,
+        aprovado: false,
         criadoEm: DateTime.now(),
       );
-      final docRef = await _firestore.collection('avaliacoes').add(novaAvaliacao.toMap());
-      avaliacoes = [novaAvaliacao.copyWith(id: docRef.id), ...avaliacoes];
+      await _firestore.collection('avaliacoes').add(novaAvaliacao.toMap());
+      // Não adicionamos à lista 'avaliacoes' local: a avaliação nasce
+      // bloqueada e só deve aparecer publicamente depois que o admin a
+      // aprovar em 'admin_avaliacoes_page.dart'. Mostrar aqui, mesmo só
+      // para o autor, seria enganoso — pareceria já estar visível a todos.
       return true;
     } catch (e) {
       errorMessage = 'Erro ao enviar avaliação: $e';

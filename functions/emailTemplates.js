@@ -231,6 +231,88 @@ function pedidoAvaliacaoEmail({ clienteNome, servicoNome }) {
     cta: { texto: 'Deixar a minha avaliação', url: `${SITE_URL}/#avaliacoes` },
   });
 }
+function resumoPedidoHtml(pedido) {
+  const linha = (label, valor) => `
+    <tr>
+      <td style="padding: 10px 0; border-bottom: 1px solid #F0E8E5; color:${CORES.brownLight}; font-size:13px;">${label}</td>
+      <td style="padding: 10px 0; border-bottom: 1px solid #F0E8E5; color:${CORES.brown}; font-size:13px; font-weight:600; text-align:right;">${valor}</td>
+    </tr>`;
+
+  const itensTexto = (pedido.itens || []).map((i) => `${i.nome} x${i.quantidade}`).join(', ') || 'Sem produtos';
+  const metodoTexto = pedido.metodoPagamento === 'mbway' ? 'MB WAY' : 'Transferência';
+
+  return `
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:${CORES.bg}; border-radius:12px; padding: 4px 20px; margin: 20px 0;">
+    ${linha('Produtos', itensTexto)}
+    ${linha('Método', metodoTexto)}
+    ${linha('Total', formatarPreco(pedido.valorTotal))}
+    ${linha('Nome', pedido.clienteNome)}
+  </table>`;
+}
+
+function pedidoRecebidoEmail(pedido) {
+  const conteudo = `
+    <p style="margin:0 0 4px; color:${CORES.brown}; font-size:15px;">Olá, <strong>${pedido.clienteNome}</strong> 👋</p>
+    <p style="margin:12px 0 0; color:${CORES.brownLight}; font-size:14px; line-height:1.6;">
+      Recebemos o teu pedido! Está neste momento <strong>pendente de confirmação de pagamento</strong> —
+      assim que confirmarmos o teu comprovativo, avisamos-te por email.
+    </p>
+    ${resumoPedidoHtml(pedido)}
+    <p style="margin:20px 0 0; color:${CORES.brownLight}; font-size:13px; line-height:1.6;">
+      Se ainda não enviaste o comprovativo de pagamento, faz isso através do site para agilizarmos a confirmação.
+    </p>`;
+
+  return emailBase({
+    preheader: 'Recebemos o teu pedido — a aguardar confirmação de pagamento.',
+    tituloTopo: 'Pedido recebido ✓',
+    subtitulo: 'A aguardar confirmação',
+    corTopo: CORES.brown,
+    conteudoHtml: conteudo,
+    cta: { texto: 'Ver o site', url: SITE_URL },
+  });
+}
+
+function pedidoConfirmadoEmail(pedido) {
+  const conteudo = `
+    <p style="margin:0 0 4px; color:${CORES.brown}; font-size:15px;">Boas notícias, <strong>${pedido.clienteNome}</strong>! 🎉</p>
+    <p style="margin:12px 0 0; color:${CORES.brownLight}; font-size:14px; line-height:1.6;">
+      O pagamento do teu pedido foi <strong>confirmado</strong> e já vamos começar a preparação.
+    </p>
+    ${resumoPedidoHtml(pedido)}
+    <p style="margin:20px 0 0; color:${CORES.brownLight}; font-size:13px; line-height:1.6;">
+      Avisamos-te assim que for enviado.
+    </p>`;
+
+  return emailBase({
+    preheader: 'O pagamento do teu pedido foi confirmado!',
+    tituloTopo: 'Pagamento confirmado ✓',
+    subtitulo: 'A preparar o teu pedido',
+    corTopo: CORES.pink,
+    conteudoHtml: conteudo,
+    cta: { texto: 'Ver os meus pedidos', url: SITE_URL },
+  });
+}
+
+function pedidoEntregueEmail(pedido) {
+  const conteudo = `
+    <p style="margin:0 0 4px; color:${CORES.brown}; font-size:15px;">Olá, <strong>${pedido.clienteNome}</strong> 💛</p>
+    <p style="margin:12px 0 0; color:${CORES.brownLight}; font-size:14px; line-height:1.6;">
+      O teu pedido foi <strong>entregue</strong>! Esperamos que gostes.
+    </p>
+    ${resumoPedidoHtml(pedido)}
+    <p style="margin:20px 0 0; color:${CORES.brownLight}; font-size:13px; line-height:1.6;">
+      Obrigado por confiares na Loah Stúdio. 🌸
+    </p>`;
+
+  return emailBase({
+    preheader: 'O teu pedido foi entregue!',
+    tituloTopo: 'Pedido entregue ✓',
+    subtitulo: null,
+    corTopo: CORES.pink,
+    conteudoHtml: conteudo,
+    cta: { texto: 'Ver o site', url: SITE_URL },
+  });
+}
 
 module.exports = {
   agendamentoRecebidoEmail,
@@ -238,4 +320,7 @@ module.exports = {
   agendamentoCanceladoEmail,
   agendamentoAtualizadoEmail,
   pedidoAvaliacaoEmail,
+  pedidoRecebidoEmail,
+  pedidoConfirmadoEmail,
+  pedidoEntregueEmail,
 };

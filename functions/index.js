@@ -11,8 +11,10 @@ const {
   agendamentoCanceladoEmail,
   agendamentoAtualizadoEmail,
   pedidoAvaliacaoEmail,
+  pedidoRecebidoEmail,
+  pedidoConfirmadoEmail,
+  pedidoEntregueEmail,
 } = require('./emailTemplates');
-
 initializeApp();
 
 const REGIAO = 'europe-west1';
@@ -84,6 +86,51 @@ exports.onAgendamentoAtualizado = onDocumentUpdated(
     }
   }
 );
+// 5. Quando um pedido é criado -> email "recebido, pendente de confirmação"
+exports.onPedidoCriado = onDocumentCreated(
+  { document: 'pedidos/{pedidoId}', region: REGIAO, secrets: SECRETS },
+  async (event) => {
+    const pedido = event.data.data();
+    if (!pedido.clienteEmail) return;
+
+    await enviarEmail({
+      para: pedido.clienteEmail,
+      assunto: 'Recebemos o teu pedido — Loah Stúdio',
+      html: pedidoRecebidoEmail(pedido),
+    });
+  }
+);
+
+// 6. Quando um pedido é atualizado -> confirmado / entregue
+exports.onPedidoAtualizado = onDocumentUpdated(
+  { document: 'pedidos/{pedidoId}', region: REGIAO, secrets: SECRETS },
+  async (event) => {
+    const before = event.data.before.data();
+    const after = event.data.after.data();
+    if (!after.clienteEmail) return;
+
+    const foiConfirmado = before.status !== 'confirmado' && after.status === 'confirmado';
+    const foiEntregue = before.status !== 'entregue' && after.status === 'entregue';
+
+    try {
+      if (foiConfirmado) {
+        await enviarEmail({
+          para: after.clienteEmail,
+          assunto: 'Pagamento confirmado! — Loah Stúdio',
+          html: pedidoConfirmadoEmail(after),
+        });
+      } else if (foiEntregue) {
+        await enviarEmail({
+          para: after.clienteEmail,
+          assunto: 'O teu pedido foi entregue — Loah Stúdio',
+          html: pedidoEntregueEmail(after),
+        });
+      }
+    } catch (e) {
+      logger.error('Erro ao processar email de atualização de pedido:', e);
+    }
+  }
+); 
 
 exports.criarAgendamento = onCall({ region: REGIAO }, async (request) => {
   const uid = request.auth?.uid ?? null;
