@@ -1,5 +1,6 @@
 const { onDocumentCreated, onDocumentUpdated } = require('firebase-functions/v2/firestore');
 const { onCall, HttpsError } = require('firebase-functions/v2/https');
+const { onSchedule } = require('firebase-functions/v2/scheduler');
 const { logger } = require('firebase-functions');
 const { getFirestore, Timestamp, FieldValue } = require('firebase-admin/firestore');
 const { initializeApp } = require('firebase-admin/app');
@@ -32,7 +33,7 @@ exports.onAgendamentoCriado = onDocumentCreated(
   }
 );
 
-// 2. Quando um agendamento é atualizado -> confirmado / cancelado / reagendado
+// 2. Quando um agendamento é atualizado -> confirmado / cancelado / reagendado / concluído
 exports.onAgendamentoAtualizado = onDocumentUpdated(
   { document: 'agendamentos/{agendamentoId}', region: REGIAO, secrets: SECRETS },
   async (event) => {
@@ -42,9 +43,15 @@ exports.onAgendamentoAtualizado = onDocumentUpdated(
 
     const foiCancelado = before.status !== 'cancelado' && after.status === 'cancelado';
     const foiConfirmado = before.status !== 'confirmado' && after.status === 'confirmado';
+    const foiConcluido = before.status !== 'concluido' && after.status === 'concluido';
     const dataMudou = before.data.toMillis() !== after.data.toMillis();
     const horaMudou = before.horaInicio !== after.horaInicio;
     const foiReagendado = (dataMudou || horaMudou) && after.status !== 'cancelado' && !foiConfirmado;
+
+    // 'expirado' (pendente vencido) é silencioso de propósito — não é um
+    // evento que o cliente precise de saber, é só limpeza interna. Nenhuma
+    // das flags acima fica true para essa transição, por isso não é preciso
+    // nenhum 'if' extra a bloqueá-la.
 
     try {
       if (foiCancelado) {
@@ -59,6 +66,12 @@ exports.onAgendamentoAtualizado = onDocumentUpdated(
           assunto: 'Agendamento confirmado! — Loah Stúdio',
           html: agendamentoConfirmadoEmail(after),
         });
+      } else if (foiConcluido) {
+        await enviarEmail({
+          para: after.clienteEmail,
+          assunto: 'Que tal deixar uma avaliação? — Loah Stúdio',
+          html: pedidoAvaliacaoEmail({ clienteNome: after.clienteNome, servicoNome: after.servicoNome }),
+        });
       } else if (foiReagendado) {
         await enviarEmail({
           para: after.clienteEmail,
@@ -71,8 +84,6 @@ exports.onAgendamentoAtualizado = onDocumentUpdated(
     }
   }
 );
-
-
 
 exports.criarAgendamento = onCall({ region: REGIAO }, async (request) => {
   const uid = request.auth?.uid ?? null;
@@ -104,8 +115,6 @@ exports.criarAgendamento = onCall({ region: REGIAO }, async (request) => {
 
   try {
     await db.runTransaction(async (tx) => {
-      // Lê os horários ocupados desse dia DENTRO da transação — se outro
-      // pedido escrever entretanto, a transação repete automaticamente.
       const ocupadosSnap = await tx.get(
         db.collection('horariosOcupados')
           .where('data', '>=', Timestamp.fromDate(inicioDoDia))
@@ -155,8 +164,9 @@ exports.criarAgendamento = onCall({ region: REGIAO }, async (request) => {
     throw new HttpsError('internal', 'Não foi possível criar o agendamento. Tenta novamente.');
   }
 });
-// 3. Callable — admin pede avaliação a um cliente
-// Verifica admin através da coleção 'clientes', campo 'role' === 'admin'
+
+// 3. Callable — admin pede avaliação a um cliente (envio manual, à parte
+// do envio automático que já acontece em onAgendamentoAtualizado)
 exports.enviarPedidoAvaliacao = onCall(
   { region: REGIAO, secrets: SECRETS },
   async (request) => {
@@ -184,5 +194,131 @@ exports.enviarPedidoAvaliacao = onCall(
     });
 
     return { sucesso: enviado };
+  }
+);
+
+// 4. Agendado — a cada 15 minutos: (a) 'confirmado' vencido -> 'concluido'
+// (dispara o email de avaliação via onAgendamentoAtualizado acima), e
+// (b) 'pendente' vencido -> 'expirado' (silencioso, sem email nenhum).
+
+/**
+ * Devolve o offset (em minutos) de Europe/Lisbon para uma data UTC dada,
+ * já considerando horário de verão (WEST, +1h) vs inverno (WET, +0h).
+ */
+function offsetLisboaMinutos(dataUtc) {
+  const partes = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'Europe/Lisbon',
+    timeZoneName: 'shortOffset',
+    hour: '2-digit',
+  }).formatToParts(dataUtc);
+
+  const nomeOffset = partes.find((p) => p.type === 'timeZoneName')?.value || 'GMT+0';
+  const match = nomeOffset.match(/GMT([+-]\d+)(?::(\d+))?/);
+  if (!match) return 0;
+
+  const horas = parseInt(match[1], 10);
+  const minutos = match[2] ? parseInt(match[2], 10) : 0;
+  return horas * 60 + (horas < 0 ? -minutos : minutos);
+}
+
+/**
+ * Calcula o instante UTC real de um horário ('horaFim' ou 'horaInicio') de
+ * um agendamento, combinando o dia guardado em 'data' (meia-noite UTC do
+ * dia-calendário de Lisboa) com a hora local de Lisboa fornecida.
+ */
+function calcularInstante(ag, campoHora) {
+  const dataBase = ag.data.toDate();
+  const [hh, mm] = ag[campoHora].split(':').map(Number);
+  const offsetMin = offsetLisboaMinutos(dataBase);
+
+  const utcMillis = Date.UTC(
+    dataBase.getUTCFullYear(),
+    dataBase.getUTCMonth(),
+    dataBase.getUTCDate(),
+    hh,
+    mm
+  ) - offsetMin * 60000;
+
+  return new Date(utcMillis);
+}
+
+/**
+ * Marca como 'concluido' todo o 'confirmado' cuja hora de FIM já passou.
+ */
+async function concluirConfirmadosVencidos(db, agora) {
+  const snap = await db.collection('agendamentos')
+    .where('status', '==', 'confirmado')
+    .where('data', '<=', Timestamp.fromDate(agora))
+    .get();
+
+  if (snap.empty) return 0;
+
+  const batch = db.batch();
+  let count = 0;
+
+  for (const doc of snap.docs) {
+    const ag = doc.data();
+    if (!ag.horaFim || !ag.data) continue;
+
+    const fim = calcularInstante(ag, 'horaFim');
+    if (fim <= agora) {
+      batch.update(doc.ref, {
+        status: 'concluido',
+        atualizadoEm: FieldValue.serverTimestamp(),
+      });
+      count++;
+    }
+  }
+
+  if (count > 0) await batch.commit();
+  return count;
+}
+
+/**
+ * Marca como 'expirado' todo o 'pendente' cuja hora de INÍCIO já passou —
+ * nunca chegou a ser confirmado nem cancelado a tempo. Sem email: é
+ * limpeza interna, não um evento que o cliente precise de saber.
+ */
+async function expirarPendentesVencidos(db, agora) {
+  const snap = await db.collection('agendamentos')
+    .where('status', '==', 'pendente')
+    .where('data', '<=', Timestamp.fromDate(agora))
+    .get();
+
+  if (snap.empty) return 0;
+
+  const batch = db.batch();
+  let count = 0;
+
+  for (const doc of snap.docs) {
+    const ag = doc.data();
+    if (!ag.horaInicio || !ag.data) continue;
+
+    const inicio = calcularInstante(ag, 'horaInicio');
+    if (inicio <= agora) {
+      batch.update(doc.ref, {
+        status: 'expirado',
+        atualizadoEm: FieldValue.serverTimestamp(),
+      });
+      count++;
+    }
+  }
+
+  if (count > 0) await batch.commit();
+  return count;
+}
+
+exports.processarAgendamentosVencidos = onSchedule(
+  { schedule: 'every 15 minutes', region: REGIAO, timeZone: 'Europe/Lisbon' },
+  async () => {
+    const db = getFirestore();
+    const agora = new Date();
+
+    const [concluidos, expirados] = await Promise.all([
+      concluirConfirmadosVencidos(db, agora),
+      expirarPendentesVencidos(db, agora),
+    ]);
+
+    logger.info(`Processamento de agendamentos vencidos: ${concluidos} concluído(s), ${expirados} expirado(s).`);
   }
 );

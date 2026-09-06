@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:loahstudio/firebase_options.dart';
+import 'package:loahstudio/view/auth/auth_gate.dart';
 import 'package:loahstudio/view/auth/auth_page.dart';
 
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:loahstudio/view/user_views/home/home_page.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -31,10 +31,10 @@ class MyApp extends StatelessWidget {
       title: 'Loah Stúdio',
       theme: ThemeData(colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple)),
       initialRoute: '/',
-      routes: {
-        '/': (context) => HomePage(),
-        '/login': (context) => const AuthPage(),
-      },
+    routes: {
+  '/': (context) => const AuthGate(), // era HomePage()
+  '/login': (context) => const AuthPage(),
+},
     );
   }
 }
