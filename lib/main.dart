@@ -15,8 +15,10 @@ if (kIsWeb) {
     webExperimentalForceLongPolling: true,  // Force, não AutoDetect
   );
 }
-
-  runApp(const MyApp());
+FirebaseFirestore.setLoggingEnabled(true);
+  runApp(
+    
+     MyApp());
 }
 
 class MyApp extends StatelessWidget {

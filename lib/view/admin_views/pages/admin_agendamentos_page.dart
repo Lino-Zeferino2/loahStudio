@@ -3,6 +3,7 @@ import 'package:loahstudio/constants/colors.dart';
 import 'package:loahstudio/constants/responsive.dart';
 import 'package:loahstudio/controller/agendamento_controller.dart';
 import 'package:loahstudio/model/agendamento_model.dart';
+import 'package:loahstudio/view/admin_views/pages/reagendar_agendamento_page.dart';
 
 class AdminAgendamentosPage extends StatefulWidget {
   const AdminAgendamentosPage({super.key});
@@ -203,12 +204,34 @@ class _AdminAgendamentosPageState extends State<AdminAgendamentosPage> {
           const Divider(height: 1),
           const SizedBox(height: 12),
           isMobile
-              ? Column(children: [Row(children: [const Icon(Icons.content_cut, color: AppColors.pinkStrong, size: 16), const SizedBox(width: 6), Expanded(child: Text(agendamento.servicoNome, style: const TextStyle(color: AppColors.brown, fontSize: 13), overflow: TextOverflow.ellipsis))]), const SizedBox(height: 8), Row(children: [const Icon(Icons.calendar_today, color: AppColors.grey, size: 16), const SizedBox(width: 6), Text('${data.day}/${data.month}', style: const TextStyle(color: AppColors.brown, fontSize: 13)), const SizedBox(width: 16), const Icon(Icons.access_time, color: AppColors.grey, size: 16), const SizedBox(width: 6), Text('${agendamento.horaInicio} - ${agendamento.horaFim} (${_formatDuracao(agendamento.servicoDuracaoMinutos)})', style: const TextStyle(color: AppColors.brown, fontSize: 13))])])
-              : Row(children: [Expanded(child: Row(children: [const Icon(Icons.content_cut, color: AppColors.pinkStrong, size: 18), const SizedBox(width: 6), Expanded(child: Text(agendamento.servicoNome, style: const TextStyle(color: AppColors.brown, fontSize: 14), overflow: TextOverflow.ellipsis))])), Expanded(child: Row(children: [const Icon(Icons.calendar_today, color: AppColors.grey, size: 18), const SizedBox(width: 6), Text('${data.day}/${data.month}/${data.year}', style: const TextStyle(color: AppColors.brown, fontSize: 14))])), Expanded(child: Row(children: [const Icon(Icons.access_time, color: AppColors.grey, size: 18), const SizedBox(width: 6), Text('${agendamento.horaInicio}', style: const TextStyle(color: AppColors.brown, fontSize: 14))]))]),
+              ? Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  Row(children: [const Icon(Icons.content_cut, color: AppColors.pinkStrong, size: 16), const SizedBox(width: 6), Expanded(child: Text(agendamento.servicoNome, style: const TextStyle(color: AppColors.brown, fontSize: 13), overflow: TextOverflow.ellipsis))]),
+                  const SizedBox(height: 8),
+                  Wrap(
+                    spacing: 12,
+                    runSpacing: 4,
+                    crossAxisAlignment: WrapCrossAlignment.center,
+                    children: [
+                      Row(mainAxisSize: MainAxisSize.min, children: [const Icon(Icons.calendar_today, color: AppColors.grey, size: 16), const SizedBox(width: 6), Text('${data.day}/${data.month}', style: const TextStyle(color: AppColors.brown, fontSize: 13))]),
+                      Row(mainAxisSize: MainAxisSize.min, children: [const Icon(Icons.access_time, color: AppColors.grey, size: 16), const SizedBox(width: 6), Text('${agendamento.horaInicio} - ${agendamento.horaFim} (${_formatDuracao(agendamento.servicoDuracaoMinutos)})', style: const TextStyle(color: AppColors.brown, fontSize: 13))]),
+                    ],
+                  ),
+                ])
+              : Row(children: [Expanded(child: Row(children: [const Icon(Icons.content_cut, color: AppColors.pinkStrong, size: 18), const SizedBox(width: 6), Expanded(child: Text(agendamento.servicoNome, style: const TextStyle(color: AppColors.brown, fontSize: 14), overflow: TextOverflow.ellipsis))])), Expanded(child: Row(children: [const Icon(Icons.calendar_today, color: AppColors.grey, size: 18), const SizedBox(width: 6), Text('${data.day}/${data.month}/${data.year}', style: const TextStyle(color: AppColors.brown, fontSize: 14))])), Expanded(child: Row(children: [const Icon(Icons.access_time, color: AppColors.grey, size: 18), const SizedBox(width: 6), Text(agendamento.horaInicio, style: const TextStyle(color: AppColors.brown, fontSize: 14))]))]),
           const SizedBox(height: 12),
           if (status != 'concluido' && status != 'cancelado')
-            Wrap(alignment: WrapAlignment.end, spacing: 8, runSpacing: 8, children: [if (status == 'pendente') ElevatedButton.icon(onPressed: () => _showConfirmDialog(agendamento, 'confirmado'), icon: const Icon(Icons.check, size: 18), label: const Text('Confirmar'), style: ElevatedButton.styleFrom(backgroundColor: Colors.green, foregroundColor: AppColors.white)), if (status == 'confirmado') ElevatedButton.icon(onPressed: () => _showConfirmDialog(agendamento, 'concluido'), icon: const Icon(Icons.check_circle, size: 18), label: const Text('Concluir'), style: ElevatedButton.styleFrom(backgroundColor: Colors.blue, foregroundColor: AppColors.white)), ElevatedButton.icon(onPressed: () => _showConfirmDialog(agendamento, 'cancelar'), icon: const Icon(Icons.close, size: 18), label: const Text('Cancelar'), style: ElevatedButton.styleFrom(backgroundColor: Colors.red, foregroundColor: AppColors.white)), TextButton.icon(onPressed: () => _showEditDialog(agendamento), icon: const Icon(Icons.edit, size: 18), label: const Text('Editar'), style: TextButton.styleFrom(foregroundColor: AppColors.pinkStrong)), TextButton.icon(onPressed: () => _showDeleteDialog(agendamento), icon: const Icon(Icons.delete, size: 18), label: const Text('Eliminar'), style: TextButton.styleFrom(foregroundColor: Colors.redAccent))])
-          else Wrap(alignment: WrapAlignment.end, spacing: 8, runSpacing: 8, children: [TextButton.icon(onPressed: () => _showEditDialog(agendamento), icon: const Icon(Icons.edit, size: 18), label: const Text('Editar'), style: TextButton.styleFrom(foregroundColor: AppColors.pinkStrong)), TextButton.icon(onPressed: () => _showDeleteDialog(agendamento), icon: const Icon(Icons.delete, size: 18), label: const Text('Eliminar'), style: TextButton.styleFrom(foregroundColor: Colors.redAccent))]),
+            Wrap(alignment: WrapAlignment.end, spacing: 8, runSpacing: 8, children: [
+              if (status == 'pendente') ElevatedButton.icon(onPressed: () => _showConfirmDialog(agendamento, 'confirmado'), icon: const Icon(Icons.check, size: 18), label: const Text('Confirmar'), style: ElevatedButton.styleFrom(backgroundColor: Colors.green, foregroundColor: AppColors.white)),
+              if (status == 'confirmado') ElevatedButton.icon(onPressed: () => _showConfirmDialog(agendamento, 'concluido'), icon: const Icon(Icons.check_circle, size: 18), label: const Text('Concluir'), style: ElevatedButton.styleFrom(backgroundColor: Colors.blue, foregroundColor: AppColors.white)),
+              ElevatedButton.icon(onPressed: () => _showConfirmDialog(agendamento, 'cancelar'), icon: const Icon(Icons.close, size: 18), label: const Text('Cancelar'), style: ElevatedButton.styleFrom(backgroundColor: Colors.red, foregroundColor: AppColors.white)),
+              TextButton.icon(onPressed: () => _navegarParaReagendar(agendamento), icon: const Icon(Icons.edit_calendar, size: 18), label: const Text('Editar'), style: TextButton.styleFrom(foregroundColor: AppColors.pinkStrong)),
+              TextButton.icon(onPressed: () => _showDeleteDialog(agendamento), icon: const Icon(Icons.delete, size: 18), label: const Text('Eliminar'), style: TextButton.styleFrom(foregroundColor: Colors.redAccent)),
+            ])
+          else
+            Wrap(alignment: WrapAlignment.end, spacing: 8, runSpacing: 8, children: [
+              TextButton.icon(onPressed: () => _navegarParaReagendar(agendamento), icon: const Icon(Icons.edit_calendar, size: 18), label: const Text('Editar'), style: TextButton.styleFrom(foregroundColor: AppColors.pinkStrong)),
+              TextButton.icon(onPressed: () => _showDeleteDialog(agendamento), icon: const Icon(Icons.delete, size: 18), label: const Text('Eliminar'), style: TextButton.styleFrom(foregroundColor: Colors.redAccent)),
+            ]),
         ],
       ),
     );
@@ -220,21 +243,33 @@ class _AdminAgendamentosPageState extends State<AdminAgendamentosPage> {
     return '$h:$m';
   }
 
-  void _showEditDialog(Agendamento agendamento) => showDialog(context: context, builder: (context) => AlertDialog(title: const Text('Editar Agendamento'), content: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [Text('Cliente: ${agendamento.clienteNome}'), Text('Serviço: ${agendamento.servicoNome}'), Text('Preço: R\$${agendamento.servicoPreco.toStringAsFixed(2)}'), Text('Data: ${agendamento.data.day}/${agendamento.data.month}/${agendamento.data.year}'), Text('Hora: ${agendamento.horaInicio} - ${agendamento.horaFim}'), Text('Status: ${agendamento.status}')]), actions: [TextButton(onPressed: () => Navigator.pop(context), child: const Text('Fechar'))]));
+  /// Leva o admin à tela de reagendamento: lá ele escolhe nova data/hora,
+  /// o horário antigo é libertado, o novo é reservado, e a atualização do
+  /// documento deve disparar o teu trigger de email de "agendamento atualizado".
+  Future<void> _navegarParaReagendar(Agendamento agendamento) async {
+    await Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => ReagendarAgendamentoPage(agendamento: agendamento)),
+    );
+  }
 
   void _showDeleteDialog(Agendamento agendamento) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Eliminar Agendamento'),
-        content: Text('Tem certeza que deseja eliminar o agendamento de ${agendamento.clienteNome}?'),
+        content: Text('Tem certeza que deseja eliminar definitivamente o agendamento de ${agendamento.clienteNome}? Esta ação não pode ser desfeita.'),
         actions: [
           TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancelar')),
           TextButton(
-            onPressed: () {
+            onPressed: () async {
               Navigator.pop(context);
-              _agendamentoController.atualizarStatusAgendamento(agendamento.id!, 'cancelado');
-              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Agendamento eliminado')));
+              final sucesso = await _agendamentoController.eliminarAgendamento(agendamento.id!);
+              if (!mounted) return;
+              ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                content: Text(sucesso ? 'Agendamento eliminado.' : 'Não foi possível eliminar. Tente novamente.'),
+                backgroundColor: sucesso ? null : Colors.redAccent,
+              ));
             },
             child: const Text('Eliminar', style: TextStyle(color: Colors.redAccent)),
           ),

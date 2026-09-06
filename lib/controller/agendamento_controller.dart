@@ -150,9 +150,15 @@ class AgendamentoController {
     }
   }
 
-  /// Edita um agendamento: atualiza dados, libera o horário antigo e (se necessário) cria novo.
+  /// Edita um agendamento: atualiza dados, liberta o horário antigo e (se necessário) cria novo.
   /// Se a data/hora mudou, liberta o horário antigo do espelho público.
   /// Se o status mudou para 'cancelado', também liberta.
+  ///
+  /// NOTA: ao contrário de [criarAgendamento], esta operação NÃO corre numa
+  /// transação server-side. A verificação de conflito depende só de a UI ter
+  /// filtrado os horários ocupados antes de deixar escolher o slot. Para uso
+  /// por um único admin de cada vez isto é razoável; se vieres a ter mais do
+  /// que um admin a reagendar ao mesmo tempo, isto precisa de reforço.
   Future<bool> editarAgendamento(String agendamentoId, {String? novoStatus, DateTime? novaData, String? novaHoraInicio, String? novaHoraFim}) async {
     try {
       // Se mudou data/hora, remover o horário antigo e criar novo no espelho
@@ -205,6 +211,27 @@ class AgendamentoController {
       return true;
     } catch (e) {
       debugPrint('Erro ao cancelar agendamento: $e');
+      return false;
+    }
+  }
+
+  /// Elimina definitivamente um agendamento (apaga o documento) e liberta
+  /// o horário ocupado associado no espelho público 'horariosOcupados'.
+  /// Diferente de [cancelarAgendamento], que só muda o status — isto
+  /// remove o registo por completo, que é o que "Eliminar" na UI implica.
+  Future<bool> eliminarAgendamento(String agendamentoId) async {
+    try {
+      final batch = _firestore.batch();
+
+      final ocupado = await _horariosOcupadosRef.where('agendamentoId', isEqualTo: agendamentoId).limit(1).get();
+      if (ocupado.docs.isNotEmpty) batch.delete(ocupado.docs.first.reference);
+
+      batch.delete(_agendamentosRef.doc(agendamentoId));
+
+      await batch.commit();
+      return true;
+    } catch (e) {
+      debugPrint('Erro ao eliminar agendamento: $e');
       return false;
     }
   }
