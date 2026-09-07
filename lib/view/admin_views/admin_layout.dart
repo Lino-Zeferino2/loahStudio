@@ -10,19 +10,30 @@ import 'package:loahstudio/view/admin_views/pages/admin_configuracoes_page.dart'
 import 'package:loahstudio/view/admin_views/pages/admin_dashboard_page.dart';
 import 'package:loahstudio/view/admin_views/pages/admin_produtos_page.dart';
 import 'package:loahstudio/view/admin_views/pages/admin_servicos_page.dart';
+import 'package:loahstudio/view/shared/notificacao_icon_button.dart';
 import 'package:loahstudio/view/user_views/home/home_page.dart';
 
 
 class AdminLayout extends StatefulWidget {
-  const AdminLayout({super.key});
+  /// Índice inicial do menu — usado para abrir já na tab certa quando se
+  /// chega aqui a partir de uma notificação (1 = Agendamentos, 2 = Compras).
+  final int initialIndex;
+
+  const AdminLayout({super.key, this.initialIndex = 0});
 
   @override
   State<AdminLayout> createState() => _AdminLayoutState();
 }
 
 class _AdminLayoutState extends State<AdminLayout> {
-  int _selectedIndex = 0;
+  late int _selectedIndex;
   bool _isExtended = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _selectedIndex = widget.initialIndex;
+  }
 
  final List<AdminMenuItem> _menuItems = [
   AdminMenuItem(icon: Icons.dashboard, label: 'Dashboard', index: 0),
@@ -40,7 +51,6 @@ class _AdminLayoutState extends State<AdminLayout> {
     final bool isMobile = ResponsiveHelper.isMobile(context);
     final bool isTablet = ResponsiveHelper.isTablet(context);
 
-    // Ajustar sidebar para tablet/mobile
     if (isMobile) {
       _isExtended = false;
     } else if (isTablet) {
@@ -52,15 +62,12 @@ class _AdminLayoutState extends State<AdminLayout> {
       body: SafeArea(
         child: Row(
           children: [
-            // 🔹 Sidebar Lateral Esquerdo
             _buildSidebar(isMobile, isTablet),
-            // 🔹 Divisor
             if (!isMobile)
               Container(
                 width: 1,
                 color: AppColors.grey.withValues(alpha: 0.2),
               ),
-            // 🔹 Área Principal (Página)
             Expanded(
               child: Column(
                 children: [
@@ -84,7 +91,6 @@ class _AdminLayoutState extends State<AdminLayout> {
       color: AppColors.white,
       child: Column(
         children: [
-          // 🔹 Logo / Título do Sidebar
           Container(
             height: 80,
             padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -127,7 +133,6 @@ class _AdminLayoutState extends State<AdminLayout> {
             ),
           ),
           const Divider(height: 1),
-          // 🔹 Menu Items
           Expanded(
             child: ListView.builder(
               padding: const EdgeInsets.symmetric(vertical: 8),
@@ -138,9 +143,7 @@ class _AdminLayoutState extends State<AdminLayout> {
             ),
           ),
           const Divider(height: 1),
-          // 🔹 Log Out
           _buildLogoutItem(isMobile),
-          // 🔹 Botão para expandir/recolher sidebar (apenas em desktop)
           if (!isMobile)
             Padding(
               padding: const EdgeInsets.all(8.0),
@@ -267,7 +270,6 @@ class _AdminLayoutState extends State<AdminLayout> {
       ),
       child: Row(
         children: [
-          // 🔹 Título da Página Atual
           Expanded(
             child: Text(
               _menuItems[_selectedIndex].label,
@@ -278,38 +280,8 @@ class _AdminLayoutState extends State<AdminLayout> {
               ),
             ),
           ),
-          // 🔹 Notificações
-          IconButton(
-            onPressed: () {
-              // TODO: Abrir notificações
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Notificações')),
-              );
-            },
-            icon: Stack(
-              children: [
-                const Icon(
-                  Icons.notifications_outlined,
-                  color: AppColors.brown,
-                  size: 28,
-                ),
-                Positioned(
-                  right: 0,
-                  top: 0,
-                  child: Container(
-                    width: 10,
-                    height: 10,
-                    decoration: const BoxDecoration(
-                      color: AppColors.pinkStrong,
-                      shape: BoxShape.circle,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
+          const NotificacaoIconButton(),
           const SizedBox(width: 8),
-          // 🔹 Foto de Perfil
           Container(
             width: 44,
             height: 44,
@@ -378,7 +350,7 @@ Widget _buildContent() {
         ),
         TextButton(
           onPressed: () async {
-            Navigator.pop(dialogContext); // fecha o diálogo primeiro
+            Navigator.pop(dialogContext);
 
             final authController = AuthController();
             await authController.logoutUser(
@@ -387,7 +359,7 @@ Widget _buildContent() {
 
                 if (success) {
                   Navigator.of(context).pushAndRemoveUntil(
-                    MaterialPageRoute(builder: (_) => const HomePage()), // troca pelo teu widget de login real
+                    MaterialPageRoute(builder: (_) => const HomePage()),
                     (route) => false,
                   );
                 } else {
@@ -410,7 +382,6 @@ Widget _buildContent() {
 
 }
 
-// 🔹 Modelo para Menu Item
 class AdminMenuItem {
   final IconData icon;
   final String label;

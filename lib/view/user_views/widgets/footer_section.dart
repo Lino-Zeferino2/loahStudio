@@ -10,6 +10,11 @@ class FooterSection extends StatelessWidget {
   final SiteConfigModel config;
   const FooterSection({super.key, required this.config});
 
+  static const String _devInstagramUrl =
+      'https://www.instagram.com/linodeveloper?stkn=Z2RiczV5MXFtdmkz&utm_source=qr';
+  static const String _devPortfolioUrl =
+      'https://linozeferino-portfolio.web.app';
+
   Future<void> _abrirLink(String url) async {
     final uri = Uri.tryParse(url);
     if (uri == null) return;
@@ -21,6 +26,10 @@ class FooterSection extends StatelessWidget {
     if (numero.isEmpty) return;
     _abrirLink('https://wa.me/$numero');
   }
+
+  void _abrirInstagramDev() => _abrirLink(_devInstagramUrl);
+
+  void _abrirPortfolioDev() => _abrirLink(_devPortfolioUrl);
 
   List<Widget> _buildIconesRedesSociais(bool isMobile) {
     final icones = <Widget>[];
@@ -79,6 +88,8 @@ class FooterSection extends StatelessWidget {
           Text(tituloHorario, style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.brown)),
           SizedBox(height: 10),
           Text(textoHorario, style: TextStyle(fontSize: 12, color: AppColors.grey, height: 1.5)),
+          SizedBox(height: 24),
+          _buildDeveloperCredit(true),
         ],
       ),
     );
@@ -89,18 +100,72 @@ class FooterSection extends StatelessWidget {
       width: double.infinity,
       padding: EdgeInsets.symmetric(horizontal: 60, vertical: 40),
       color: Color(0xFFF5F5F5),
-      child: Row(
+      child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text(nome, style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: AppColors.brown)), SizedBox(height: 12), Text(copyright, style: TextStyle(fontSize: 14, color: AppColors.grey, height: 1.5))])),
-          Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text(tituloRedes, style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: AppColors.brown)), SizedBox(height: 12), Row(children: _buildIconesRedesSociais(false))])),
-          Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text(tituloHorario, style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: AppColors.brown)), SizedBox(height: 12), Text(textoHorario, style: TextStyle(fontSize: 14, color: AppColors.grey, height: 1.6))])),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text(nome, style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: AppColors.brown)), SizedBox(height: 12), Text(copyright, style: TextStyle(fontSize: 14, color: AppColors.grey, height: 1.5))])),
+              Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text(tituloRedes, style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: AppColors.brown)), SizedBox(height: 12), Row(children: _buildIconesRedesSociais(false))])),
+              Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text(tituloHorario, style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: AppColors.brown)), SizedBox(height: 12), Text(textoHorario, style: TextStyle(fontSize: 14, color: AppColors.grey, height: 1.6))])),
+            ],
+          ),
+          SizedBox(height: 32),
+          _buildDeveloperCredit(false),
         ],
       ),
     );
   }
 
-    Widget _socialIcon(Widget icone, VoidCallback? onTap) {
+  Widget _buildDeveloperCredit(bool isMobile) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(height: 1, color: Color(0xFFE0E0E0)),
+        SizedBox(height: isMobile ? 16 : 20),
+        Wrap(
+          crossAxisAlignment: WrapCrossAlignment.center,
+          children: [
+            Text(
+              'Desenvolvido por ',
+              style: TextStyle(fontSize: isMobile ? 12 : 13, color: AppColors.grey),
+            ),
+            InkWell(
+              onTap: _abrirInstagramDev,
+              child: Text(
+                'Lino Zeferino',
+                style: TextStyle(
+                  fontSize: isMobile ? 12 : 13,
+                  color: AppColors.brown,
+                  fontWeight: FontWeight.w600,
+                  decoration: TextDecoration.underline,
+                ),
+              ),
+            ),
+            Text(
+              '  •  ',
+              style: TextStyle(fontSize: isMobile ? 12 : 13, color: AppColors.grey),
+            ),
+            InkWell(
+              onTap: _abrirPortfolioDev,
+              child: Text(
+                'Portfólio',
+                style: TextStyle(
+                  fontSize: isMobile ? 12 : 13,
+                  color: AppColors.brown,
+                  fontWeight: FontWeight.w600,
+                  decoration: TextDecoration.underline,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _socialIcon(Widget icone, VoidCallback? onTap) {
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(8),

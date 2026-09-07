@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
 import 'package:loahstudio/model/user_model.dart';
@@ -101,7 +102,25 @@ class AuthController {
     required AuthCallback onComplete,
   }) async {
     try {
-      debugPrint('A terminar sessão do utilizador: ${_auth.currentUser?.uid}');
+      final uid = _auth.currentUser?.uid;
+
+      // Remove o token FCM deste dispositivo antes de terminar a sessão —
+      // caso contrário este utilizador continuaria a receber pushes
+      // destinados a quem entrar a seguir neste mesmo dispositivo/browser.
+      if (uid != null) {
+        try {
+          final token = await FirebaseMessaging.instance.getToken();
+          if (token != null) {
+            await _firestore.collection('clientes').doc(uid).update({
+              'fcmTokens': FieldValue.arrayRemove([token]),
+            });
+          }
+        } catch (e) {
+          debugPrint('Erro ao remover token FCM no logout (a continuar): $e');
+        }
+      }
+
+      debugPrint('A terminar sessão do utilizador: $uid');
       await _auth.signOut();
       debugPrint('Logout bem-sucedido');
       onComplete(true, null);

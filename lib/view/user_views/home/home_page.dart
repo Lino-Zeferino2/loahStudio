@@ -1,9 +1,11 @@
 // ignore_for_file: library_private_types_in_public_api
 
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:loahstudio/constants/colors.dart';
 import 'package:loahstudio/constants/responsive.dart';
 import 'package:loahstudio/controller/home_controller.dart';
+import 'package:loahstudio/view/shared/notificacao_icon_button.dart';
 import 'package:loahstudio/view/user_views/home/widgets/hero_section.dart';
 import 'package:loahstudio/view/user_views/home/widgets/servicos_destaque_section.dart';
 import 'package:loahstudio/view/user_views/home/widgets/produtos_destaque_section.dart';
@@ -73,6 +75,15 @@ class _HomePageState extends State<HomePage> {
         elevation: 0,
         title: Text("LOAH STÚDIO", style: TextStyle(color: AppColors.brown, fontWeight: FontWeight.w600, fontSize: 18, letterSpacing: 2)),
         centerTitle: true,
+        actions: [
+          StreamBuilder<User?>(
+            stream: FirebaseAuth.instance.authStateChanges(),
+            builder: (context, snapshot) {
+              if (snapshot.data == null) return const SizedBox.shrink();
+              return const NotificacaoIconButton();
+            },
+          ),
+        ],
       ),
     endDrawer: AppDrawer(
         selectedIndex: selectedIndex,
@@ -139,6 +150,16 @@ class _HomePageState extends State<HomePage> {
                   );
                 }),
                 SizedBox(width: 20),
+                StreamBuilder<User?>(
+                  stream: FirebaseAuth.instance.authStateChanges(),
+                  builder: (context, snapshot) {
+                    if (snapshot.data == null) return const SizedBox.shrink();
+                    return const Padding(
+                      padding: EdgeInsets.only(right: 8),
+                      child: NotificacaoIconButton(),
+                    );
+                  },
+                ),
                 buildAuthMenuItem(),
                 ElevatedButton(
                   style: ElevatedButton.styleFrom(backgroundColor: AppColors.pinkStrong, padding: EdgeInsets.symmetric(horizontal: 20, vertical: 12), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20))),
