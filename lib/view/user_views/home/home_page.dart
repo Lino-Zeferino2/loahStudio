@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:loahstudio/constants/colors.dart';
 import 'package:loahstudio/constants/responsive.dart';
 import 'package:loahstudio/controller/home_controller.dart';
+import 'package:loahstudio/view/shared/floating_bob.dart';
 import 'package:loahstudio/view/shared/notificacao_icon_button.dart';
 import 'package:loahstudio/view/user_views/home/widgets/hero_section.dart';
 import 'package:loahstudio/view/user_views/home/widgets/servicos_destaque_section.dart';
@@ -62,7 +63,11 @@ class _HomePageState extends State<HomePage> {
     return Stack(
       children: [
         scaffold,
-        Positioned(bottom: 24, right: 20, child: WhatsappFloatingButton(numeroWhatsapp: numeroWhatsapp)),
+        Positioned(
+          bottom: 24,
+          right: 20,
+          child: FloatingBob(child: WhatsappFloatingButton(numeroWhatsapp: numeroWhatsapp)),
+        ),
       ],
     );
   }
@@ -82,6 +87,17 @@ class _HomePageState extends State<HomePage> {
               if (snapshot.data == null) return const SizedBox.shrink();
               return const NotificacaoIconButton();
             },
+          ),
+          // 'actions' definido manualmente substitui a lista que o Flutter
+          // usava para injetar sozinho o ícone do endDrawer — por isso
+          // este IconButton tem de ser explícito. O Builder é necessário
+          // para obter um context abaixo deste Scaffold (Scaffold.of
+          // exige isso; o context do State em si fica acima do Scaffold).
+          Builder(
+            builder: (context) => IconButton(
+              icon: Icon(Icons.menu, color: AppColors.brown),
+              onPressed: () => Scaffold.of(context).openEndDrawer(),
+            ),
           ),
         ],
       ),
