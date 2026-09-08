@@ -71,23 +71,39 @@ class _EmailVerificationPendingPageState extends State<EmailVerificationPendingP
   Future<void> _jaVerifiquei() async {
     setState(() => _isChecking = true);
 
-    final verificado = await _authController.isEmailVerified();
-
-    if (!mounted) return;
-    setState(() => _isChecking = false);
-
-    if (!verificado) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Ainda não detetámos a confirmação. Aguarde alguns segundos e tente novamente.'),
-          backgroundColor: Colors.red,
-        ),
-      );
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) {
+      setState(() => _isChecking = false);
       return;
     }
 
-    final user = FirebaseAuth.instance.currentUser;
-    final role = user != null ? await _authController.getUserRole(user.uid) : null;
+    // Marca o email como verificado na Firestore e aguarda o reload para o estado atualizado
+    await _authController.marcarEmailComoVerificado(user.uid);
+
+    // Recarrega o estado do Firebase para verificar se a confirmação foi detectada
+    try {
+      await user.reload();
+      final verificado = user.emailVerified ?? false;
+
+      if (!mounted) return;
+      setState(() => _isChecking = false);
+
+      if (!verificado) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Ainda não detetámos a confirmação. Aguarde alguns segundos e tente novamente.'),
+            backgroundColor: Colors.red,
+          ),
+        );
+        return;
+      }
+    } catch (e) {
+      debugPrint('Erro ao verificar email: $e');
+      setState(() => _isChecking = false);
+      return;
+    }
+
+    final role = await _authController.getUserRole(user.uid);
 
     if (!mounted) return;
 

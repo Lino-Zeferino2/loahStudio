@@ -139,16 +139,31 @@ class AuthController {
     }
   }
 
-  /// Recarrega os dados do utilizador atual junto do Firebase e devolve
-  /// se o email já foi confirmado. O `emailVerified` só é atualizado
-  /// localmente depois de um `reload()` explícito.
+  /// Devolve `true` se este utilizador já confirmou o seu email alguma vez.
+  /// A confirmação é guardada no Firestore (`emailVerificado: true`) e só
+  /// precisa ser feita uma única vez: depois de confirmada, o login
+  /// decorre normalmente sem reexigir nova verificação.
   Future<bool> isEmailVerified() async {
+    final uid = _auth.currentUser?.uid;
+    if (uid == null) return false;
     try {
-      await _auth.currentUser?.reload();
-      return _auth.currentUser?.emailVerified ?? false;
+      final doc = await _firestore.collection('clientes').doc(uid).get();
+      return doc.data()?['emailVerificado'] == true;
     } catch (e) {
       debugPrint('Erro ao verificar estado do email: $e');
       return false;
+    }
+  }
+
+  /// Marca o email como verificado na Firestore. Chamado após o utilizador
+  /// clicar no link de confirmação enviado pelo Firebase.
+  Future<void> marcarEmailComoVerificado(String uid) async {
+    try {
+      await _firestore.collection('clientes').doc(uid).update({
+        'emailVerificado': true,
+      });
+    } catch (e) {
+      debugPrint('Erro ao marcar email como verificado: $e');
     }
   }
 
@@ -255,6 +270,7 @@ class AuthController {
           'email': email.trim().toLowerCase(),
           'telefone': _normalizePhonePT(telefone),
           'role': 'user',
+          'emailVerificado': false,
           'status': 'ativo',
           'dataCadastro': Timestamp.now(),
           'termosAceites': true,

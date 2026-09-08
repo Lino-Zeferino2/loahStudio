@@ -10,11 +10,9 @@ class AuthGate extends StatelessWidget {
   const AuthGate({super.key});
 
   Future<_AuthGateData> _resolver(User user) async {
-    // O emailVerified do stream authStateChanges() não se atualiza sozinho —
-    // é preciso recarregar o utilizador para obter o estado mais recente.
-    await user.reload();
-    final refreshedUser = FirebaseAuth.instance.currentUser;
-    final verificado = refreshedUser?.emailVerified ?? false;
+    // Verifica se o email já foi confirmado alguma vez (guardado no Firestore).
+    // Depois da primeira confirmação, o login decorre sem exigir nova verificação.
+    final verificado = await AuthController().isEmailVerified();
 
     if (!verificado) {
       return const _AuthGateData(emailVerificado: false, role: null);

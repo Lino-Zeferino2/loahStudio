@@ -519,9 +519,11 @@ class _AuthPageState extends State<AuthPage> {
       _isSubmitting = false;
     });
 
-    // Só deixa avançar para a Home/Admin quem já confirmou o email —
-    // quem acabou de registar-se ou tenta entrar sem confirmar cai aqui.
-    if (user != null && !user.emailVerified) {
+    // Só bloqueia se o utilizador ainda NUNCA confirmou o email (verificamos
+    // no Firestore, não no estado Firebase — que só se atualiza após reload).
+    // Se já confirmou uma vez, passa direto para a Home/Admin.
+    final emailConfirmado = user != null ? await authController.isEmailVerified() : false;
+    if (user != null && !emailConfirmado) {
       Navigator.of(context).pushAndRemoveUntil(
         MaterialPageRoute(builder: (_) => const EmailVerificationPendingPage()),
         (route) => false,
