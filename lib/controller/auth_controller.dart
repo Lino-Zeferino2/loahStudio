@@ -97,6 +97,61 @@ class AuthController {
     }
   }
 
+  // ---------------- RECUPERAÇÃO DE SENHA ----------------
+  Future<void> sendPasswordResetEmail({
+    required String email,
+    required AuthCallback onComplete,
+  }) async {
+    final trimmed = email.trim();
+    if (trimmed.isEmpty || !trimmed.contains('@') || !trimmed.contains('.')) {
+      onComplete(false, 'Por favor, insira um email válido.');
+      return;
+    }
+
+    try {
+      debugPrint('A enviar email de recuperação de senha para: $trimmed');
+      await _auth.sendPasswordResetEmail(email: trimmed);
+      debugPrint('Email de recuperação enviado com sucesso');
+      onComplete(true, null);
+    } on FirebaseAuthException catch (e) {
+      debugPrint('FirebaseAuthException (reset password): ${e.code} - ${e.message}');
+      onComplete(false, _translateAuthError(e.code));
+    } catch (e) {
+      debugPrint('Erro geral ao enviar email de recuperação: $e');
+      onComplete(false, 'Erro: ${e.toString()}');
+    }
+  }
+
+  // ---------------- VERIFICAÇÃO DE EMAIL ----------------
+  Future<bool> sendEmailVerification() async {
+    try {
+      final user = _auth.currentUser;
+      if (user == null) return false;
+      await user.sendEmailVerification();
+      debugPrint('Email de verificação enviado para: ${user.email}');
+      return true;
+    } on FirebaseAuthException catch (e) {
+      debugPrint('FirebaseAuthException (envio verificação): ${e.code} - ${e.message}');
+      return false;
+    } catch (e) {
+      debugPrint('Erro ao enviar email de verificação: $e');
+      return false;
+    }
+  }
+
+  /// Recarrega os dados do utilizador atual junto do Firebase e devolve
+  /// se o email já foi confirmado. O `emailVerified` só é atualizado
+  /// localmente depois de um `reload()` explícito.
+  Future<bool> isEmailVerified() async {
+    try {
+      await _auth.currentUser?.reload();
+      return _auth.currentUser?.emailVerified ?? false;
+    } catch (e) {
+      debugPrint('Erro ao verificar estado do email: $e');
+      return false;
+    }
+  }
+
   // ---------------- LOGOUT ----------------
   Future<void> logoutUser({
     required AuthCallback onComplete,
@@ -180,6 +235,15 @@ class AuthController {
         debugPrint('Token refresh error (continuando): $e');
       }
 
+      // Envia o email de confirmação — só depois de confirmado é que o
+      // utilizador terá acesso à área de cliente/admin (ver AuthGate).
+      try {
+        await user.sendEmailVerification();
+        debugPrint('Email de verificação enviado para: ${user.email}');
+      } catch (e) {
+        debugPrint('Erro ao enviar email de verificação (a continuar): $e');
+      }
+
       bool firestoreOk = true;
       String? firestoreError;
 
@@ -244,7 +308,7 @@ class AuthController {
       case 'user-disabled':
         return 'Esta conta foi desativada.';
       case 'user-not-found':
-        return 'Utilizador não encontrado.';
+        return 'Não existe nenhuma conta associada a este email.';
       case 'wrong-password':
         return 'Palavra-passe incorreta.';
       case 'invalid-credential':

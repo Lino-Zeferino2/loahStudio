@@ -5,6 +5,9 @@ import 'package:loahstudio/constants/colors.dart';
 import 'package:loahstudio/constants/responsive.dart';
 import 'package:loahstudio/view/admin_views/admin_layout.dart';
 import 'package:loahstudio/controller/auth_controller.dart';
+import 'package:loahstudio/utils/validators.dart';
+import 'package:loahstudio/view/auth/email_verification_pending_page.dart';
+import 'package:loahstudio/view/auth/forgot_password_page.dart';
 import 'package:loahstudio/view/user_views/home/home_page.dart';
 
 class AuthPage extends StatefulWidget {
@@ -114,6 +117,29 @@ class _AuthPageState extends State<AuthPage> {
     );
   }
 
+  void _irParaRecuperarSenha() {
+    Navigator.of(context).push(
+      MaterialPageRoute(builder: (_) => const ForgotPasswordPage()),
+    );
+  }
+
+  // ---------- Ícones de validação em tempo real ----------
+
+  Widget _iconeValidacao(Listenable listenable, bool Function() temValor, String? Function() erro) {
+    return AnimatedBuilder(
+      animation: listenable,
+      builder: (context, _) {
+        if (!temValor()) return const SizedBox.shrink();
+        final e = erro();
+        return Icon(
+          e == null ? Icons.check_circle : Icons.error,
+          color: e == null ? Colors.green : Colors.red,
+          size: 20,
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final bool isMobile = ResponsiveHelper.isMobile(context);
@@ -127,6 +153,7 @@ class _AuthPageState extends State<AuthPage> {
               padding: EdgeInsets.all(isMobile ? 20 : 40),
               child: Form(
                 key: _formKey,
+                autovalidateMode: AutovalidateMode.onUserInteraction,
                 child: Container(
                   constraints: BoxConstraints(maxWidth: isMobile ? double.infinity : 450),
                   padding: EdgeInsets.all(isMobile ? 24 : 40),
@@ -171,9 +198,15 @@ class _AuthPageState extends State<AuthPage> {
                       if (!_isLogin) ...[
                         TextFormField(
                           controller: _nameController,
+                          onChanged: (_) => setState(() {}),
                           decoration: InputDecoration(
                             labelText: 'Nome Completo',
                             prefixIcon: const Icon(Icons.person, color: AppColors.grey),
+                            suffixIcon: _iconeValidacao(
+                              _nameController,
+                              () => _nameController.text.isNotEmpty,
+                              () => AppValidators.nomeCompleto(_nameController.text),
+                            ),
                             filled: true,
                             fillColor: AppColors.lightCreamBg,
                             border: OutlineInputBorder(
@@ -181,20 +214,21 @@ class _AuthPageState extends State<AuthPage> {
                               borderSide: BorderSide.none,
                             ),
                           ),
-                          validator: (value) {
-                            if (!_isLogin && (value == null || value.trim().isEmpty)) {
-                              return 'Por favor, insira o seu nome';
-                            }
-                            return null;
-                          },
+                          validator: AppValidators.nomeCompleto,
                         ),
                         const SizedBox(height: 16),
                         TextFormField(
                           controller: _telefoneController,
                           keyboardType: TextInputType.phone,
+                          onChanged: (_) => setState(() {}),
                           decoration: InputDecoration(
                             labelText: 'Telemóvel',
                             prefixIcon: const Icon(Icons.phone, color: AppColors.grey),
+                            suffixIcon: _iconeValidacao(
+                              _telefoneController,
+                              () => _telefoneController.text.isNotEmpty,
+                              () => AppValidators.telefonePT(_telefoneController.text),
+                            ),
                             filled: true,
                             fillColor: AppColors.lightCreamBg,
                             border: OutlineInputBorder(
@@ -202,24 +236,7 @@ class _AuthPageState extends State<AuthPage> {
                               borderSide: BorderSide.none,
                             ),
                           ),
-                          validator: (value) {
-                            if (_isLogin) return null;
-                            final trimmed = value?.trim() ?? '';
-                            if (trimmed.isEmpty) {
-                              return 'Por favor, insira o seu número de telemóvel';
-                            }
-                            final digitsOnly = trimmed.replaceAll(RegExp(r'[^0-9]'), '');
-                            final localNumber = digitsOnly.startsWith('351')
-                                ? digitsOnly.substring(3)
-                                : digitsOnly;
-                            if (localNumber.length != 9) {
-                              return 'Número de telemóvel inválido';
-                            }
-                            if (!RegExp(r'^[92368]').hasMatch(localNumber)) {
-                              return 'Número de telemóvel inválido';
-                            }
-                            return null;
-                          },
+                          validator: (value) => _isLogin ? null : AppValidators.telefonePT(value),
                         ),
                         const SizedBox(height: 16),
                       ],
@@ -228,9 +245,15 @@ class _AuthPageState extends State<AuthPage> {
                       TextFormField(
                         controller: _emailController,
                         keyboardType: TextInputType.emailAddress,
+                        onChanged: (_) => setState(() {}),
                         decoration: InputDecoration(
                           labelText: 'Email',
                           prefixIcon: const Icon(Icons.email, color: AppColors.grey),
+                          suffixIcon: _iconeValidacao(
+                            _emailController,
+                            () => _emailController.text.isNotEmpty,
+                            () => AppValidators.email(_emailController.text),
+                          ),
                           filled: true,
                           fillColor: AppColors.lightCreamBg,
                           border: OutlineInputBorder(
@@ -238,15 +261,7 @@ class _AuthPageState extends State<AuthPage> {
                             borderSide: BorderSide.none,
                           ),
                         ),
-                        validator: (value) {
-                          if (value == null || value.trim().isEmpty) {
-                            return 'Por favor, insira o seu email';
-                          }
-                          if (!value.contains('@') || !value.contains('.')) {
-                            return 'Por favor, insira um email válido';
-                          }
-                          return null;
-                        },
+                        validator: AppValidators.email,
                       ),
                       const SizedBox(height: 16),
 
@@ -254,15 +269,28 @@ class _AuthPageState extends State<AuthPage> {
                       TextFormField(
                         controller: _passwordController,
                         obscureText: _obscurePassword,
+                        onChanged: (_) => setState(() {}),
                         decoration: InputDecoration(
                           labelText: 'Senha',
                           prefixIcon: const Icon(Icons.lock, color: AppColors.grey),
-                          suffixIcon: IconButton(
-                            icon: Icon(
-                              _obscurePassword ? Icons.visibility : Icons.visibility_off,
-                              color: AppColors.grey,
-                            ),
-                            onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
+                          suffixIcon: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              _iconeValidacao(
+                                _passwordController,
+                                () => _passwordController.text.isNotEmpty,
+                                () => _isLogin
+                                    ? AppValidators.loginPassword(_passwordController.text)
+                                    : AppValidators.password(_passwordController.text, minLength: 6),
+                              ),
+                              IconButton(
+                                icon: Icon(
+                                  _obscurePassword ? Icons.visibility : Icons.visibility_off,
+                                  color: AppColors.grey,
+                                ),
+                                onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
+                              ),
+                            ],
                           ),
                           filled: true,
                           fillColor: AppColors.lightCreamBg,
@@ -271,15 +299,9 @@ class _AuthPageState extends State<AuthPage> {
                             borderSide: BorderSide.none,
                           ),
                         ),
-                        validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return 'Por favor, insira a sua senha';
-                          }
-                          if (!_isLogin && value.length < 6) {
-                            return 'A senha deve ter pelo menos 6 caracteres';
-                          }
-                          return null;
-                        },
+                        validator: (value) => _isLogin
+                            ? AppValidators.loginPassword(value)
+                            : AppValidators.password(value, minLength: 6),
                       ),
                       const SizedBox(height: 16),
 
@@ -288,16 +310,30 @@ class _AuthPageState extends State<AuthPage> {
                         TextFormField(
                           controller: _confirmPasswordController,
                           obscureText: _obscureConfirmPassword,
+                          onChanged: (_) => setState(() {}),
                           decoration: InputDecoration(
                             labelText: 'Confirmar Senha',
                             prefixIcon: const Icon(Icons.lock_outline, color: AppColors.grey),
-                            suffixIcon: IconButton(
-                              icon: Icon(
-                                _obscureConfirmPassword ? Icons.visibility : Icons.visibility_off,
-                                color: AppColors.grey,
-                              ),
-                              onPressed: () =>
-                                  setState(() => _obscureConfirmPassword = !_obscureConfirmPassword),
+                            suffixIcon: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                _iconeValidacao(
+                                  Listenable.merge([_passwordController, _confirmPasswordController]),
+                                  () => _confirmPasswordController.text.isNotEmpty,
+                                  () => AppValidators.confirmPassword(
+                                    _confirmPasswordController.text,
+                                    _passwordController.text,
+                                  ),
+                                ),
+                                IconButton(
+                                  icon: Icon(
+                                    _obscureConfirmPassword ? Icons.visibility : Icons.visibility_off,
+                                    color: AppColors.grey,
+                                  ),
+                                  onPressed: () =>
+                                      setState(() => _obscureConfirmPassword = !_obscureConfirmPassword),
+                                ),
+                              ],
                             ),
                             filled: true,
                             fillColor: AppColors.lightCreamBg,
@@ -306,17 +342,9 @@ class _AuthPageState extends State<AuthPage> {
                               borderSide: BorderSide.none,
                             ),
                           ),
-                          validator: (value) {
-                            if (!_isLogin) {
-                              if (value == null || value.isEmpty) {
-                                return 'Por favor, confirme a sua senha';
-                              }
-                              if (value != _passwordController.text) {
-                                return 'As senhas não coincidem';
-                              }
-                            }
-                            return null;
-                          },
+                          validator: (value) => _isLogin
+                              ? null
+                              : AppValidators.confirmPassword(value, _passwordController.text),
                         ),
                         const SizedBox(height: 16),
 
@@ -374,11 +402,7 @@ class _AuthPageState extends State<AuthPage> {
                         Align(
                           alignment: Alignment.centerRight,
                           child: TextButton(
-                            onPressed: () {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(content: Text('Função em desenvolvimento')),
-                              );
-                            },
+                            onPressed: _irParaRecuperarSenha,
                             child: Text('Esqueceu a senha?', style: TextStyle(color: AppColors.pinkStrong)),
                           ),
                         ),
@@ -487,7 +511,6 @@ class _AuthPageState extends State<AuthPage> {
     }
 
     final user = FirebaseAuth.instance.currentUser;
-    final role = user != null ? await authController.getUserRole(user.uid) : null;
 
     if (!mounted) return;
 
@@ -495,6 +518,20 @@ class _AuthPageState extends State<AuthPage> {
       _isLoading = false;
       _isSubmitting = false;
     });
+
+    // Só deixa avançar para a Home/Admin quem já confirmou o email —
+    // quem acabou de registar-se ou tenta entrar sem confirmar cai aqui.
+    if (user != null && !user.emailVerified) {
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(builder: (_) => const EmailVerificationPendingPage()),
+        (route) => false,
+      );
+      return;
+    }
+
+    final role = user != null ? await authController.getUserRole(user.uid) : null;
+
+    if (!mounted) return;
 
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
