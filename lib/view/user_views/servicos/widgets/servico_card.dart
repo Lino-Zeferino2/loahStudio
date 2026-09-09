@@ -7,7 +7,9 @@ class ServicoCard extends StatelessWidget {
   final bool isSelected;
   final bool isMobile;
   final VoidCallback onTap; // toque no card inteiro -> abre a tela de detalhes
-  final VoidCallback onSelecionar; // toque no botão -> seleciona direto na lista
+  final VoidCallback onSelecionar;
+  final bool isFavorited;
+  final VoidCallback? onToggleFavorito;
 
   const ServicoCard({
     super.key,
@@ -16,6 +18,8 @@ class ServicoCard extends StatelessWidget {
     required this.isMobile,
     required this.onTap,
     required this.onSelecionar,
+    this.isFavorited = false,
+    this.onToggleFavorito,
   });
 
   String get _duracaoTexto {
@@ -38,6 +42,20 @@ class ServicoCard extends StatelessWidget {
   Widget _placeholder() => Container(
         color: AppColors.pinkNude.withValues(alpha: 0.3),
         child: Center(child: Icon(Icons.content_cut, color: AppColors.pinkStrong, size: 32)),
+      );
+
+  Widget _favButton({double size = 36, double iconSize = 18}) => GestureDetector(
+        onTap: onToggleFavorito,
+        child: Container(
+          width: size,
+          height: size,
+          decoration: BoxDecoration(
+            color: Colors.white,
+            shape: BoxShape.circle,
+            boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.1), blurRadius: 6, offset: const Offset(0, 2))],
+          ),
+          child: Icon(isFavorited ? Icons.favorite : Icons.favorite_border, color: isFavorited ? Colors.red : Colors.grey[600], size: iconSize),
+        ),
       );
 
   @override
@@ -79,6 +97,11 @@ class ServicoCard extends StatelessWidget {
                           decoration: BoxDecoration(color: Colors.black.withValues(alpha: 0.45), shape: BoxShape.circle),
                           child: const Icon(Icons.remove_red_eye_outlined, size: 14, color: Colors.white),
                         ),
+                      ),
+                      Positioned(
+                        top: 6,
+                        right: 6,
+                        child: _favButton(size: 26, iconSize: 14),
                       ),
                     ],
                   ),
@@ -150,7 +173,20 @@ class ServicoCard extends StatelessWidget {
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            ClipRRect(borderRadius: BorderRadius.circular(16), child: SizedBox(width: 180, height: 180, child: _imagem())),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(16),
+              child: SizedBox(
+                width: 180,
+                height: 180,
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    _imagem(),
+                    Positioned(top: 8, right: 8, child: _favButton()),
+                  ],
+                ),
+              ),
+            ),
             const SizedBox(width: 24),
             Expanded(
               child: Column(

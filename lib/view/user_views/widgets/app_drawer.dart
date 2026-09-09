@@ -4,6 +4,7 @@ import 'package:loahstudio/constants/colors.dart';
 import 'package:loahstudio/view/auth/auth_page.dart';
 import 'package:loahstudio/view/user_views/perfil/perfil_page.dart';
 import 'package:loahstudio/view/user_views/servicos/servicos_page.dart';
+import 'package:loahstudio/view/user_views/favoritos/favoritos_page.dart';
 
 class AppDrawer extends StatelessWidget {
   final int selectedIndex;
@@ -58,6 +59,14 @@ class AppDrawer extends StatelessWidget {
                 );
               }),
               _buildAuthMenuItem(context),
+              ListTile(
+                leading: Icon(Icons.favorite_outline, color: AppColors.brown),
+                title: Text("Favoritos", style: TextStyle(color: AppColors.brown, fontWeight: FontWeight.w500)),
+                onTap: () {
+                  Navigator.pop(context);
+                  Navigator.push(context, MaterialPageRoute(builder: (_) => const FavoritosPage()));
+                },
+              ),
               const Spacer(),
               const Divider(),
               const SizedBox(height: 16),

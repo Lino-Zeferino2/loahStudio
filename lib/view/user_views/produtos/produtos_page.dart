@@ -1,10 +1,13 @@
 // ignore_for_file: library_private_types_in_public_api
 
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:loahstudio/constants/colors.dart';
 import 'package:loahstudio/controller/home_controller.dart';
 import 'package:loahstudio/controller/produtos_controller.dart';
+import 'package:loahstudio/controller/favoritos_controller.dart';
 import 'package:loahstudio/model/produto_model.dart';
+import 'package:loahstudio/view/user_views/favoritos/favoritos_page.dart';
 import 'package:loahstudio/view/user_views/home/home_page.dart';
 import 'package:loahstudio/view/user_views/produtos/widgets/produtos_destaque_carousel.dart';
 import 'package:loahstudio/view/user_views/servicos/servicos_page.dart';
@@ -15,6 +18,26 @@ import 'package:loahstudio/view/user_views/widgets/build_auth_menu_item.dart';
 import 'package:loahstudio/view/user_views/widgets/footer_section.dart';
 import 'package:loahstudio/view/user_views/produtos/produto_detalhe_page.dart';
 
+/// Descreve UM item do menu de navegação (topo desktop + drawer mobile).
+/// Ter só ESTA lista como fonte da verdade evita o bug de índices
+/// desalinhados entre vários `switch`/`if (index == ...)` espalhados
+/// pelo ficheiro (era isso que fazia "Carrinho" abrir "Favoritos").
+class _MenuItem {
+  final String label;
+  final IconData icon;
+  final bool iconOnlyDesktop; // true = Favoritos/Carrinho (ícone em vez de texto no menu desktop)
+  final int? badgeCount;
+  final VoidCallback onTap;
+
+  const _MenuItem({
+    required this.label,
+    required this.icon,
+    this.iconOnlyDesktop = false,
+    this.badgeCount,
+    required this.onTap,
+  });
+}
+
 class ProdutosPage extends StatefulWidget {
   const ProdutosPage({super.key});
 
@@ -24,20 +47,24 @@ class ProdutosPage extends StatefulWidget {
 
 class _ProdutosPageState extends State<ProdutosPage> {
   final ProdutosController _controller = ProdutosController();
+  final FavoritosController _favCtrl = FavoritosController();
   // ignore: non_constant_identifier_names
-  final HomeController _HomeController = HomeController();
-  int selectedIndex = 2;
+  final HomeController _homeController = HomeController();
+  int selectedIndex = 2; // "Produtos" — ver _buildMenuItems()
   int? hoverIndex;
-  final List<String> menuItems = ["Início", "Serviços", "Produtos", "Carrinho"];
 
   // Carrinho: cada item guarda id, nome e preço já formatado (compatível
   // com o formato que o CarrinhoPage já espera receber).
   final List<Map<String, dynamic>> _cart = [];
 
+  // IDs dos produtos favoritados pelo utilizador atual, mantidos em
+  // sincronia com o Firestore através do stream abaixo.
+  Set<String> _favoritoIds = {};
+  StreamSubscription<Set<String>>? _favoritosSub;
+
   bool _isInCart(String? produtoId) => produtoId != null && _cart.any((item) => item['id'] == produtoId);
 
   void _toggleCart(Produto produto) {
-    if (produto.id == null) return;
     setState(() {
       if (_isInCart(produto.id)) {
         _cart.removeWhere((item) => item['id'] == produto.id);
@@ -76,23 +103,108 @@ class _ProdutosPageState extends State<ProdutosPage> {
     Navigator.push(context, MaterialPageRoute(builder: (_) => CarrinhoPage(existingCart: _cart)));
   }
 
+  void _irParaFavoritos() {
+    Navigator.push(context, MaterialPageRoute(builder: (_) => const FavoritosPage()));
+  }
+
+  /// Única fonte da verdade para o menu: label, ícone e ação de cada
+  /// item, nesta ordem (o índice na lista é só para o realce visual do
+  /// item selecionado/hover — a navegação já não depende dele).
+  List<_MenuItem> _buildMenuItems() => [
+        _MenuItem(
+          label: 'Início',
+          icon: Icons.home_outlined,
+          onTap: () => Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (_) => const HomePage()), (route) => route.isFirst),
+        ),
+        _MenuItem(
+          label: 'Serviços',
+          icon: Icons.spa_outlined,
+          onTap: () => Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const ServicosPage())),
+        ),
+        _MenuItem(
+          label: 'Produtos',
+          icon: Icons.shopping_bag_outlined,
+          onTap: () {}, // já estamos nesta página
+        ),
+        _MenuItem(
+          label: 'Favoritos',
+          icon: Icons.favorite_border,
+          iconOnlyDesktop: true,
+          onTap: _irParaFavoritos,
+        ),
+        _MenuItem(
+          label: 'Carrinho',
+          icon: Icons.shopping_bag_outlined,
+          iconOnlyDesktop: true,
+          badgeCount: _cart.length,
+          onTap: _irParaCarrinho,
+        ),
+      ];
+
   @override
   void initState() {
-    _HomeController.carregarDados();
-   
-   
     super.initState();
+    _homeController.carregarDados();
+    _favoritosSub = _favCtrl.streamFavoritoIds('produto').listen((ids) {
+      if (mounted) setState(() => _favoritoIds = ids);
+    });
+  }
+
+  @override
+  void dispose() {
+    _favoritosSub?.cancel();
+    super.dispose();
+  }
+
+  Future<void> _toggleFavorito(Produto produto) async {
+    if (produto.id == null) return;
+
+    final jaFavoritado = _favoritoIds.contains(produto.id);
+
+    try {
+      final novoEstado = await _favCtrl.toggleFavorito(
+        itemId: produto.id!,
+        tipo: 'produto',
+        nome: produto.nome,
+        imagemUrl: produto.imagemUrl,
+        preco: produto.preco,
+        isFavoritoAtual: jaFavoritado,
+      );
+
+      if (!mounted) return;
+
+      if (novoEstado == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Precisas de iniciar sessão para adicionar aos favoritos.'), backgroundColor: Colors.red),
+        );
+        return;
+      }
+
+      // O stream vai atualizar _favoritoIds automaticamente, mas isto
+      // dá feedback visual imediato, sem esperar pelo próximo snapshot.
+      setState(() {
+        if (novoEstado) {
+          _favoritoIds.add(produto.id!);
+        } else {
+          _favoritoIds.remove(produto.id!);
+        }
+      });
+    } catch (e) {
+      if (!mounted) return;
+      debugPrint('Erro ao alternar favorito: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Ocorreu um erro ao atualizar os favoritos.'), backgroundColor: Colors.red),
+      );
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     final isMobile = MediaQuery.of(context).size.width < 600;
+    final menuItems = _buildMenuItems();
 
     return Scaffold(
-      endDrawer: isMobile ? _buildMobileDrawer() : null,
-      // FAB fixo com o número de itens — fica visível mesmo enquanto se
-      // faz scroll pela lista de produtos, ao contrário do ícone do
-      // header que pode ficar fora de vista.
+      endDrawer: isMobile ? _buildMobileDrawer(menuItems) : null,
       floatingActionButton: _cart.isEmpty
           ? null
           : FloatingActionButton.extended(
@@ -118,28 +230,44 @@ class _ProdutosPageState extends State<ProdutosPage> {
               child: Text("LOAH STÚDIO", style: TextStyle(color: AppColors.brown, fontWeight: FontWeight.w600, fontSize: isMobile ? 16 : 22, letterSpacing: 3)),
             ),
             if (isMobile)
-              GestureDetector(
-                onTap: _irParaCarrinho,
-                child: Badge(label: Text("${_cart.length}"), isLabelVisible: _cart.isNotEmpty, child: Icon(Icons.shopping_cart, color: AppColors.brown, size: 24)),
-              )
+              Row(children: [
+                GestureDetector(
+                  onTap: _irParaFavoritos,
+                  child: Padding(
+                    padding: const EdgeInsets.only(right: 16),
+                    child: Icon(Icons.favorite_border, color: AppColors.brown, size: 24),
+                  ),
+                ),
+                GestureDetector(
+                  onTap: _irParaCarrinho,
+                  child: Badge(label: Text("${_cart.length}"), isLabelVisible: _cart.isNotEmpty, child: Icon(Icons.shopping_cart, color: AppColors.brown, size: 24)),
+                ),
+              ])
             else
               Row(children: [
                 ...List.generate(menuItems.length, (index) {
+                  final item = menuItems[index];
                   final isSelected = selectedIndex == index;
                   final isHover = hoverIndex == index;
+                  final color = isSelected || isHover ? AppColors.pinkNude : AppColors.brown;
                   return MouseRegion(
                     onEnter: (_) => setState(() => hoverIndex = index),
                     onExit: (_) => setState(() => hoverIndex = null),
                     child: GestureDetector(
-                      onTap: () => _handleMenuTap(index),
+                      onTap: () {
+                        setState(() => selectedIndex = index);
+                        item.onTap();
+                      },
                       child: AnimatedContainer(
                         duration: const Duration(milliseconds: 200),
                         margin: const EdgeInsets.symmetric(horizontal: 12),
                         padding: const EdgeInsets.symmetric(vertical: 8),
                         decoration: BoxDecoration(border: isSelected ? Border(bottom: BorderSide(color: AppColors.pinkNude, width: 2)) : null),
-                        child: index == 3
-                            ? Badge(label: Text("${_cart.length}"), isLabelVisible: _cart.isNotEmpty, child: Icon(Icons.shopping_bag_outlined, color: isSelected || isHover ? AppColors.pinkNude : AppColors.brown, size: 22))
-                            : Text(menuItems[index], style: TextStyle(color: isSelected || isHover ? AppColors.pinkNude : AppColors.brown, fontSize: 16, fontWeight: isSelected ? FontWeight.bold : FontWeight.w500)),
+                        child: item.iconOnlyDesktop
+                            ? (item.badgeCount != null
+                                ? Badge(label: Text('${item.badgeCount}'), isLabelVisible: item.badgeCount! > 0, child: Icon(item.icon, color: color, size: 22))
+                                : Icon(item.icon, color: color, size: 22))
+                            : Text(item.label, style: TextStyle(color: color, fontSize: 16, fontWeight: isSelected ? FontWeight.bold : FontWeight.w500)),
                       ),
                     ),
                   );
@@ -168,20 +296,21 @@ class _ProdutosPageState extends State<ProdutosPage> {
             final produtos = snapshot.data!;
             final produtosDestaque = produtos.where((p) => p.destaque).toList();
 
-            return SingleChildScrollView(
-              child: Column(children: [
-                SizedBox(height: isMobile ? 20 : 40),
-                _introSection(),
-                const SizedBox(height: 60),
-                if (produtosDestaque.isNotEmpty) _produtosDestaqueSection(produtosDestaque),
-                if (produtosDestaque.isNotEmpty) const SizedBox(height: 60),
-                _todosProdutosSection(produtos),
-                // Espaço extra para o FAB não tapar o último produto ou o
-                // rodapé quando o carrinho tem itens.
-                SizedBox(height: _cart.isEmpty ? 100 : 160),
-                FooterSection(config: _HomeController.config),
-              ]),
-            );
+          return SingleChildScrollView(
+  child: Column(children: [
+    SizedBox(height: isMobile ? 20 : 40),
+    _introSection(),
+    const SizedBox(height: 60),
+    if (produtosDestaque.isNotEmpty) _produtosDestaqueSection(produtosDestaque),
+    if (produtosDestaque.isNotEmpty) const SizedBox(height: 60),
+    _todosProdutosSection(produtos),
+    SizedBox(height: _cart.isEmpty ? 100 : 160),
+    ListenableBuilder(
+      listenable: _homeController,
+      builder: (context, _) => FooterSection(config: _homeController.config),
+    ),
+  ]),
+);
           },
         ),
       ),
@@ -294,10 +423,12 @@ class _ProdutosPageState extends State<ProdutosPage> {
                 return ProdutoCardGrid(
                   produto: produto,
                   isInCart: _isInCart(produto.id),
-                  isCompact: true, // ou false no desktop
+                  isCompact: true,
                   onToggleCart: () => _toggleCart(produto),
                   onOpenDetalhes: () => _abrirDetalhes(produto),
-                  width: MediaQuery.of(context).size.width / 2 - 20, // só no mobile
+                  isFavorited: _favoritoIds.contains(produto.id),
+                  onToggleFavorito: () => _toggleFavorito(produto),
+                  width: MediaQuery.of(context).size.width / 2 - 20,
                 );
               },
             )
@@ -311,6 +442,8 @@ class _ProdutosPageState extends State<ProdutosPage> {
                 isCompact: false,
                 onToggleCart: () => _toggleCart(produto),
                 onOpenDetalhes: () => _abrirDetalhes(produto),
+                isFavorited: _favoritoIds.contains(produto.id),
+                onToggleFavorito: () => _toggleFavorito(produto),
               )).toList(),
             ),
         ],
@@ -318,17 +451,7 @@ class _ProdutosPageState extends State<ProdutosPage> {
     );
   }
 
-  void _handleMenuTap(int index) {
-    if (index == 0) {
-      Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (_) => const HomePage()), (route) => route.isFirst);
-    } else if (index == 1) {
-      Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const ServicosPage()));
-    } else if (index == 3) {
-      _irParaCarrinho();
-    }
-  }
-
-  Widget _buildMobileDrawer() {
+  Widget _buildMobileDrawer(List<_MenuItem> menuItems) {
     return Container(
       width: 280,
       padding: const EdgeInsets.all(20),
@@ -356,15 +479,18 @@ class _ProdutosPageState extends State<ProdutosPage> {
           const Divider(),
           const SizedBox(height: 20),
           ...List.generate(menuItems.length, (index) {
+            final item = menuItems[index];
             final isSelected = selectedIndex == index;
+            final color = isSelected ? AppColors.pinkStrong : AppColors.brown;
             return ListTile(
-              leading: index == 3
-                  ? Badge(label: Text("${_cart.length}"), isLabelVisible: _cart.isNotEmpty, child: Icon(Icons.shopping_cart, color: isSelected ? AppColors.pinkStrong : AppColors.brown))
-                  : Icon(index == 0 ? Icons.home_outlined : index == 1 ? Icons.spa_outlined : Icons.shopping_bag_outlined, color: isSelected ? AppColors.pinkStrong : AppColors.brown),
-              title: Text(menuItems[index], style: TextStyle(color: isSelected ? AppColors.pinkStrong : AppColors.brown, fontWeight: isSelected ? FontWeight.bold : FontWeight.w500)),
+              leading: item.badgeCount != null
+                  ? Badge(label: Text('${item.badgeCount}'), isLabelVisible: item.badgeCount! > 0, child: Icon(item.icon, color: color))
+                  : Icon(item.icon, color: color),
+              title: Text(item.label, style: TextStyle(color: color, fontWeight: isSelected ? FontWeight.bold : FontWeight.w500)),
               onTap: () {
                 Navigator.pop(context);
-                _handleMenuTap(index);
+                setState(() => selectedIndex = index);
+                item.onTap();
               },
             );
           }),

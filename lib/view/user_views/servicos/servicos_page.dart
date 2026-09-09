@@ -1,10 +1,13 @@
 // ignore_for_file: library_private_types_in_public_api
 
+import 'dart:async';
+
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:loahstudio/constants/colors.dart';
 import 'package:loahstudio/constants/responsive.dart';
 import 'package:loahstudio/controller/agendamento_controller.dart';
+import 'package:loahstudio/controller/favoritos_controller.dart';
 import 'package:loahstudio/controller/home_controller.dart';
 import 'package:loahstudio/model/agendamento_model.dart';
 import 'package:loahstudio/model/servico_model.dart';
@@ -18,8 +21,8 @@ import 'package:loahstudio/view/user_views/servicos/widgets/horarios_selector.da
 import 'package:loahstudio/view/user_views/servicos/widgets/dados_pessoais_section.dart';
 import 'package:loahstudio/view/user_views/servicos/widgets/servicos_search_filter.dart';
 import 'package:loahstudio/view/user_views/widgets/build_auth_menu_item.dart';
-import 'package:loahstudio/view/user_views/widgets/footer_section.dart';
 import 'package:loahstudio/view/user_views/widgets/app_drawer.dart';
+import 'package:loahstudio/view/user_views/widgets/footer_section.dart';
 
 class ServicosPage extends StatefulWidget {
   const ServicosPage({super.key});
@@ -32,6 +35,9 @@ class _ServicosPageState extends State<ServicosPage> {
   final AgendamentoController _controller = AgendamentoController();
   final HomeController _homeController = HomeController();
   final GlobalKey<DadosPessoaisSectionState> _dadosKey = GlobalKey();
+  final FavoritosController _favCtrl = FavoritosController();
+  Set<String> _favoritoIds = {};
+  StreamSubscription<Set<String>>? _favoritosSub;
 
   int selectedIndex = 1;
   int? hoverIndex;
@@ -67,6 +73,9 @@ class _ServicosPageState extends State<ServicosPage> {
     super.initState();
     _carregarHorarioFuncionamento();
     _homeController.carregarDados();
+    _favoritosSub = _favCtrl.streamFavoritoIds('servico').listen((ids) {
+      if (mounted) setState(() => _favoritoIds = ids);
+    });
   }
 
   @override
@@ -76,6 +85,7 @@ class _ServicosPageState extends State<ServicosPage> {
     telefoneController.dispose();
     observacaoController.dispose();
     _searchController.dispose();
+    _favoritosSub?.cancel();
     super.dispose();
   }
 
@@ -121,7 +131,45 @@ class _ServicosPageState extends State<ServicosPage> {
     setState(() { selectedDate = data; selectedTime = null; });
     _atualizarHorarios();
   }
+Future<void> _toggleFavoritoServico(Servico servico) async {
+  if (servico.id == null) return;
 
+  final jaFavoritado = _favoritoIds.contains(servico.id);
+
+  try {
+    final novoEstado = await _favCtrl.toggleFavorito(
+      itemId: servico.id!,
+      tipo: 'servico',
+      nome: servico.nome,
+      imagemUrl: servico.imagemUrl,
+      preco: servico.preco,
+      isFavoritoAtual: jaFavoritado,
+    );
+
+    if (!mounted) return;
+
+    if (novoEstado == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Precisas de iniciar sessão para adicionar aos favoritos.'), backgroundColor: Colors.red),
+      );
+      return;
+    }
+
+    setState(() {
+      if (novoEstado) {
+        _favoritoIds.add(servico.id!);
+      } else {
+        _favoritoIds.remove(servico.id!);
+      }
+    });
+  } catch (e) {
+    if (!mounted) return;
+    debugPrint('Erro ao alternar favorito: $e');
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Ocorreu um erro ao atualizar os favoritos.'), backgroundColor: Colors.red),
+    );
+  }
+}
    /// Valida os campos e, se estiver tudo certo, abre o resumo para
   /// confirmação — a criação em si só acontece depois de o utilizador
   /// confirmar nesse passo seguinte (ver _abrirResumoConfirmacao).
@@ -502,22 +550,28 @@ class _ServicosPageState extends State<ServicosPage> {
                         mainAxisExtent: 270,
                       ),
                       itemCount: exibidos.length,
+                   // versão mobile (dentro do GridView.builder)
                       itemBuilder: (context, index) => ServicoCard(
                         servico: exibidos[index],
                         isSelected: selectedServico?.id == exibidos[index].id,
                         isMobile: true,
                         onTap: () => _abrirDetalhesServico(exibidos[index]),
                         onSelecionar: () => _selecionarServico(exibidos[index]),
+                        isFavorited: _favoritoIds.contains(exibidos[index].id),
+                        onToggleFavorito: () => _toggleFavoritoServico(exibidos[index]),
                       ),
                     )
                   else
-                    Column(children: exibidos.map((s) => ServicoCard(
-                      servico: s,
-                      isSelected: selectedServico?.id == s.id,
-                      isMobile: false,
-                      onTap: () => _abrirDetalhesServico(s),
-                      onSelecionar: () => _selecionarServico(s),
-                    )).toList()),
+                  // versão desktop (dentro do Column(children: exibidos.map(...)))
+                      Column(children: exibidos.map((s) => ServicoCard(
+                        servico: s,
+                        isSelected: selectedServico?.id == s.id,
+                        isMobile: false,
+                        onTap: () => _abrirDetalhesServico(s),
+                        onSelecionar: () => _selecionarServico(s),
+                        isFavorited: _favoritoIds.contains(s.id),
+                        onToggleFavorito: () => _toggleFavoritoServico(s),
+                      )).toList()),
                   if (temMais) ...[
                     const SizedBox(height: 16),
                     Center(

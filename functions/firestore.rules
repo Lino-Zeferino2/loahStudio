@@ -1,0 +1,107 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ── Helpers ──────────────────────────────────────────
+    function isSignedIn() {
+      return request.auth != null;
+    }
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+    function isAdmin() {
+      return isSignedIn()
+        && exists(/databases/$(database)/documents/clientes/$(request.auth.uid))
+        && get(/databases/$(database)/documents/clientes/$(request.auth.uid)).data.role == 'admin';
+    }
+
+    // ── Clientes ─────────────────────────────────────────
+    match /clientes/{userId} {
+      allow create: if isOwner(userId);
+      allow read, update: if isOwner(userId) || isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    // ── Favoritos ────────────────────────────────────────
+    // Cada utilizador só acede aos próprios favoritos.
+    match /favoritos/{favoritoId} {
+      allow read, update, delete: if isSignedIn()
+        && resource.data.usuarioId == request.auth.uid;
+      allow create: if isSignedIn()
+        && request.resource.data.usuarioId == request.auth.uid;
+    }
+
+    // ── Serviços ─────────────────────────────────────────
+    match /servicos/{servicoId} {
+      allow read: if true;
+      allow create, update, delete: if isAdmin();
+    }
+
+    // ── Configurações ────────────────────────────────────
+    match /configuracoes/{docId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // ── Produtos ─────────────────────────────────────────
+    match /produtos/{produtoId} {
+      allow read: if true;
+      allow create, update, delete: if isAdmin();
+    }
+
+    // ── Avaliações ───────────────────────────────────────
+    match /avaliacoes/{id} {
+      allow read: if true;
+      allow create: if isSignedIn()
+        && request.resource.data.nomeCliente is string
+        && request.resource.data.mensagem is string
+        && request.resource.data.nota is int
+        && request.resource.data.nota >= 1
+        && request.resource.data.nota <= 5
+        && request.resource.data.aprovado == false;
+      allow update, delete: if isAdmin();
+    }
+
+    // ── Agendamentos ─────────────────────────────────────
+    match /agendamentos/{agendamentoId} {
+      allow create: if true;
+      allow read, update: if isAdmin()
+        || (isSignedIn() && resource.data.clienteId == request.auth.uid);
+      allow delete: if isAdmin();
+    }
+
+    // ── Horários ocupados ────────────────────────────────
+    match /horariosOcupados/{id} {
+      allow read: if true;
+      allow create: if true;
+      allow update, delete: if isAdmin();
+    }
+
+    // ── Notificações ─────────────────────────────────────
+    match /notificacoes/{notificacaoId} {
+      allow read: if request.auth != null && request.auth.uid == resource.data.destinatarioId;
+      allow update: if request.auth != null
+        && request.auth.uid == resource.data.destinatarioId
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['lida']);
+      allow delete: if request.auth != null && request.auth.uid == resource.data.destinatarioId;
+      allow create: if false;
+    }
+
+    // ── Pedidos ──────────────────────────────────────────
+    match /pedidos/{pedidoId} {
+      allow create: if isSignedIn() && request.resource.data.clienteId == request.auth.uid;
+      allow read: if isAdmin() || (isSignedIn() && resource.data.clienteId == request.auth.uid);
+      allow update: if isAdmin() ||
+        (isSignedIn() && resource.data.clienteId == request.auth.uid && (
+          (resource.data.status in ['pendente', 'confirmado', 'preparando']
+            && request.resource.data.status == 'cancelado')
+          ||
+          (resource.data.status == 'pendente'
+            && request.resource.data.status == resource.data.status
+            && request.resource.data.diff(resource.data).affectedKeys()
+                .hasOnly(['comprovativoUrl', 'comprovativoEnviadoEm']))
+        ));
+      allow delete: if isAdmin();
+    }
+  }
+}
