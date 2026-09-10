@@ -295,22 +295,21 @@ class _ProdutosPageState extends State<ProdutosPage> {
             }
             final produtos = snapshot.data!;
             final produtosDestaque = produtos.where((p) => p.destaque).toList();
-
           return SingleChildScrollView(
-  child: Column(children: [
-    SizedBox(height: isMobile ? 20 : 40),
-    _introSection(),
-    const SizedBox(height: 60),
-    if (produtosDestaque.isNotEmpty) _produtosDestaqueSection(produtosDestaque),
-    if (produtosDestaque.isNotEmpty) const SizedBox(height: 60),
-    _todosProdutosSection(produtos),
-    SizedBox(height: _cart.isEmpty ? 100 : 160),
-    ListenableBuilder(
-      listenable: _homeController,
-      builder: (context, _) => FooterSection(config: _homeController.config),
-    ),
-  ]),
-);
+              child: Column(children: [
+                SizedBox(height: isMobile ? 20 : 40),
+                _introSection(),
+                const SizedBox(height: 60),
+                if (produtosDestaque.isNotEmpty) _produtosDestaqueSection(produtosDestaque),
+                if (produtosDestaque.isNotEmpty) const SizedBox(height: 60),
+                _todosProdutosSection(produtos),
+                SizedBox(height: _cart.isEmpty ? 100 : 160),
+                ListenableBuilder(
+                  listenable: _homeController,
+                  builder: (context, _) => FooterSection(config: _homeController.config),
+                ),
+              ]),
+            );
           },
         ),
       ),
